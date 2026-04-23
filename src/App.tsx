@@ -183,6 +183,7 @@ export default function App() {
   };
 
   const filteredProjects = projectFilter === 'All' ? PROJECTS : PROJECTS.filter((p) => p.category === projectFilter);
+  const catanProject = PROJECTS.find((p) => p.title === 'Catan Settlement Optimizer');
   const featuredProject = PROJECTS.find((p) => p.featured);
   const nonFeaturedFiltered = filteredProjects.filter((p) => !p.featured);
 
@@ -314,7 +315,7 @@ export default function App() {
             <motion.div initial="hidden" animate="visible" variants={staggerContainer} className="max-w-3xl">
               <motion.div variants={fadeInUp} className="mb-6">
                 <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.25em] text-blue-400/80 bg-blue-500/8 border border-blue-500/15 px-4 py-2 rounded-full">
-                  Full-Stack Engineer | AI Systems Builder
+                  Full-Stack Developer
                 </span>
               </motion.div>
               <motion.h1
@@ -369,7 +370,6 @@ export default function App() {
                       <stat.icon className="text-cyan-400" size={20} />
                     </div>
                     <div>
-                      <p className="text-[10px] uppercase tracking-[0.2em] text-slate-500 font-semibold">Signal {idx + 1}</p>
                       <p className="text-sm font-bold text-white">{stat.label}</p>
                     </div>
                   </div>
@@ -396,136 +396,6 @@ export default function App() {
                   }}
                 />
               </div>
-            </motion.div>
-          </div>
-        </div>
-      </section>
-
-      {/* Selected Work */}
-      <section className="py-24 relative">
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute left-[8%] top-10 h-56 w-56 rounded-full bg-cyan-500/8 blur-3xl" />
-          <div className="absolute right-[12%] bottom-0 h-64 w-64 rounded-full bg-blue-500/8 blur-3xl" />
-        </div>
-        <div className="container mx-auto px-6 relative z-10">
-          <div className="grid gap-16 xl:grid-cols-[1.1fr,0.9fr] items-start">
-            <motion.div
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-              variants={staggerContainer}
-              className="space-y-8"
-            >
-              <motion.div variants={fadeInUp}>
-                <span className="text-xs font-bold uppercase tracking-[0.22em] text-cyan-400">Selected Work</span>
-                <h2 className="text-4xl md:text-6xl font-bold text-white tracking-tight mt-4 leading-[1.02]">
-                  Building the operating layer behind AI products.
-                </h2>
-                <p className="mt-6 max-w-2xl text-lg text-slate-400 leading-relaxed">
-                  The work I care about most sits between product, tooling, and operations. It has to be useful to
-                  people, dependable in production, and clear enough that someone can operate it under pressure.
-                </p>
-              </motion.div>
-
-              {featuredProject && (
-                <motion.div variants={fadeInUp} className="featured-case rounded-[32px] p-8 md:p-10">
-                  <div className="flex flex-wrap items-center gap-3 mb-6">
-                    <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-200 bg-white/5 border border-white/10 px-3 py-1.5 rounded-full">
-                      Featured Build
-                    </span>
-                    <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-cyan-300 bg-cyan-500/10 border border-cyan-500/20 px-3 py-1.5 rounded-full">
-                      {featuredProject.category}
-                    </span>
-                  </div>
-
-                  <div className="grid gap-8 lg:grid-cols-[1fr,220px]">
-                    <div>
-                      <h3 className="text-3xl md:text-4xl font-bold text-white">{featuredProject.title}</h3>
-                      <p className="mt-3 text-sm uppercase tracking-[0.14em] text-amber-300/80 font-semibold">
-                        {featuredProject.role}
-                      </p>
-                      <p className="mt-5 max-w-2xl text-slate-300 leading-relaxed">{featuredProject.description}</p>
-                      <div className="mt-6 flex flex-wrap gap-2.5">
-                        {featuredProject.tech.map((tech) => (
-                          <span key={tech} className="px-3 py-1.5 rounded-full border border-slate-700/70 text-sm text-slate-300">
-                            {tech}
-                          </span>
-                        ))}
-                      </div>
-                      {featuredProject.cta?.url && (
-                        <a
-                          href={featuredProject.cta.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="btn-primary inline-flex items-center gap-2 px-6 py-3 rounded-full text-white font-bold mt-8"
-                        >
-                          {featuredProject.cta.label}
-                          <ArrowRight size={16} />
-                        </a>
-                      )}
-                    </div>
-
-                    <div className="space-y-3">
-                      {featuredProject.metrics?.map((metric) => (
-                        <div key={metric} className="border border-slate-700/60 rounded-2xl px-4 py-4 text-sm text-slate-200 bg-slate-950/35">
-                          {metric}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </motion.div>
-
-            <motion.div
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-              variants={staggerContainer}
-              className="space-y-10"
-            >
-              <motion.div variants={fadeInUp}>
-                <p className="text-xs font-bold uppercase tracking-[0.22em] text-slate-500 mb-5">Operating Now</p>
-                <div className="space-y-4">
-                  {BUILDING_NOW.map((item) => (
-                    <div key={item.name} className="proof-row">
-                      <div className="flex items-start gap-4">
-                        <div className="w-11 h-11 rounded-2xl bg-blue-500/10 border border-blue-500/15 flex items-center justify-center flex-shrink-0">
-                          <item.icon size={20} className="text-cyan-300" />
-                        </div>
-                        <div>
-                          <div className="flex flex-wrap items-center gap-3">
-                            <h3 className="text-lg font-bold text-white">{item.name}</h3>
-                            <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-emerald-300">
-                              {item.status}
-                            </span>
-                          </div>
-                          <p className="mt-2 text-sm text-slate-400 leading-relaxed">{item.detail}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </motion.div>
-
-              <motion.div variants={fadeInUp}>
-                <p className="text-xs font-bold uppercase tracking-[0.22em] text-slate-500 mb-5">Proof Points</p>
-                <div className="space-y-4">
-                  {HIGHLIGHTS.map((item) => (
-                    <div key={item.label} className="proof-row">
-                      <div className="flex items-start gap-4">
-                        <div className="w-11 h-11 rounded-2xl bg-white/5 border border-white/8 flex items-center justify-center flex-shrink-0">
-                          <item.icon size={20} className="text-white" />
-                        </div>
-                        <div>
-                          <h3 className="text-lg font-bold text-white">{item.label}</h3>
-                          <p className="mt-2 text-sm text-slate-400 leading-relaxed">{item.detail}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </motion.div>
             </motion.div>
           </div>
         </div>
@@ -596,6 +466,67 @@ export default function App() {
               ))}
             </div>
           </div>
+
+          {catanProject && (
+            <motion.div
+              initial={{ opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+              className="mb-12 catan-embed rounded-[28px] overflow-hidden"
+            >
+              <div className="p-8 md:p-10 border-b border-white/8">
+                <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+                  <div className="max-w-3xl">
+                    <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-amber-300 bg-amber-500/10 border border-amber-500/20 px-3 py-1.5 rounded-full">
+                      Featured Side Project
+                    </span>
+                    <h3 className="mt-5 text-3xl md:text-4xl font-bold text-white">{catanProject.title}</h3>
+                    <p className="mt-4 text-base md:text-lg text-slate-300 leading-relaxed">
+                      One of my favorite builds. It scores settlement openings with probability weighting, resource scarcity,
+                      and port value so people can actually use the tool instead of just reading about it.
+                    </p>
+                    <div className="mt-6 flex flex-wrap gap-2.5">
+                      {catanProject.tech.map((tech) => (
+                        <span key={tech} className="px-3 py-1.5 rounded-full border border-slate-700/70 text-sm text-slate-300">
+                          {tech}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-3">
+                    {catanProject.cta?.url && (
+                      <a
+                        href={catanProject.cta.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn-primary inline-flex items-center gap-2 px-6 py-3 rounded-full text-white font-bold"
+                      >
+                        Open full page
+                        <ExternalLink size={16} />
+                      </a>
+                    )}
+                    <a
+                      href="#catan-live"
+                      className="inline-flex items-center gap-2 px-6 py-3 rounded-full border border-white/10 text-slate-200 hover:bg-white/5 transition-colors"
+                    >
+                      Use it here
+                      <ArrowRight size={16} />
+                    </a>
+                  </div>
+                </div>
+              </div>
+
+              <div id="catan-live" className="catan-embed-frame-wrap">
+                <iframe
+                  src={`${import.meta.env.BASE_URL}catan/`}
+                  title="Catan Settlement Optimizer"
+                  className="catan-embed-frame"
+                  loading="lazy"
+                />
+              </div>
+            </motion.div>
+          )}
 
           {/* Featured Project - Full Width */}
           {featuredProject && (projectFilter === 'All' || projectFilter === featuredProject.category) && (

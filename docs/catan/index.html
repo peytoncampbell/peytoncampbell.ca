@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -297,7 +297,7 @@ canvas {
 }
 .info-toggle summary:hover { background: rgba(255, 255, 255, 0.06); color: #94a3b8; }
 .info-toggle summary::-webkit-details-marker { display: none; }
-.info-toggle summary::before { content: '▸'; transition: transform 0.2s ease; display: inline-block; }
+.info-toggle summary::before { content: 'â–¸'; transition: transform 0.2s ease; display: inline-block; }
 .info-toggle[open] summary::before { transform: rotate(90deg); }
 .info-content {
   padding: 14px 16px;
@@ -319,74 +319,551 @@ canvas {
   .top-list { padding: 12px 14px; }
   .top-list li { padding: 6px 10px; font-size: 0.78em; }
 }
+
+.page-shell {
+  width: 100%;
+  max-width: 1380px;
+  margin: 0 auto;
+}
+
+.hero-shell,
+.board-shell {
+  width: 100%;
+  max-width: none;
+}
+
+.hero-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.75fr);
+  gap: 20px;
+  padding: 26px;
+  margin-bottom: 16px;
+}
+
+.eyebrow {
+  display: inline-flex;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: rgba(230, 168, 23, 0.1);
+  border: 1px solid rgba(230, 168, 23, 0.18);
+  color: #f3d48b;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.hero-shell h1 {
+  margin-top: 14px;
+  font-size: clamp(2.2rem, 4vw, 4.2rem);
+  line-height: 0.96;
+  color: #f8fafc;
+  background: none;
+  -webkit-text-fill-color: initial;
+}
+
+.hero-shell .subtitle {
+  margin-top: 14px;
+  max-width: 780px;
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+.hero-points {
+  margin-top: 18px;
+  display: grid;
+  gap: 10px;
+}
+
+.hero-points li {
+  list-style: none;
+  display: flex;
+  gap: 10px;
+  color: #cbd5e1;
+  line-height: 1.55;
+}
+
+.hero-points li::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  margin-top: 0.55em;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #e6a817, #10b981);
+  flex-shrink: 0;
+}
+
+.hero-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.hero-stat {
+  padding: 16px;
+  border-radius: 16px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+.hero-stat-label {
+  color: #94a3b8;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+}
+
+.hero-stat-value {
+  margin-top: 8px;
+  color: #f8fafc;
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.hero-stat-copy {
+  margin-top: 6px;
+  color: #cbd5e1;
+  font-size: 0.83rem;
+  line-height: 1.45;
+}
+
+.controls {
+  width: 100%;
+  max-width: none;
+  justify-content: flex-start;
+  align-items: stretch;
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+}
+
+.controls-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.controls-title {
+  color: #f8fafc;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.controls-copy {
+  color: #94a3b8;
+  font-size: 0.88rem;
+}
+
+.controls-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.control-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 16px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.05);
+}
+
+.control-group.span-2 {
+  grid-column: span 2;
+}
+
+.control-kicker {
+  width: 100%;
+  color: #94a3b8;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.control-label {
+  width: 100%;
+  display: grid;
+  gap: 8px;
+  align-items: start;
+}
+
+.board-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(320px, 0.75fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.board-panel,
+.sidebar-panel {
+  padding: 16px;
+}
+
+.board-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.board-title {
+  color: #f8fafc;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.board-copy,
+.board-note,
+.canvas-foot {
+  color: #94a3b8;
+  font-size: 0.84rem;
+  line-height: 1.6;
+}
+
+.board-copy {
+  margin-top: 4px;
+}
+
+.legend {
+  justify-content: flex-start;
+  margin-top: 0;
+  margin-bottom: 12px;
+}
+
+.sidebar-panel {
+  display: grid;
+  gap: 16px;
+}
+
+.summary-card {
+  padding: 18px;
+}
+
+.summary-title,
+.resource-title,
+.top-list h3 {
+  color: #f8fafc;
+  font-size: 0.96rem;
+  font-weight: 700;
+  margin-bottom: 12px;
+  background: none;
+  -webkit-text-fill-color: initial;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.summary-stat {
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.05);
+}
+
+.summary-stat-label {
+  color: #94a3b8;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.summary-stat-value {
+  margin-top: 8px;
+  color: #f8fafc;
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.summary-stat-copy {
+  margin-top: 6px;
+  color: #cbd5e1;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.resource-row {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr) 52px;
+  gap: 10px;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.resource-label {
+  color: #e2e8f0;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.resource-bar {
+  height: 12px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.06);
+  overflow: hidden;
+}
+
+.resource-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.resource-value {
+  color: #94a3b8;
+  text-align: right;
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.top-list {
+  width: 100%;
+  max-width: none;
+  margin-top: 0;
+}
+
+.top-list ol {
+  display: grid;
+  gap: 10px;
+  list-style: none;
+  padding-left: 0;
+  counter-reset: none;
+}
+
+.top-list li {
+  margin-bottom: 0;
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.05);
+}
+
+.top-list li::before {
+  content: none;
+}
+
+.top-headline {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.top-rank {
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(230, 168, 23, 0.14);
+  color: #f3d48b;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.top-score {
+  color: #f8fafc;
+  font-weight: 800;
+}
+
+.top-meta,
+.top-breakdown,
+.top-list p {
+  color: #94a3b8;
+  font-size: 0.82rem;
+  line-height: 1.55;
+}
+
+.info-toggle {
+  margin-top: 0;
+  max-width: none;
+  width: 100%;
+}
+
+.info-toggle summary {
+  color: #f8fafc;
+}
+
+.info-toggle summary::before {
+  content: '>';
+}
+
+.info-content {
+  color: #94a3b8;
+}
+
+@media (max-width: 1100px) {
+  .hero-shell,
+  .board-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .controls-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .hero-shell,
+  .controls,
+  .board-panel,
+  .summary-card,
+  .top-list {
+    padding: 14px;
+  }
+
+  .hero-stats,
+  .summary-grid,
+  .controls-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .control-group.span-2 {
+    grid-column: span 1;
+  }
+
+  .board-head {
+    flex-direction: column;
+    align-items: start;
+  }
+}
 </style>
 </head>
 <body>
+<div class="page-shell">
+  <section class="hero-shell glass">
+    <div>
+      <span class="eyebrow">Board analysis tool</span>
+      <h1 id="mainTitle">Catan Settlement Optimizer</h1>
+      <p class="subtitle" id="subtitle">Score settlement openings with weighted pips, resource scarcity, port access, and expansion value.</p>
+      <ul class="hero-points">
+        <li>Build or scan a board, then inspect the best starting spots immediately.</li>
+        <li>Use the canvas for fast experimentation instead of manually comparing every intersection.</li>
+        <li>Designed to be practical first: clear scores, resource probabilities, and opening guidance.</li>
+      </ul>
+    </div>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="hero-stat-label">Mode</div>
+        <div class="hero-stat-value">4P or 6P</div>
+        <div class="hero-stat-copy">Switch between standard and expanded layouts without leaving the page.</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-label">Inputs</div>
+        <div class="hero-stat-value">Click or scan</div>
+        <div class="hero-stat-copy">Assign numbers manually, randomize a board, or scan a photo with your API key.</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-label">Signals</div>
+        <div class="hero-stat-value">Pips plus context</div>
+        <div class="hero-stat-copy">Scores combine raw production, diversity, spread, ports, robber risk, and expansion.</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-label">Output</div>
+        <div class="hero-stat-value">Ranked openings</div>
+        <div class="hero-stat-copy">Get a clean top list and resource pool view for quicker starting decisions.</div>
+      </div>
+    </div>
+  </section>
 
-<div class="header">
-  <h1 id="mainTitle">🏠 Catan Settlement Optimizer</h1>
-  <p class="subtitle" id="subtitle">Click tiles to assign numbers · see the best settlement spots</p>
+  <section class="controls glass">
+    <div class="controls-head">
+      <div>
+        <div class="controls-title">Board controls</div>
+        <div class="controls-copy">Set the board, assign numbers, and decide how much analysis you want to see.</div>
+      </div>
+    </div>
+    <div class="controls-grid">
+      <div class="control-group">
+        <div class="control-kicker">Board size</div>
+        <button id="mode4p" class="mode-btn active">4-Player</button>
+        <button id="mode6p" class="mode-btn">6-Player</button>
+      </div>
+      <div class="control-group">
+        <div class="control-kicker">Tile assignment</div>
+        <label class="control-label">Number token
+          <select id="numberSelect">
+            <option value="0">Desert</option>
+            <option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option>
+            <option value="6">6</option><option value="8">8</option><option value="9">9</option>
+            <option value="10">10</option><option value="11">11</option><option value="12">12</option>
+          </select>
+        </label>
+      </div>
+      <div class="control-group span-2">
+        <div class="control-kicker">Actions</div>
+        <button id="randomBtn">Random board</button>
+        <button id="scanBtn">Scan board photo</button>
+        <button id="clearBtn" class="secondary">Clear board</button>
+      </div>
+      <div class="control-group">
+        <div class="control-kicker">Ranking depth</div>
+        <label class="control-label">Show top settlements
+          <select id="topN"><option value="5">5</option><option value="10" selected>10</option><option value="15">15</option><option value="20">20</option></select>
+        </label>
+      </div>
+    </div>
+    <input type="file" id="photoInput" accept="image/*" capture="environment" style="display:none">
+  </section>
+
+  <section class="board-shell">
+    <div class="board-panel glass">
+      <div class="board-head">
+        <div>
+          <div class="board-title">Board workspace</div>
+          <div class="board-copy">Click a tile to assign the selected number token. Hover settlement dots to inspect the reasoning.</div>
+        </div>
+        <div class="board-note">Dots on vertices represent the current opening score.</div>
+      </div>
+
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#00ff88;box-shadow:0 0 6px #00ff8866;"></div> Best</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#ffdd00;box-shadow:0 0 6px #ffdd0066;"></div> Great</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#ff8800;box-shadow:0 0 6px #ff880066;"></div> Good</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#ff3355;box-shadow:0 0 6px #ff335566;"></div> Weak</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#475569;"></div> No value</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#1e40af;"></div> Port 3:1</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#059669;"></div> Port 2:1</div>
+      </div>
+
+      <div class="canvas-wrap">
+        <canvas id="board" width="920" height="860"></canvas>
+        <div id="tooltip"></div>
+      </div>
+      <div class="canvas-foot">Tip: use Random board for fast testing, or scan a photo if you want to analyze a real game setup.</div>
+    </div>
+
+    <aside class="sidebar-panel">
+      <div id="boardStats" class="summary-card glass"></div>
+      <div id="resourcePool" class="summary-card glass"></div>
+      <div class="top-list glass" id="topList"></div>
+      <details class="info-toggle glass">
+        <summary>How the scoring works</summary>
+        <div class="info-content">
+          <b>Formula:</b> weighted pips + diversity + number spread + port bonus - robber risk + expansion.<br><br>
+          <b>Weighted pips:</b> ore and wheat are valued slightly higher, brick and wood get an early-game boost, and sheep is slightly discounted.<br><br>
+          <b>Diversity:</b> three unique resources score better than repeating the same production profile.<br><br>
+          <b>Number spread:</b> different token numbers reduce correlation and smooth income over time.<br><br>
+          <b>Ports:</b> matching 2:1 ports matter most, generic 3:1 ports still help, and off-resource ports get a smaller bonus.<br><br>
+          <b>Robber risk:</b> overly concentrated production gets penalized because one blocked tile can cripple the spot.<br><br>
+          <b>Expansion:</b> nearby follow-up intersections add value when road options remain strong.
+        </div>
+      </details>
+    </aside>
+  </section>
 </div>
-
-<div class="controls glass">
-  <button id="mode4p" class="mode-btn active">4-Player</button>
-  <button id="mode6p" class="mode-btn">6-Player</button>
-  <label>Assign: <select id="numberSelect">
-    <option value="0">Desert</option>
-    <option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option>
-    <option value="6">6</option><option value="8">8</option><option value="9">9</option>
-    <option value="10">10</option><option value="11">11</option><option value="12">12</option>
-  </select></label>
-  <button id="randomBtn">🎲 Random Board</button>
-  <button id="scanBtn">📷 Scan Board</button>
-  <button id="clearBtn" class="secondary">Clear</button>
-  <label>Show top: <select id="topN"><option value="5">5</option><option value="10" selected>10</option><option value="15">15</option><option value="20">20</option></select></label>
-  <input type="file" id="photoInput" accept="image/*" capture="environment" style="display:none">
-</div>
-
-<div class="canvas-wrap">
-  <canvas id="board" width="920" height="860"></canvas>
-  <div id="tooltip"></div>
-</div>
-
-<div class="legend">
-  <div class="legend-item"><div class="legend-dot" style="background:#00ff88;box-shadow:0 0 6px #00ff8866;"></div> Best</div>
-  <div class="legend-item"><div class="legend-dot" style="background:#ffdd00;box-shadow:0 0 6px #ffdd0066;"></div> Great</div>
-  <div class="legend-item"><div class="legend-dot" style="background:#ff8800;box-shadow:0 0 6px #ff880066;"></div> Good</div>
-  <div class="legend-item"><div class="legend-dot" style="background:#ff3355;box-shadow:0 0 6px #ff335566;"></div> Weak</div>
-  <div class="legend-item"><div class="legend-dot" style="background:#475569;"></div> No value</div>
-  <div class="legend-item"><div class="legend-dot" style="background:#1e40af;"></div> Port 3:1</div>
-  <div class="legend-item"><div class="legend-dot" style="background:#059669;"></div> Port 2:1</div>
-</div>
-
-<div id="resourcePool" class="glass" style="width:100%;max-width:520px;margin:12px auto;padding:16px 20px;border-radius:16px;background:rgba(255,255,255,0.04);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.08);"></div>
-
-<div class="top-list glass" id="topList"></div>
-
-<details class="info-toggle">
-  <summary>How it works</summary>
-  <div class="info-content">
-    <b>Scoring Formula:</b> Score = Weighted Pips + Diversity + Number Spread + Port Bonus − Robber Risk + Expansion
-    <br><br>
-    <b>⚖️ Weighted Pips:</b> Each tile's pip count × resource scarcity weight. Ore & Wheat = 1.3x (cities + dev cards), Brick & Wood = 1.1x (early game), Sheep = 0.9x (most abundant).
-    <br><br>
-    <b>📊 Resource Probability:</b> Each number has a real probability (e.g. 6/8 = 13.9%, 2/12 = 2.8%). The breakdown shows your expected % chance of getting each resource per roll.
-    <br><br>
-    <b>🎲 Diversity Bonus:</b> 3 unique resources = +3, 2 = +1. More types = less trading needed.
-    <br><br>
-    <b>🎯 Number Spread:</b> 3 different numbers = +2, 2 = +1. Uncorrelated rolls = more consistent income.
-    <br><br>
-    <b>🚢 Port Bonus:</b> Matching 2:1 port with that resource = +3, generic 3:1 = +1.5, non-matching 2:1 = +1.
-    <br><br>
-    <b>🏴‍☠️ Robber Risk:</b> If >60% of your pips come from one hex, −1.5 penalty (robber magnet).
-    <br><br>
-    <b>🛤️ Expansion:</b> Nearby vertices with 4+ pips = better road-building options (up to +3).
-    <br><br>
-    Click a tile to assign a number, hit Random for a valid layout, or <b>📷 Scan Board</b> to
-    take a photo of your real Catan board and auto-populate with AI vision.
-  </div>
-</details>
-
 <script>
 let currentMode = '4p'; // '4p' or '6p'
 let ROWS = [3,4,5,4,3]; // Start with 4-player
@@ -399,7 +876,7 @@ const BOARD_CONFIGS = {
     resources: { desert: 1, brick: 3, ore: 3, wood: 4, wheat: 4, sheep: 4 },
     tokens: [0, 2,3,3,4,4,5,5,6,6,8,8,9,9,10,10,11,11,12],
     ports: 9, // 4 generic (3:1) + 5 resource-specific (2:1)
-    title: "🏠 Catan 4P Settlement Optimizer"
+    title: "Catan 4P Settlement Optimizer"
   },
   '6p': {
     rows: [3,4,5,6,5,4,3],
@@ -407,7 +884,7 @@ const BOARD_CONFIGS = {
     resources: { desert: 2, brick: 5, ore: 5, wood: 6, wheat: 6, sheep: 6 },
     tokens: [0,0,2,2,3,3,3,4,4,4,5,5,5,6,6,6,6,8,8,8,8,9,9,9,10,10,10,11,11,11,12,12],
     ports: 11, // 5 generic (3:1) + 6 resource-specific (2:1)
-    title: "🏠 Catan 6P Settlement Optimizer"
+    title: "Catan 6P Settlement Optimizer"
   }
 };
 
@@ -425,7 +902,7 @@ const RESOURCE_WEIGHT = { ore: 1.3, wheat: 1.3, brick: 1.1, wood: 1.1, sheep: 0.
 function scoreVertex(v) {
   if (!v.isLand || v.adjacentTiles.length === 0) return null;
 
-  // 1. Weighted pip count (probability × resource scarcity)
+  // 1. Weighted pip count (probability Ã— resource scarcity)
   let weightedPips = 0;
   let rawPips = 0;
   const resourceCounts = {};
@@ -453,7 +930,7 @@ function scoreVertex(v) {
   const diversity = uniqueResources.size;
   const diversityBonus = diversity >= 3 ? 3 : diversity === 2 ? 1 : 0;
 
-  // 3. Number spread bonus — reward different numbers (less correlated rolls)
+  // 3. Number spread bonus â€” reward different numbers (less correlated rolls)
   const uniqueNumbers = new Set(adjNumbers);
   const spreadBonus = uniqueNumbers.size >= 3 ? 2 : uniqueNumbers.size === 2 ? 1 : 0;
 
@@ -469,7 +946,7 @@ function scoreVertex(v) {
     }
   }
 
-  // 5. Robber risk penalty — if >60% of pips come from one hex, it's a robber magnet
+  // 5. Robber risk penalty â€” if >60% of pips come from one hex, it's a robber magnet
   let robberPenalty = 0;
   if (adjNumbers.length > 1) {
     const maxSinglePip = Math.max(...v.adjacentTiles.map(i => DOTS[tiles[i].number] || 0));
@@ -478,7 +955,7 @@ function scoreVertex(v) {
     }
   }
 
-  // 6. Expansion score — count nearby vertices that also have decent value
+  // 6. Expansion score â€” count nearby vertices that also have decent value
   let expansionScore = 0;
   const ROAD_DIST = HEX_R * Math.sqrt(3) * 1.2;
   for (const other of vertices) {
@@ -561,6 +1038,10 @@ function switchMode(newMode) {
   
   // Update title
   document.getElementById('mainTitle').textContent = config.title;
+  document.getElementById('subtitle').textContent =
+    newMode === '6p'
+      ? 'Analyze the expanded board with the same weighted scoring, port access, and expansion logic.'
+      : 'Score settlement openings with weighted pips, resource scarcity, port access, and expansion value.';
   
   // Update button states
   document.getElementById('mode4p').classList.toggle('active', newMode === '4p');
@@ -834,7 +1315,7 @@ function computeVertexValues() {
     v.dots = totalDots;
     v.resources = resources;
     
-    // Check for port access — vertex must be near one of the port's two coastal vertices
+    // Check for port access â€” vertex must be near one of the port's two coastal vertices
     v.portAccess = null;
     for (const port of ports) {
       if (port.vertex1 && port.vertex2) {
@@ -969,6 +1450,41 @@ function drawBoard() {
 
   updateTopList(sorted, topN);
   updateResourcePool();
+  updateBoardStats(sorted);
+}
+
+function updateBoardStats(sorted) {
+  const el = document.getElementById('boardStats');
+  const assignedTiles = tiles.filter((t) => t.number > 0).length;
+  const desertTiles = tiles.filter((t) => t.resource === 'desert').length;
+  const activePorts = vertices.filter((v) => v.portAccess && v.isLand).length;
+  const bestScore = sorted.length ? sorted[0].score.totalScore.toFixed(1) : '--';
+
+  el.innerHTML = `
+    <div class="summary-title">Board snapshot</div>
+    <div class="summary-grid">
+      <div class="summary-stat">
+        <div class="summary-stat-label">Assigned tiles</div>
+        <div class="summary-stat-value">${assignedTiles}/${tiles.length}</div>
+        <div class="summary-stat-copy">Numbered tiles currently driving the board score.</div>
+      </div>
+      <div class="summary-stat">
+        <div class="summary-stat-label">Best opening</div>
+        <div class="summary-stat-value">${bestScore}</div>
+        <div class="summary-stat-copy">Highest current settlement score on the board.</div>
+      </div>
+      <div class="summary-stat">
+        <div class="summary-stat-label">Deserts</div>
+        <div class="summary-stat-value">${desertTiles}</div>
+        <div class="summary-stat-copy">Tiles with no production assigned.</div>
+      </div>
+      <div class="summary-stat">
+        <div class="summary-stat-label">Port access</div>
+        <div class="summary-stat-value">${activePorts}</div>
+        <div class="summary-stat-copy">Coastal intersections with a trading edge.</div>
+      </div>
+    </div>
+  `;
 }
 
 function updateResourcePool() {
@@ -982,17 +1498,17 @@ function updateResourcePool() {
   }
   const maxProb = Math.max(...Object.values(pool), 0.001);
   const colors = { brick:'#c0392b', ore:'#7f8c8d', wood:'#27ae60', wheat:'#f39c12', sheep:'#2ecc71' };
-  const labels = { brick:'🧱 Brick', ore:'⛰️ Ore', wood:'🌲 Wood', wheat:'🌾 Wheat', sheep:'🐑 Sheep' };
-  let html = '<div style="font:600 0.95em Inter,sans-serif;color:#e2e8f0;margin-bottom:10px;">📊 Resource Probability Pool</div>';
+  const labels = { brick:'Brick', ore:'Ore', wood:'Wood', wheat:'Wheat', sheep:'Sheep' };
+  let html = '<div class="resource-title">Resource probability pool</div>';
   for (const r of RESOURCE_NAMES) {
     const pct = (pool[r] * 100).toFixed(1);
     const barW = Math.max(1, (pool[r] / maxProb) * 100);
-    html += `<div style="display:flex;align-items:center;gap:8px;margin:5px 0;font:500 0.8em Inter,sans-serif;color:#cbd5e1;">
-      <span style="width:80px;text-align:right;">${labels[r]}</span>
-      <div style="flex:1;height:14px;background:rgba(255,255,255,0.06);border-radius:7px;overflow:hidden;">
-        <div style="width:${barW}%;height:100%;background:${colors[r]};border-radius:7px;transition:width 0.3s;"></div>
+    html += `<div class="resource-row">
+      <span class="resource-label">${labels[r]}</span>
+      <div class="resource-bar">
+        <div class="resource-fill" style="width:${barW}%;background:${colors[r]};"></div>
       </div>
-      <span style="width:45px;font-variant-numeric:tabular-nums;">${pct}%</span>
+      <span class="resource-value">${pct}%</span>
     </div>`;
   }
   el.innerHTML = html;
@@ -1159,37 +1675,40 @@ function updateTopList(sorted, topN) {
   const el = document.getElementById('topList');
   const shown = sorted.slice(0, topN);
   if (shown.length === 0) {
-    el.innerHTML = '<h3>Top Settlement Spots</h3><p>Assign numbers to tiles first (click tiles or hit Random)</p>';
+    el.innerHTML = '<h3>Top settlement spots</h3><p>Assign numbers to the board first, then the highest-value openings will appear here.</p>';
     return;
   }
   let html = `<h3>Top ${topN} Settlement Spots</h3><ol>`;
-  for (const v of shown) {
+  shown.forEach((v, index) => {
     const s = v.score;
     const resList = v.adjacentTiles.map(i => {
       const t = tiles[i];
       return t.number > 0 ? `${t.resource}(${t.number})` : null;
     }).filter(Boolean).join(', ');
     
-    const portText = v.portAccess ? ` 🚢${v.portAccess.ratio}${v.portAccess.resource ? ' ' + v.portAccess.resource : ''}` : '';
-    
-    // Resource probability spread
+    const portText = v.portAccess ? `${v.portAccess.ratio}${v.portAccess.resource ? ' ' + v.portAccess.resource : ''}` : 'No port';
     const probParts = Object.entries(s.resourceProbs).map(([res, prob]) => 
       `${res}: ${(prob * 100).toFixed(1)}%`
     ).join(', ');
-    
-    // Score breakdown chips
-    let chips = `<span class="dots">${s.totalScore}</span> `;
-    chips += `<span class="res">— ${resList || 'none'}${portText}</span>`;
-    chips += `<br><span class="res" style="font-size:0.85em;color:#475569;">`;
-    chips += `⚖️${s.weightedPips} wpips · 🎲${s.diversity} types · 📊${probParts}`;
-    if (s.robberPenalty > 0) chips += ` · 🏴‍☠️-${s.robberPenalty}`;
-    if (s.portBonus > 0) chips += ` · 🚢+${s.portBonus}`;
-    if (s.expansionScore > 0) chips += ` · 🛤️+${s.expansionScore}`;
-    if (s.spreadBonus > 0) chips += ` · 🎯+${s.spreadBonus} spread`;
-    chips += `</span>`;
-    
-    html += `<li>${chips}</li>`;
-  }
+    const breakdown = [
+      `${s.weightedPips} weighted pips`,
+      `${s.diversity} resource types`,
+      probParts
+    ];
+    if (s.robberPenalty > 0) breakdown.push(`robber risk -${s.robberPenalty}`);
+    if (s.portBonus > 0) breakdown.push(`port bonus +${s.portBonus}`);
+    if (s.expansionScore > 0) breakdown.push(`expansion +${s.expansionScore}`);
+    if (s.spreadBonus > 0) breakdown.push(`spread +${s.spreadBonus}`);
+
+    html += `<li>
+      <div class="top-headline">
+        <span class="top-rank">${index + 1}</span>
+        <span class="top-score">Score ${s.totalScore}</span>
+      </div>
+      <div class="top-meta">${resList || 'No active resources'} · ${portText}</div>
+      <div class="top-breakdown">${breakdown.join(' · ')}</div>
+    </li>`;
+  });
   html += '</ol>';
   el.innerHTML = html;
 }
@@ -1234,7 +1753,7 @@ canvas.addEventListener('mousemove', (e) => {
       const t = tiles[tIdx];
       if (t.number > 0) {
         const prob = (PROB[t.number] * 100).toFixed(1);
-        lines.push(`${t.resource} ${t.number} — ${prob}% chance/roll`);
+        lines.push(`${t.resource} ${t.number} - ${prob}% chance per roll`);
       }
     }
     lines.push(`Diversity: ${s.diversity} type${s.diversity !== 1 ? 's' : ''} (+${s.diversityBonus})`);
@@ -1269,7 +1788,7 @@ const photoInput = document.getElementById('photoInput');
 function getApiKey() {
   let key = localStorage.getItem('openai_api_key');
   if (key) return key;
-  key = prompt('Enter your OpenAI API key to use board scanning.\nIt\'s stored locally in your browser only.\n\nGet one at platform.openai.com/api-keys');
+  key = prompt('Enter your OpenAI API key to use board scanning.\nIt is stored locally in your browser only.\n\nGet one at platform.openai.com/api-keys');
   if (key && key.startsWith('sk-')) {
     localStorage.setItem('openai_api_key', key);
     return key;
@@ -1289,7 +1808,7 @@ photoInput.addEventListener('change', async (e) => {
   const key = localStorage.getItem('openai_api_key');
   if (!key) return;
 
-  scanBtn.textContent = '⏳ Analyzing...';
+  scanBtn.textContent = 'Analyzing...';
   scanBtn.disabled = true;
 
   try {
@@ -1328,7 +1847,7 @@ If you can't identify a tile clearly, use your best guess. Desert tiles have num
     if (data.error) {
       if (data.error.code === 'invalid_api_key') {
         localStorage.removeItem('openai_api_key');
-        alert('Invalid API key. It has been cleared — try again.');
+        alert('Invalid API key. It has been cleared. Try again.');
       } else {
         alert('API error: ' + data.error.message);
       }
@@ -1358,12 +1877,12 @@ If you can't identify a tile clearly, use your best guess. Desert tiles have num
     }
 
     drawBoard();
-    alert(`✅ Board scanned! ${count} tiles detected.`);
+    alert(`Board scanned. ${count} tiles detected.`);
   } catch (err) {
     console.error(err);
     alert('Failed to analyze image: ' + err.message);
   } finally {
-    scanBtn.textContent = '📷 Scan Board';
+    scanBtn.textContent = 'Scan board photo';
     scanBtn.disabled = false;
     photoInput.value = '';
   }

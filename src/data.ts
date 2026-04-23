@@ -23,13 +23,13 @@ export const NAV_LINKS = [
 ];
 
 export const HERO = {
-  headline: 'I build systems that keep working when I am away.',
+  headline: 'Full-stack developer building real products.',
   subheadline:
-    'Full-stack engineer focused on AI automation, operational tooling, and infrastructure that has to stay reliable under real-world use. I design the interface, the backend, and the process layer that keeps everything moving.',
+    'I am a full-stack developer with hands-on experience across frontend, backend, and product delivery. My strongest stack is React, TypeScript, Node.js, and C#/.NET.',
   stats: [
-    { label: '7 supervised services', icon: Code2 },
-    { label: 'Automation-first systems', icon: Brain },
-    { label: 'Full-stack delivery', icon: Trophy },
+    { label: 'Frontend + backend delivery', icon: Code2 },
+    { label: 'React, Node.js, TypeScript, .NET', icon: Brain },
+    { label: 'Always learning and improving', icon: Trophy },
   ],
 };
 
@@ -110,10 +110,10 @@ export const PROCESS = [
 ];
 
 export const LIVE_STATUS = [
-  { label: 'Focus', value: 'AI systems + product engineering' },
-  { label: 'Status', value: 'Open to strong teams and ambitious products' },
+  { label: 'Focus', value: 'Junior full-stack software roles' },
+  { label: 'Status', value: 'Early-career developer growing fast' },
   { label: 'Location', value: 'London, ON with Toronto reach' },
-  { label: 'Current', value: 'Building automation and agent tooling' },
+  { label: 'Current', value: 'Building across React, Node.js, TypeScript, and .NET' },
 ];
 
 export const EXPERIENCE = [
@@ -179,18 +179,6 @@ export const PROJECTS = [
     cta: null,
   },
   {
-    id: 14,
-    title: 'Campbell Solutions',
-    category: 'Production',
-    featured: false,
-    description:
-      'Technology consulting practice focused on full-stack delivery, AI integration, and practical system design for businesses and startups.',
-    tech: ['React', 'Next.js', 'Python', 'AI/ML', 'Consulting'],
-    role: 'Founder',
-    metrics: ['Full-stack consulting', 'AI integration', 'System architecture'],
-    cta: { label: 'Visit Site', url: 'https://campbell-solutions.vercel.app' },
-  },
-  {
     id: 12,
     title: 'AI Personal Assistant (Jarvis)',
     category: 'Tools',
@@ -236,18 +224,6 @@ export const PROJECTS = [
     tech: ['Python', 'XGBoost', 'Optuna', 'Pandas'],
     role: 'Data science',
     metrics: ['R^2 0.59 on WAR', 'Optuna search loop', '1k lineup simulations per run'],
-    cta: { label: 'View repo', url: 'https://github.com/peytoncampbell' },
-  },
-  {
-    id: 4,
-    title: 'Customer Sentiment Analyzer',
-    category: 'ML/AI',
-    featured: false,
-    description:
-      'Multi-channel sentiment classifier fine-tuned on support data with a lightweight dashboard for operational insight.',
-    tech: ['Transformers', 'Python', 'TensorFlow', 'NLP'],
-    role: 'ML engineer',
-    metrics: ['85 percent accuracy', 'Sub-300ms p95 latency', 'Coverage across tickets, chat, and reviews'],
     cta: { label: 'View repo', url: 'https://github.com/peytoncampbell' },
   },
 ];

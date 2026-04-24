@@ -274,33 +274,3 @@ export const BUILDING_NOW = [
     icon: Bot,
   },
 ];
-
-export const BLOG_POSTS = [
-  {
-    title: 'How I Keep an Agent Stack Operable',
-    date: 'Draft',
-    readTime: 'In progress',
-    excerpt:
-      'Notes on supervision, recovery paths, and why the boring operational layer matters more than the demo.',
-    tags: ['Automation', 'Infra', 'Systems'],
-    href: null,
-  },
-  {
-    title: 'Designing a Useful AI Control Surface',
-    date: 'Draft',
-    readTime: 'In progress',
-    excerpt:
-      'What I learned building Jarvis Console: what belongs in a workspace, what belongs in logs, and what should stay out of the UI.',
-    tags: ['Product', 'UI', 'AI'],
-    href: null,
-  },
-  {
-    title: 'What Shipping Cross-Platform Software Taught Me',
-    date: 'Draft',
-    readTime: 'In progress',
-    excerpt:
-      'A practical look at product reliability, release discipline, and why platform work changes how you think about engineering.',
-    tags: ['Product', 'Delivery', 'Engineering'],
-    href: null,
-  },
-];

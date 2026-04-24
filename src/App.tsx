@@ -18,7 +18,6 @@ import { NAV_LINKS, HERO, EXPERIENCE, PROJECTS, TECH_STACK, HIGHLIGHTS, BUILDING
 import LiveTicker from './LiveTicker';
 import ScrollProgress from './ScrollProgress';
 import Certifications from './Certifications';
-import Blog from './Blog';
 import GitHubActivity from './GitHubActivity';
 import clsx from 'clsx';
 
@@ -752,9 +751,6 @@ export default function App() {
 
       {/* GitHub Activity */}
       <GitHubActivity />
-
-      {/* Blog */}
-      <Blog />
 
       {/* Duality - On & Off The Court */}
       <section className="flex flex-col md:flex-row min-h-[650px] relative" id="duality" ref={dualityRef}>

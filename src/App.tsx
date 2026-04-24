@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
+import { Suspense, lazy, useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence, useReducedMotion, useScroll, useTransform } from 'framer-motion';
 import {
   ArrowRight,
   ArrowUp,
@@ -15,11 +15,12 @@ import {
   Star,
 } from 'lucide-react';
 import { NAV_LINKS, HERO, EXPERIENCE, PROJECTS, TECH_STACK, HIGHLIGHTS, BUILDING_NOW } from './data';
-import LiveTicker from './LiveTicker';
 import ScrollProgress from './ScrollProgress';
-import Certifications from './Certifications';
-import GitHubActivity from './GitHubActivity';
 import clsx from 'clsx';
+
+const Certifications = lazy(() => import('./Certifications'));
+const GitHubActivity = lazy(() => import('./GitHubActivity'));
+const LiveTicker = lazy(() => import('./LiveTicker'));
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 24 },
@@ -56,6 +57,40 @@ function SectionHeading({ children, className = '' }: { children: React.ReactNod
   );
 }
 
+function SectionSkeleton({ className = '' }: { className?: string }) {
+  return <div className={clsx('mx-auto h-48 w-full max-w-5xl rounded-3xl bg-white/[0.035]', className)} />;
+}
+
+function useNearViewport<T extends HTMLElement>(rootMargin = '600px') {
+  const ref = useRef<T | null>(null);
+  const [isNear, setIsNear] = useState(false);
+
+  useEffect(() => {
+    const node = ref.current;
+    if (!node || isNear) return;
+
+    if (!('IntersectionObserver' in window)) {
+      setIsNear(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsNear(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin }
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [isNear, rootMargin]);
+
+  return [ref, isNear] as const;
+}
+
 // Group tech stack by category
 const TECH_BY_CATEGORY = TECH_STACK.reduce((acc, tech) => {
   if (!acc[tech.category]) acc[tech.category] = [];
@@ -79,24 +114,30 @@ const PROJECT_ACCENTS: Record<string, string> = {
 };
 
 export default function App() {
+  const prefersReducedMotion = useReducedMotion();
   const [loading, setLoading] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [projectFilter, setProjectFilter] = useState('All');
   const [athleteImageIndex, setAthleteImageIndex] = useState(0);
+  const [isLiveTickerReady, setIsLiveTickerReady] = useState(false);
+  const [isCatanEmbedLoaded, setIsCatanEmbedLoaded] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [contactForm, setContactForm] = useState({ name: '', email: '', message: '' });
   const [contactError, setContactError] = useState<string | null>(null);
   const [contactSuccess, setContactSuccess] = useState(false);
   const [contactLoading, setContactLoading] = useState(false);
-  const [mousePos, setMousePos] = useState({ x: -1000, y: -1000 });
 
   const dualityRef = useRef<HTMLDivElement>(null);
+  const cursorGlowRef = useRef<HTMLDivElement>(null);
+  const [catanEmbedRef, isCatanEmbedNear] = useNearViewport<HTMLDivElement>('700px');
+  const [certificationsRef, shouldLoadCertifications] = useNearViewport<HTMLDivElement>('650px');
+  const [githubRef, shouldLoadGitHub] = useNearViewport<HTMLDivElement>('650px');
   const { scrollYProgress: dualityProgress } = useScroll({
     target: dualityRef,
     offset: ['start end', 'end start'],
   });
-  const dualityY = useTransform(dualityProgress, [0, 1], [60, -60]);
+  const dualityY = useTransform(dualityProgress, [0, 1], prefersReducedMotion ? [0, 0] : [60, -60]);
 
   const athleteImages = [`${import.meta.env.BASE_URL}basketball.jpg`, `${import.meta.env.BASE_URL}golf.jpg`];
   const portraitImage = `${import.meta.env.BASE_URL}portrait.jpg`;
@@ -111,26 +152,50 @@ export default function App() {
       setScrolled(window.scrollY > 50);
       setShowBackToTop(window.scrollY > 600);
     };
-    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
 
-    const imageTimer = setInterval(() => {
-      setAthleteImageIndex((prev) => (prev + 1) % athleteImages.length);
-    }, 5000);
+    const imageTimer = prefersReducedMotion
+      ? undefined
+      : window.setInterval(() => {
+          setAthleteImageIndex((prev) => (prev + 1) % athleteImages.length);
+        }, 5000);
 
     return () => {
       window.removeEventListener('scroll', handleScroll);
-      clearInterval(imageTimer);
+      if (imageTimer) window.clearInterval(imageTimer);
     };
-  }, [athleteImages.length]);
+  }, [athleteImages.length, prefersReducedMotion]);
 
   // Cursor glow
   useEffect(() => {
+    if (prefersReducedMotion || !window.matchMedia('(pointer: fine)').matches) return;
+
+    let frame = 0;
     const handleMouseMove = (e: MouseEvent) => {
-      setMousePos({ x: e.clientX, y: e.clientY });
+      if (frame) return;
+      frame = window.requestAnimationFrame(() => {
+        cursorGlowRef.current?.style.setProperty('--cursor-x', `${e.clientX}px`);
+        cursorGlowRef.current?.style.setProperty('--cursor-y', `${e.clientY}px`);
+        frame = 0;
+      });
     };
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mousemove', handleMouseMove, { passive: true });
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
+  }, [prefersReducedMotion]);
+
+  useEffect(() => {
+    const schedule = window.requestIdleCallback ?? ((cb: IdleRequestCallback) => window.setTimeout(cb, 800));
+    const cancel = window.cancelIdleCallback ?? window.clearTimeout;
+    const handle = schedule(() => setIsLiveTickerReady(true), { timeout: 2000 });
+    return () => cancel(handle);
   }, []);
+
+  useEffect(() => {
+    if (isCatanEmbedNear) setIsCatanEmbedLoaded(true);
+  }, [isCatanEmbedNear]);
 
   const handleContactChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setContactForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -185,6 +250,7 @@ export default function App() {
   const catanProject = PROJECTS.find((p) => p.title === 'Catan Settlement Optimizer');
   const featuredProject = PROJECTS.find((p) => p.featured);
   const nonFeaturedFiltered = filteredProjects.filter((p) => !p.featured);
+  const catanEmbedUrl = 'https://peytoncampbell.ca/catan/';
 
   return (
     <>
@@ -220,8 +286,9 @@ export default function App() {
 
     {/* Cursor glow */}
     <div
+      ref={cursorGlowRef}
       className="cursor-glow hidden lg:block"
-      style={{ left: mousePos.x, top: mousePos.y }}
+      aria-hidden="true"
     />
 
     <div className="min-h-screen text-slate-300 selection:bg-blue-500/30 selection:text-white">
@@ -244,7 +311,11 @@ export default function App() {
                 Peyton Campbell
               </span>
             </a>
-            <LiveTicker />
+            {isLiveTickerReady && (
+              <Suspense fallback={null}>
+                <LiveTicker />
+              </Suspense>
+            )}
           </div>
 
           <div className="hidden md:flex items-center gap-7 rounded-full border border-white/8 bg-slate-950/28 px-3 py-2 backdrop-blur-md">
@@ -528,6 +599,7 @@ export default function App() {
                     )}
                     <a
                       href="#catan-live"
+                      onClick={() => setIsCatanEmbedLoaded(true)}
                       className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full border border-white/10 bg-white/[0.035] text-slate-200 hover:bg-white/[0.07] transition-colors"
                     >
                       Use embedded board
@@ -537,11 +609,15 @@ export default function App() {
                 </div>
               </div>
 
-              <div id="catan-live" className="catan-embed-frame-wrap">
+              <div id="catan-live" ref={catanEmbedRef} className="catan-embed-frame-wrap">
                 <div className="catan-embed-toolbar">
                   <div>
                     <div className="text-xs font-bold uppercase tracking-[0.18em] text-amber-200">Playable embed</div>
-                    <div className="mt-1 text-sm text-slate-400">Scroll inside the frame to use the board, rankings, and controls.</div>
+                    <div className="mt-1 text-sm text-slate-400">
+                      {isCatanEmbedLoaded
+                        ? 'Scroll inside the frame to use the board, rankings, and controls.'
+                        : 'The board loads when this section is opened or near your viewport.'}
+                    </div>
                   </div>
                   {catanProject.cta?.url && (
                     <a
@@ -555,12 +631,31 @@ export default function App() {
                     </a>
                   )}
                 </div>
-                <iframe
-                  src="https://peytoncampbell.ca/catan/"
-                  title="Catan Settlement Optimizer"
-                  className="catan-embed-frame"
-                  loading="lazy"
-                />
+                {isCatanEmbedLoaded ? (
+                  <iframe
+                    src={catanEmbedUrl}
+                    title="Catan Settlement Optimizer"
+                    className="catan-embed-frame"
+                    loading="lazy"
+                  />
+                ) : (
+                  <div className="catan-embed-placeholder">
+                    <div>
+                      <div className="text-xs font-bold uppercase tracking-[0.18em] text-amber-200">Catan optimizer</div>
+                      <p className="mt-3 max-w-xl text-sm text-slate-300">
+                        Launch the playable board only when you need it. This keeps the main portfolio faster while preserving the full tool.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setIsCatanEmbedLoaded(true)}
+                      className="btn-primary inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-bold text-white"
+                    >
+                      Load embedded board
+                      <ArrowRight size={16} />
+                    </button>
+                  </div>
+                )}
               </div>
             </motion.div>
           )}
@@ -747,10 +842,26 @@ export default function App() {
       </section>
 
       {/* Education & Credentials */}
-      <Certifications />
+      <div ref={certificationsRef}>
+        {shouldLoadCertifications ? (
+          <Suspense fallback={<SectionSkeleton className="my-24" />}>
+            <Certifications />
+          </Suspense>
+        ) : (
+          <SectionSkeleton className="my-24" />
+        )}
+      </div>
 
       {/* GitHub Activity */}
-      <GitHubActivity />
+      <div ref={githubRef}>
+        {shouldLoadGitHub ? (
+          <Suspense fallback={<SectionSkeleton className="my-24" />}>
+            <GitHubActivity />
+          </Suspense>
+        ) : (
+          <SectionSkeleton className="my-24" />
+        )}
+      </div>
 
       {/* Duality - On & Off The Court */}
       <section className="flex flex-col md:flex-row min-h-[650px] relative" id="duality" ref={dualityRef}>

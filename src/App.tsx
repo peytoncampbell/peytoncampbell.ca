@@ -104,17 +104,19 @@ function TechIcon({ className = '' }: { className?: string }) {
   return <span className={clsx('tech-spark', className)} aria-hidden="true" />;
 }
 
-const categoryOrder = ['Languages', 'Frontend', 'ML/AI', 'Infrastructure', 'Tools'];
+const categoryOrder = ['Languages', 'Frontend', 'Backend & Data', 'Infrastructure', 'Systems', 'Tools'];
 const categoryTone: Record<string, string> = {
   Languages: 'blue',
   Frontend: 'cyan',
-  'ML/AI': 'violet',
+  'Backend & Data': 'violet',
   Infrastructure: 'teal',
+  Systems: 'amber',
   Tools: 'slate',
 };
 
 const projectAccent: Record<string, string> = {
   Production: 'cyan',
+  Systems: 'amber',
   Tools: 'blue',
   'ML/AI': 'violet',
 };
@@ -314,9 +316,7 @@ export default function App() {
             <div className="hero-copy">
               <p className="hero-kicker">Full-stack developer / London, ON</p>
               <h1>{HERO.headline}</h1>
-              <p className="hero-subtitle">
-                Court-tested discipline, product-minded engineering, and reliable delivery across React, TypeScript, Node.js, and .NET.
-              </p>
+              <p className="hero-subtitle">{HERO.subheadline}</p>
               <div className="hero-actions">
                 <a href="#projects" className="button-primary">
                   See selected work
@@ -373,8 +373,9 @@ export default function App() {
               Products with <span className="gradient-text">operational weight.</span>
             </>
           }
-          copy="The redesign leads with fewer, clearer project stories so the technical depth is easier to scan."
+          copy="Clearer project stories. Easier technical scanning."
           id="projects"
+          className="projects-compact"
         >
           <div className="featured-work">
             <article className="featured-case">
@@ -461,8 +462,8 @@ export default function App() {
               A stack built for <span className="gradient-text">shipping and operating.</span>
             </>
           }
-          copy="The technical surface is intentionally quieter: grouped tools, clear proof, and less repeated chrome."
-          className="surface-band"
+          copy="The technical surface is grouped around the real systems from the resume: product UI, backend data flows, infrastructure, and hardware-adjacent delivery."
+          className="surface-band capabilities-compact"
         >
           <div className="capability-layout">
             <div className="highlight-column">

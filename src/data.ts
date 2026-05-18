@@ -23,57 +23,57 @@ export const NAV_LINKS = [
 ];
 
 export const HERO = {
-  headline: 'Full-stack developer building real products.',
+  headline: 'Full-stack developer for product tools.',
   subheadline:
-    'I am a full-stack developer with hands-on experience across frontend, backend, and product delivery. My strongest stack is React, TypeScript, Node.js, and C#/.NET.',
+    'I own end-to-end delivery across web, mobile, desktop, and internal operations tools for sports technology and IoT products, with hands-on depth in React, Next.js, TypeScript, Python, C#, .NET MAUI, and BLE systems.',
   stats: [
-    { label: 'Frontend + backend delivery', icon: Code2 },
-    { label: 'React, Node.js, TypeScript, .NET', icon: Brain },
-    { label: 'Always learning and improving', icon: Trophy },
+    { label: 'Web, mobile, desktop, and internal tooling', icon: Code2 },
+    { label: 'React, Next.js, Python, C#, .NET MAUI', icon: Brain },
+    { label: 'Sports tech, IoT, BLE, and production testing', icon: Trophy },
   ],
 };
 
 export const HIGHLIGHTS = [
   {
-    label: 'Jarvis Console',
+    label: 'Scoreboard product tooling',
     detail:
-      'Built a Next.js control surface for chat, memory inspection, session management, and cron visibility across a live agent environment.',
+      'Build React and Next.js configurators, admin layout editors, and reusable preview components for customizable scoreboard products.',
     icon: Rocket,
   },
   {
-    label: 'Cross-platform product work',
+    label: 'Cross-platform scoreboard control',
     detail:
-      'Ship .NET MAUI apps and operational tooling for scoreboard control, sync, and deployment at OES.',
+      'Ship .NET MAUI apps for iOS, Android, and Windows using C#, XAML, MVVM, ReactiveUI, BLE communication, and cloud-backed data flows.',
     icon: Award,
   },
   {
-    label: 'Agent infrastructure',
+    label: 'IoT operations and production testing',
     detail:
-      'Run a personal AI system across Telegram, Discord, and Signal with health monitoring, recovery flows, and persistent memory.',
+      'Build Python tooling for provisioning, serial protocol validation, STM32 firmware programming, TTN checks, and DynamoDB result logging.',
     icon: Database,
   },
 ];
 
 export const SKILLS = [
   {
-    title: 'AI and automation systems',
-    tags: ['Python', 'TypeScript', 'Claude API', 'WebSocket', 'Cron'],
+    title: 'Product interfaces',
+    tags: ['React', 'Next.js', 'TypeScript', 'Tailwind CSS', 'XAML'],
     copy:
-      'I build agent-driven systems with supervision, recovery paths, and durable operating context rather than one-off demos.',
+      'I build customer-facing previews, admin editors, responsive UI, and reusable product components that match real hardware constraints.',
     icon: Layout,
   },
   {
-    title: 'Full-stack engineering',
-    tags: ['React', 'Next.js', 'Node.js', 'REST APIs', 'PWA'],
+    title: 'Backend, data, and cloud',
+    tags: ['Python', 'C#', '.NET', 'REST APIs', 'DynamoDB'],
     copy:
-      'From responsive interfaces to backend workflows, I build products that feel good to use and hold up operationally.',
+      'I connect product surfaces to APIs, JSON data flows, SQL, AWS IoT, and ETL-style workflows with reliability in mind.',
     icon: Database,
   },
   {
-    title: 'Infrastructure and delivery',
-    tags: ['Process Management', 'Cloudflare', 'SQLite', 'Windows Services', 'CI/CD'],
+    title: 'Systems and delivery',
+    tags: ['BLE', 'LoRaWAN', 'RouterOS', 'CI/CD', 'Regression Testing'],
     copy:
-      'I care about runbooks, release quality, and the parts of software that keep teams calm after launch.',
+      'I work across hardware, cloud, manufacturing, and field workflows with automated tests, diagnostics, logging, and release discipline.',
     icon: Users,
   },
 ];
@@ -110,24 +110,24 @@ export const PROCESS = [
 ];
 
 export const LIVE_STATUS = [
-  { label: 'Focus', value: 'Junior full-stack software roles' },
-  { label: 'Status', value: 'Early-career developer growing fast' },
-  { label: 'Location', value: 'London, ON with Toronto reach' },
-  { label: 'Current', value: 'Building across React, Node.js, TypeScript, and .NET' },
+  { label: 'Role', value: 'Full-stack software developer' },
+  { label: 'Stack', value: 'React, Next.js, Python, C#, .NET MAUI' },
+  { label: 'Domain', value: 'Sports technology and IoT tools' },
+  { label: 'Based in', value: 'London, Ontario' },
 ];
 
 export const EXPERIENCE = [
   {
-    company: 'OES Inc',
+    company: 'OES',
     location: 'London, ON',
-    title: 'Full Stack Developer',
+    title: 'Full Stack Software Developer',
     period: 'Aug 2025 - Present',
     bullets: [
-      'Build cross-platform .NET MAUI scoreboard control apps with shared libraries and MVVM architecture.',
-      'Design REST APIs for real-time sync between hardware, edge devices, and mobile clients.',
-      'Automate regression testing in Python, cutting validation time by roughly 40 percent.',
-      'Support deployment workflows and release quality for multi-platform product delivery.',
-      'Help move legacy product surfaces toward a more modern, maintainable architecture.',
+      'Own end-to-end delivery of user-facing web, mobile, desktop, and internal operations tools for sports technology and IoT products.',
+      'Build cross-platform .NET MAUI applications for iOS, Android, and Windows using C#, XAML, MVVM, dependency injection, Shell navigation, BLE communication, and cloud-backed data flows.',
+      'Develop React and Next.js product configurator and admin tooling for customizable scoreboard layouts, reusable components, responsive previews, and JSON-based layout publishing workflows.',
+      'Build Python tooling for IoT provisioning, embedded production testing, serial protocol validation, firmware programming, and cloud result logging.',
+      'Improve product reliability through CI/CD pipelines, automated tests, boot diagnostics, regression testing, live logging, and debugging across frontend, backend, mobile, hardware, and cloud boundaries.',
     ],
   },
 ];
@@ -142,59 +142,71 @@ export const EDUCATION = [
   {
     school: 'Fanshawe College',
     degree: 'AI and Machine Learning Certificate',
-    period: '2025',
+    period: 'Jan 2025 - Aug 2025',
     bullets: [],
   },
 ];
 
 export const PROJECTS = [
   {
-    id: 16,
-    title: 'Jarvis Console',
+    id: 18,
+    title: 'Scoreboard Configurator & Admin Layout Editor',
     category: 'Production',
-    featured: false,
+    featured: true,
     description:
-      'Operational console for my agent ecosystem. It centralizes chat, memory browsing, cron visibility, and session control in a single responsive workspace.',
-    tech: ['Next.js', 'WebSocket', 'RPC', 'PWA', 'Real-time'],
-    role: 'Full-Stack Engineer',
+      'Web-based scoreboard configurator and internal admin layout editor for customer-facing previews and editable hardware-specific layouts.',
+    tech: ['React', 'Next.js', 'TypeScript', 'Tailwind CSS', 'JSON layouts'],
+    role: 'Full-stack product engineer',
     metrics: [
-      'Real-time chat and command surface',
-      'Session management across active tools',
-      'Memory browser and search',
-      'Cron visibility and status',
-      'Responsive PWA architecture',
+      'Model selection and sport-specific layouts',
+      'Editable panels, LED digits, labels, logos, and indicators',
+      'Reusable model-specific components',
+      'Responsive customer previews',
+      'JSON-based layout publishing workflows',
     ],
-    cta: { label: 'View Console', url: 'https://peytoncampbell.ca/console/' },
-  },
-  {
-    id: 17,
-    title: 'OpenClaw Agent Infrastructure',
-    category: 'Production',
-    featured: false,
-    description:
-      'Personal AI agent infrastructure spanning multiple messaging platforms, supervision loops, research tasks, and persistent memory.',
-    tech: ['Node.js', 'Python', 'Cron Scheduling', 'Multi-service', 'Cross-platform'],
-    role: 'Infrastructure Architect',
-    metrics: ['7 supervised services', 'Health monitoring', 'Auto-recovery', 'Research workflows', 'Persistent memory system'],
     cta: null,
   },
   {
-    id: 12,
-    title: 'AI Personal Assistant (Jarvis)',
-    category: 'Tools',
+    id: 19,
+    title: 'Provisioning Operations Console',
+    category: 'Production',
     featured: false,
     description:
-      'Multi-platform AI assistant with persistent memory, browser automation, scheduled workflows, and proactive monitoring.',
-    tech: ['TypeScript', 'Claude API', 'Playwright', 'Node.js'],
-    role: 'Solo builder',
-    metrics: ['3 messaging platforms', '8+ service era infrastructure', 'Persistent memory', '24/7 uptime monitoring'],
+      'Internal operations console for IoT device provisioning and commissioning with guided operator workflows, live logs, and persistent job history.',
+    tech: ['Python', 'RouterOS', 'LoRaWAN', 'TTN', 'PyInstaller'],
+    role: 'Operations tooling engineer',
+    metrics: ['MikroTik gateway setup', 'SIM activation', 'Water Sniffer validation', 'TTN registration checks', 'Validation reporting'],
+    cta: null,
+  },
+  {
+    id: 20,
+    title: 'ScoreController',
+    category: 'Production',
+    featured: false,
+    description:
+      'Cross-platform scoreboard controller for iOS, Android, and Windows with real-time BLE communication to embedded scoreboard hardware.',
+    tech: ['C#', '.NET MAUI', 'XAML', 'MVVM', 'ReactiveUI', 'BLE'],
+    role: 'Mobile and systems engineer',
+    metrics: ['Hockey, basketball, football, soccer, volleyball, and baseball workflows', 'iOS startup crash fixes', 'MAUI resource loading refactors', 'Play-clock edge case fixes'],
+    cta: { label: 'App Store', url: 'https://apps.apple.com/us/app/score-controller/id1563410119' },
+  },
+  {
+    id: 21,
+    title: 'Python Production Test Jig',
+    category: 'Systems',
+    featured: false,
+    description:
+      'Production test application for embedded sensor board manufacturing with serial protocol validation, firmware programming, and cloud result logging.',
+    tech: ['Python', 'Serial Protocols', 'STM32CubeProgrammer', 'DynamoDB', 'Regression Testing'],
+    role: 'Production systems engineer',
+    metrics: ['Custom 50-byte serial protocol', 'GUI-guided operator checks', 'Checksum and response parsing fixes', 'Binary serialization', 'Regression tests for traceability'],
     cta: null,
   },
   {
     id: 15,
     title: 'Catan Settlement Optimizer',
     category: 'Tools',
-    featured: true,
+    featured: false,
     description:
       'Interactive Catan optimizer that ranks settlement positions using weighted probability, scarcity analysis, and port-aware heuristics.',
     tech: ['JavaScript', 'Canvas API', 'Algorithms'],
@@ -202,75 +214,61 @@ export const PROJECTS = [
     metrics: ['Scarcity scoring', 'Port concentration engine', 'Resource rarity ledger', 'Weighted probability analysis'],
     cta: { label: 'Try It', url: 'https://peytoncampbell.ca/catan/' },
   },
-  {
-    id: 2,
-    title: 'Score Controller',
-    category: 'Production',
-    featured: false,
-    description:
-      'Mobile control system for OES scoreboards, designed for responsive game operations and resilient sync across devices.',
-    tech: ['iOS', 'Bluetooth/WiFi', 'Real-time Systems'],
-    role: 'Full stack / Mobile',
-    metrics: ['Latency down 150ms', 'Crash-free sessions up 8%', 'Onboarding time down 30%'],
-    cta: { label: 'App Store', url: 'https://apps.apple.com/us/app/score-controller/id1563410119' },
-  },
-  {
-    id: 3,
-    title: 'Player Performance Predictor',
-    category: 'ML/AI',
-    featured: false,
-    description:
-      'Roster construction engine using XGBoost, feature engineering, and Optuna tuning to predict long-horizon player value.',
-    tech: ['Python', 'XGBoost', 'Optuna', 'Pandas'],
-    role: 'Data science',
-    metrics: ['R^2 0.59 on WAR', 'Optuna search loop', '1k lineup simulations per run'],
-    cta: { label: 'View repo', url: 'https://github.com/peytoncampbell' },
-  },
 ];
 
 export const TECH_STACK = [
   { name: 'Python', category: 'Languages' },
   { name: 'TypeScript', category: 'Languages' },
+  { name: 'JavaScript', category: 'Languages' },
   { name: 'C# / .NET', category: 'Languages' },
-  { name: 'Swift', category: 'Languages' },
   { name: 'React', category: 'Frontend' },
   { name: 'Next.js', category: 'Frontend' },
-  { name: 'Tailwind', category: 'Frontend' },
-  { name: 'scikit-learn', category: 'ML/AI' },
-  { name: 'XGBoost', category: 'ML/AI' },
-  { name: 'Claude API', category: 'ML/AI' },
-  { name: 'OpenAI API', category: 'ML/AI' },
-  { name: 'Playwright', category: 'ML/AI' },
-  { name: 'PostgreSQL', category: 'Infrastructure' },
-  { name: 'SQLite', category: 'Infrastructure' },
+  { name: 'Tailwind CSS', category: 'Frontend' },
+  { name: 'HTML/CSS', category: 'Frontend' },
+  { name: 'Responsive UI', category: 'Frontend' },
+  { name: 'XAML', category: 'Frontend' },
+  { name: 'REST APIs', category: 'Backend & Data' },
+  { name: 'SQL', category: 'Backend & Data' },
+  { name: 'ETL/data pipelines', category: 'Backend & Data' },
+  { name: 'DynamoDB', category: 'Backend & Data' },
+  { name: 'AWS IoT', category: 'Backend & Data' },
+  { name: 'JSON data flows', category: 'Backend & Data' },
+  { name: 'AWS', category: 'Infrastructure' },
+  { name: 'Azure DevOps', category: 'Infrastructure' },
+  { name: 'CI/CD', category: 'Infrastructure' },
   { name: 'Docker', category: 'Infrastructure' },
-  { name: 'Node.js', category: 'Infrastructure' },
-  { name: 'Cloudflare', category: 'Infrastructure' },
-  { name: 'Vercel', category: 'Infrastructure' },
-  { name: 'Playwright', category: 'Tools' },
   { name: 'Git', category: 'Tools' },
+  { name: 'PyInstaller', category: 'Tools' },
+  { name: 'Unit testing', category: 'Tools' },
+  { name: 'Regression testing', category: 'Tools' },
+  { name: 'Agile', category: 'Tools' },
+  { name: 'Bluetooth Low Energy', category: 'Systems' },
+  { name: 'Serial protocols', category: 'Systems' },
+  { name: 'LoRaWAN', category: 'Systems' },
+  { name: 'MikroTik RouterOS', category: 'Systems' },
+  { name: 'STM32 firmware programming', category: 'Systems' },
 ];
 
 export const BUILDING_NOW = [
   {
-    name: 'Jarvis Console',
-    status: 'Live',
+    name: 'Scoreboard configurator',
+    status: 'Shipping',
     statusColor: 'green',
-    detail: 'Control surface for chat, memory, sessions, and scheduled workflows.',
+    detail: 'React and Next.js product previews, admin layout editing, and JSON publishing workflows.',
     icon: Rocket,
   },
   {
-    name: 'Agent Infrastructure',
-    status: 'Live',
+    name: 'ScoreController',
+    status: 'Active',
     statusColor: 'green',
-    detail: 'Supervision, recovery, and multi-platform automation across 7 active services.',
+    detail: '.NET MAUI scoreboard control across iOS, Android, Windows, BLE, and sport-specific workflows.',
     icon: Brain,
   },
   {
-    name: 'Job Hunt Pipeline',
+    name: 'Provisioning and test tooling',
     status: 'Active',
     statusColor: 'green',
-    detail: 'Automated job discovery, scoring, and application tracking.',
+    detail: 'Python operations tools for IoT commissioning, embedded test jigs, and production traceability.',
     icon: Bot,
   },
 ];

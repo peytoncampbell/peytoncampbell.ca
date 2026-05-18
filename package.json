@@ -6,6 +6,9 @@
   "scripts": {
     "prebuild": "node scripts/cleanDocsBuild.js",
     "dev": "vite",
+    "verify:resume": "node scripts/verifyResumeAlignment.js",
+    "verify:compact": "node scripts/verifyCompactLayout.js",
+    "verify:ticker": "node scripts/verifyTicker.js",
     "build": "vite build",
     "postbuild": "node scripts/copy404.js",
     "preview": "vite preview"

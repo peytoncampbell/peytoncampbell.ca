@@ -13,29 +13,31 @@ export default function LiveTicker() {
   }, []);
 
   return (
-    <div className="hidden lg:flex items-center gap-3 px-4 py-2 bg-white/[0.035] border border-white/10 rounded-full backdrop-blur-xl shadow-inner shadow-white/5">
-      <div className="relative flex items-center justify-center w-2 h-2">
-        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-        <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+    <div
+      className="work-status-ticker hidden lg:flex items-center gap-2.5 rounded-full border border-cyan-300/20 bg-slate-950/70 px-3.5 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_10px_28px_rgba(2,6,23,0.2)] backdrop-blur-xl"
+      aria-live="polite"
+    >
+      <div className="flex h-2 w-2 items-center justify-center rounded-full bg-cyan-300 shadow-[0_0_12px_rgba(103,232,249,0.75)]">
+        <span className="h-1.5 w-1.5 rounded-full bg-cyan-100" />
       </div>
       
-      <div className="w-px h-3.5 bg-slate-700/50" />
+      <div className="h-3.5 w-px bg-cyan-100/20" />
       
-      <div className="h-5 overflow-hidden relative w-[220px]">
+      <div className="relative h-5 w-[300px] overflow-hidden">
         <AnimatePresence mode="wait">
           <motion.div
             key={index}
-            initial={{ y: 20, opacity: 0, filter: 'blur(4px)' }}
-            animate={{ y: 0, opacity: 1, filter: 'blur(0px)' }}
-            exit={{ y: -20, opacity: 0, filter: 'blur(4px)' }}
+            initial={{ y: 14, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -14, opacity: 0 }}
             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="flex items-center gap-2 text-xs font-mono absolute w-full"
+            className="absolute flex w-full items-center gap-2 text-xs"
           >
-            <span className="text-slate-600 font-bold uppercase tracking-wider whitespace-nowrap">
+            <span className="whitespace-nowrap font-mono font-bold uppercase tracking-[0.18em] text-cyan-200">
               {LIVE_STATUS[index].label}
             </span>
-            <span className="text-slate-600">/</span>
-            <span className="text-blue-200 font-medium truncate">
+            <span className="text-slate-500">/</span>
+            <span className="truncate font-semibold text-slate-100">
               {LIVE_STATUS[index].value}
             </span>
           </motion.div>

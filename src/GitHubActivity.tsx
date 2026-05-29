@@ -1,4 +1,25 @@
-import { ExternalLink } from 'lucide-react';
+import { ExternalLink, GitBranch, Github, ShieldCheck, Terminal } from 'lucide-react';
+
+const SIGNALS = [
+  {
+    label: 'Product systems',
+    value: 'React, Next.js, TypeScript',
+    detail: 'Customer previews, admin editors, reusable components, and publishing workflows.',
+    icon: GitBranch,
+  },
+  {
+    label: 'Automation',
+    value: 'Python tooling',
+    detail: 'Provisioning, serial validation, firmware programming, and production traceability.',
+    icon: Terminal,
+  },
+  {
+    label: 'Reliability',
+    value: 'Tests and release support',
+    detail: 'Regression checks, diagnostics, live logging, and cross-platform debugging.',
+    icon: ShieldCheck,
+  },
+];
 
 export default function GitHubActivity() {
   return (
@@ -15,19 +36,26 @@ export default function GitHubActivity() {
         </div>
 
         <article className="github-card">
-          <div>
-            <h3>Contribution Graph</h3>
-            <p>Public activity snapshot for recent product and systems work.</p>
+          <div className="github-card-header">
+            <div>
+              <h3>Engineering Signal</h3>
+              <p>Work themes pulled into the site instead of depending on a third-party contribution image.</p>
+            </div>
+            <Github size={28} aria-hidden="true" />
           </div>
           <a href="https://github.com/peytoncampbell" target="_blank" rel="noopener noreferrer" className="button-secondary">
             <ExternalLink size={16} />
             View profile
           </a>
-          <div className="github-graph">
-            <img
-              src="https://ghchart.rshah.org/3b82f6/peytoncampbell"
-              alt="GitHub Contribution Graph"
-            />
+          <div className="github-signal-grid">
+            {SIGNALS.map((signal) => (
+              <div key={signal.label} className="github-signal">
+                <signal.icon size={21} aria-hidden="true" />
+                <span>{signal.label}</span>
+                <strong>{signal.value}</strong>
+                <p>{signal.detail}</p>
+              </div>
+            ))}
           </div>
         </article>
       </div>

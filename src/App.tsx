@@ -142,8 +142,8 @@ export default function App() {
   const storyY = useTransform(storyProgress, [0, 1], prefersReducedMotion ? [0, 0] : [44, -44]);
 
   const baseUrl = import.meta.env.BASE_URL;
-  const portraitImage = `${baseUrl}portrait.jpg`;
-  const athleteImages = [`${baseUrl}basketball.jpg`, `${baseUrl}golf.jpg`];
+  const portraitImage = `${baseUrl}portrait-1200.webp`;
+  const athleteImages = [`${baseUrl}basketball-1200.webp`, `${baseUrl}golf-1200.webp`];
   const featuredProject = PROJECTS.find((project) => project.featured) ?? PROJECTS[0];
   const projectFilters = ['All', ...Array.from(new Set(PROJECTS.map((project) => project.category)))];
   const filteredProjects = projectFilter === 'All' ? PROJECTS : PROJECTS.filter((project) => project.category === projectFilter);
@@ -318,6 +318,10 @@ export default function App() {
               <h1>{HERO.headline}</h1>
               <p className="hero-subtitle">{HERO.subheadline}</p>
               <div className="hero-actions">
+                <a href="#contact" className="button-primary">
+                  Start a conversation
+                  <Mail size={18} />
+                </a>
                 <a href="#projects" className="button-primary">
                   See selected work
                   <ArrowRight size={18} />
@@ -391,6 +395,22 @@ export default function App() {
                     <span key={tech}>{tech}</span>
                   ))}
                 </div>
+                {featuredProject.caseStudy && (
+                  <div className="case-study-strip">
+                    <div>
+                      <span>Problem</span>
+                      <p>{featuredProject.caseStudy.problem}</p>
+                    </div>
+                    <div>
+                      <span>Approach</span>
+                      <p>{featuredProject.caseStudy.approach}</p>
+                    </div>
+                    <div>
+                      <span>Outcome</span>
+                      <p>{featuredProject.caseStudy.outcome}</p>
+                    </div>
+                  </div>
+                )}
                 {featuredProject.cta?.url && (
                   <a href={featuredProject.cta.url} target="_blank" rel="noopener noreferrer" className="button-primary compact">
                     {featuredProject.cta.label}
@@ -415,6 +435,7 @@ export default function App() {
                   type="button"
                   onClick={() => setProjectFilter(filter)}
                   className={clsx(projectFilter === filter && 'active')}
+                  aria-pressed={projectFilter === filter}
                 >
                   {filter}
                 </button>
@@ -435,7 +456,7 @@ export default function App() {
                     <div className="project-card-top">
                       <span>{project.category}</span>
                       {project.cta?.url && (
-                        <a href={project.cta.url} target="_blank" rel="noopener noreferrer" aria-label={`Open ${project.title}`}>
+                        <a href={project.cta.url} target="_blank" rel="noopener noreferrer" aria-label={`Open ${project.title}`} className="project-card-link">
                           <ExternalLink size={17} />
                         </a>
                       )}
@@ -443,6 +464,12 @@ export default function App() {
                     <h3>{project.title}</h3>
                     <p className="project-role">{project.role}</p>
                     <p className="project-description">{project.description}</p>
+                    {project.caseStudy && (
+                      <div className="project-proof">
+                        <span>{project.caseStudy.details[0]}</span>
+                        <p>{project.caseStudy.outcome}</p>
+                      </div>
+                    )}
                     <div className="project-tech">
                       {project.tech.slice(0, 5).map((tech) => (
                         <span key={tech}>{tech}</span>
@@ -610,6 +637,13 @@ export default function App() {
                   <Mail size={18} />
                   {contactLoading ? 'Sending...' : 'Send message'}
                 </button>
+                <p className="contact-fallback">
+                  Prefer email? Reach me through{' '}
+                  <a href="https://www.linkedin.com/in/peyton-campbell/" target="_blank" rel="noopener noreferrer">
+                    LinkedIn
+                  </a>
+                  .
+                </p>
               </form>
             </div>
 

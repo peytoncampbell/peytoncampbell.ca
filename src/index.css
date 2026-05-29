@@ -151,7 +151,7 @@
   align-items: center;
   justify-content: center;
   gap: 0.45rem;
-  min-height: 2.55rem;
+  min-height: 2.75rem;
   border-radius: 999px;
   padding-inline: 1rem;
   color: white;
@@ -527,6 +527,40 @@
   line-height: 1.55;
 }
 
+.case-study-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.55rem;
+  margin: 1rem 0 1.1rem;
+}
+
+.case-study-strip div,
+.project-proof {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.8rem;
+  padding: 0.7rem;
+  background: rgba(2, 6, 23, 0.3);
+}
+
+.case-study-strip span,
+.project-proof span {
+  display: block;
+  margin-bottom: 0.35rem;
+  color: #8adff0;
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.case-study-strip p,
+.project-proof p {
+  margin: 0;
+  color: #c5d0e0;
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
 .tag-row,
 .project-tech,
 .tech-list {
@@ -591,6 +625,8 @@
 .filter-row button {
   border: 1px solid rgba(255, 255, 255, 0.09);
   border-radius: 999px;
+  min-height: 2.75rem;
+  min-width: 2.75rem;
   padding: 0.48rem 0.68rem;
   background: rgba(255, 255, 255, 0.035);
   color: #aebbd0;
@@ -653,6 +689,12 @@
 }
 
 .project-card-top a {
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.045);
   color: #93a4bd;
   transition: color 180ms ease;
 }
@@ -684,6 +726,10 @@
   color: #aebbd0;
   font-size: 0.86rem;
   line-height: 1.52;
+}
+
+.project-proof {
+  margin-bottom: 0.85rem;
 }
 
 .capability-layout {
@@ -903,20 +949,59 @@
   padding: clamp(0.9rem, 2.5vw, 1.25rem);
 }
 
-.github-graph {
-  grid-column: 1 / -1;
-  overflow-x: auto;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 1rem;
-  padding: 1rem;
-  background: rgba(2, 6, 23, 0.42);
+.github-card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
 }
 
-.github-graph img {
+.github-card-header svg {
+  flex: 0 0 auto;
+  color: var(--cyan);
+}
+
+.github-signal-grid {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+
+.github-signal {
+  min-height: 10rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.85rem;
+  padding: 0.9rem;
+  background: rgba(2, 6, 23, 0.34);
+}
+
+.github-signal svg {
+  color: var(--amber);
+}
+
+.github-signal span {
   display: block;
-  width: 100%;
-  min-width: 720px;
-  filter: brightness(1.08) contrast(1.04);
+  margin-top: 0.75rem;
+  color: #8adff0;
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.github-signal strong {
+  display: block;
+  margin-top: 0.25rem;
+  color: white;
+  font-size: 1rem;
+  line-height: 1.2;
+}
+
+.github-signal p {
+  margin: 0.45rem 0 0;
+  color: #aebbd0;
+  font-size: 0.84rem;
+  line-height: 1.48;
 }
 
 .skeleton-panel {
@@ -1024,7 +1109,8 @@
 
 .contact-form label.full,
 .form-message,
-.contact-form button {
+.contact-form button,
+.contact-fallback {
   grid-column: 1 / -1;
 }
 
@@ -1073,6 +1159,19 @@
 .contact-form button:disabled {
   cursor: not-allowed;
   opacity: 0.62;
+}
+
+.contact-fallback {
+  margin: -0.1rem 0 0;
+  color: #9ba8bc;
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+.contact-fallback a {
+  color: #8adff0;
+  font-weight: 900;
+  text-decoration: none;
 }
 
 .contact-aside {
@@ -1222,9 +1321,11 @@
   }
 
   .hero-proof,
+  .case-study-strip,
   .project-grid,
   .tech-matrix,
   .credential-grid,
+  .github-signal-grid,
   .story-points,
   .contact-form,
   .github-card {

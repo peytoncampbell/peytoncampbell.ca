@@ -164,6 +164,14 @@ export const PROJECTS = [
       'Responsive customer previews',
       'JSON-based layout publishing workflows',
     ],
+    caseStudy: {
+      problem: 'Customers and internal teams needed reliable previews for hardware layouts that vary by model, sport, and physical constraints.',
+      approach:
+        'Built a component-driven editor with model-specific rendering, JSON layout publishing, and responsive preview surfaces that mirror real scoreboard behavior.',
+      outcome:
+        'Reduced ambiguity between sales, product, and production by turning configurable hardware layouts into inspectable software workflows.',
+      details: ['Hardware-aware UI constraints', 'Reusable layout primitives', 'Preview-to-publishing workflow'],
+    },
     cta: null,
   },
   {
@@ -176,6 +184,14 @@ export const PROJECTS = [
     tech: ['Python', 'RouterOS', 'LoRaWAN', 'TTN', 'PyInstaller'],
     role: 'Operations tooling engineer',
     metrics: ['MikroTik gateway setup', 'SIM activation', 'Water Sniffer validation', 'TTN registration checks', 'Validation reporting'],
+    caseStudy: {
+      problem: 'Provisioning work had many operator steps across gateways, SIMs, network checks, and device validation.',
+      approach:
+        'Created guided Python tooling with live logs, repeatable checks, and persistent job history so commissioning steps could be verified consistently.',
+      outcome:
+        'Made field and production workflows easier to audit, repeat, and debug when devices or network services behaved unexpectedly.',
+      details: ['Operator-first workflow', 'Live validation logs', 'Persistent provisioning records'],
+    },
     cta: null,
   },
   {
@@ -188,6 +204,14 @@ export const PROJECTS = [
     tech: ['C#', '.NET MAUI', 'XAML', 'MVVM', 'ReactiveUI', 'BLE'],
     role: 'Mobile and systems engineer',
     metrics: ['Hockey, basketball, football, soccer, volleyball, and baseball workflows', 'iOS startup crash fixes', 'MAUI resource loading refactors', 'Play-clock edge case fixes'],
+    caseStudy: {
+      problem: 'Scoreboard operators need dependable control across sports, devices, and BLE-connected embedded hardware.',
+      approach:
+        'Improved .NET MAUI app reliability across iOS, Android, and Windows while tightening resource loading, startup behavior, and sport-specific edge cases.',
+      outcome:
+        'Delivered a steadier controller experience for real-time game operations where timing, device state, and operator confidence matter.',
+      details: ['Cross-platform app delivery', 'BLE hardware communication', 'Sport-specific control flows'],
+    },
     cta: { label: 'App Store', url: 'https://apps.apple.com/us/app/score-controller/id1563410119' },
   },
   {
@@ -200,6 +224,14 @@ export const PROJECTS = [
     tech: ['Python', 'Serial Protocols', 'STM32CubeProgrammer', 'DynamoDB', 'Regression Testing'],
     role: 'Production systems engineer',
     metrics: ['Custom 50-byte serial protocol', 'GUI-guided operator checks', 'Checksum and response parsing fixes', 'Binary serialization', 'Regression tests for traceability'],
+    caseStudy: {
+      problem: 'Manufacturing needed a dependable way to validate embedded boards before they moved deeper into production.',
+      approach:
+        'Built a GUI-guided Python test application around serial protocol validation, firmware programming, response parsing, and cloud result logging.',
+      outcome:
+        'Improved traceability and repeatability by turning manual board checks into testable, logged production steps.',
+      details: ['Serial protocol validation', 'Firmware programming flow', 'Cloud-backed result logging'],
+    },
     cta: null,
   },
   {
@@ -212,6 +244,14 @@ export const PROJECTS = [
     tech: ['JavaScript', 'Canvas API', 'Algorithms'],
     role: 'Solo builder',
     metrics: ['Scarcity scoring', 'Port concentration engine', 'Resource rarity ledger', 'Weighted probability analysis'],
+    caseStudy: {
+      problem: 'Catan settlement choices are usually judged by instinct, even though board state can be scored systematically.',
+      approach:
+        'Modeled settlement value with probability weighting, scarcity, port access, and resource concentration to explain stronger opening choices.',
+      outcome:
+        'Turned a strategy problem into an interactive decision tool that demonstrates algorithmic thinking in a playful format.',
+      details: ['Weighted probability scoring', 'Port-aware heuristics', 'Interactive board analysis'],
+    },
     cta: { label: 'Try It', url: 'https://peytoncampbell.ca/catan/' },
   },
 ];

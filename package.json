@@ -9,6 +9,7 @@
     "verify:resume": "node scripts/verifyResumeAlignment.js",
     "verify:compact": "node scripts/verifyCompactLayout.js",
     "verify:ticker": "node scripts/verifyTicker.js",
+    "optimize:images": "node scripts/optimizeImages.js",
     "build": "vite build",
     "postbuild": "node scripts/copy404.js",
     "preview": "vite preview"
@@ -29,6 +30,7 @@
     "autoprefixer": "^10.0.0",
     "baseline-browser-mapping": "^2.10.21",
     "postcss": "^8.0.0",
+    "sharp": "^0.34.5",
     "tailwindcss": "^3.0.0",
     "typescript": "^5.3.2",
     "vite": "^7.2.4"

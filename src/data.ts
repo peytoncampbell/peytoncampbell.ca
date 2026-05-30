@@ -220,23 +220,7 @@ export const PROJECTS = [
       details: ['Cross-platform app delivery', 'BLE hardware communication', 'Sport-specific control flows'],
     },
     visual: 'mobile',
-    images: [
-      {
-        src: 'project-images/scorecontroller-1.png',
-        alt: 'ScoreController app auto-connect screen from public App Store listing',
-        caption: 'Public App Store screenshot: auto-connect workflow',
-      },
-      {
-        src: 'project-images/scorecontroller-2.png',
-        alt: 'ScoreController app discovery list from public App Store listing',
-        caption: 'Public App Store screenshot: controller discovery',
-      },
-      {
-        src: 'project-images/scorecontroller-3.png',
-        alt: 'ScoreController baseball controls from public App Store listing',
-        caption: 'Public App Store screenshot: baseball controls',
-      },
-    ],
+    imageTodo: 'Needs current ScoreController screenshots. Public store screenshots exist, but they appear older than the current MAUI version.',
     cta: { label: 'App Store', url: 'https://apps.apple.com/us/app/score-controller/id1563410119' },
   },
   {

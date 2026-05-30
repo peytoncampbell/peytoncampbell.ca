@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Manrope:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -24,7 +22,7 @@
   body {
     @apply bg-slate-950 text-white antialiased;
     margin: 0;
-    font-family: 'Space Grotesk', 'Manrope', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-family: Aptos, 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
     background:
       radial-gradient(circle at 20% -10%, rgba(72, 116, 255, 0.16), transparent 34rem),
       radial-gradient(circle at 86% 10%, rgba(236, 167, 76, 0.08), transparent 30rem),
@@ -312,6 +310,10 @@
   font-size: 0.9rem;
 }
 
+.detail-button {
+  width: fit-content;
+}
+
 .hero-proof {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -483,7 +485,7 @@
 .featured-case {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(240px, 0.78fr);
+  grid-template-columns: minmax(0, 1fr) minmax(250px, 0.62fr) minmax(220px, 0.48fr);
   gap: clamp(1rem, 3vw, 2.4rem);
   overflow: hidden;
   border-radius: 1.1rem;
@@ -732,6 +734,152 @@
   margin-bottom: 0.85rem;
 }
 
+.project-detail-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 2.5rem;
+  width: fit-content;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  padding-inline: 0.75rem;
+  background: rgba(255, 255, 255, 0.04);
+  color: #e7eefb;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.project-visual {
+  position: relative;
+  min-height: 14rem;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.085);
+  border-radius: 0.95rem;
+  padding: 0.75rem;
+  background:
+    linear-gradient(180deg, rgba(2, 6, 23, 0.34), rgba(15, 23, 42, 0.42)),
+    radial-gradient(circle at 70% 0%, rgba(38, 202, 218, 0.12), transparent 18rem);
+}
+
+.project-card .project-visual {
+  min-height: 9.5rem;
+  margin-top: 0.75rem;
+  padding: 0.55rem;
+}
+
+.visual-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.32rem;
+  margin-bottom: 0.75rem;
+}
+
+.visual-toolbar span {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.visual-toolbar strong {
+  min-width: 0;
+  margin-left: 0.35rem;
+  color: #dce8f7;
+  font-size: 0.72rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scoreboard-display,
+.layout-palette,
+.console-mock,
+.tester-mock,
+.phone-mock,
+.catan-mock {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.scoreboard-display {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.scoreboard-display div,
+.console-mock div,
+.tester-mock div,
+.phone-score,
+.phone-clock,
+.hex-grid span,
+.catan-mock strong {
+  border: 1px solid rgba(38, 202, 218, 0.16);
+  border-radius: 0.65rem;
+  padding: 0.55rem;
+  background: rgba(2, 6, 23, 0.46);
+  color: #ebf7ff;
+  font: 700 0.74rem ui-monospace, 'Cascadia Mono', 'Segoe UI Mono', monospace;
+}
+
+.layout-palette,
+.phone-controls,
+.hex-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.42rem;
+}
+
+.layout-palette span,
+.phone-controls button {
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 999px;
+  padding: 0.36rem 0.48rem;
+  background: rgba(255, 255, 255, 0.04);
+  color: #cbd8e9;
+  font-size: 0.68rem;
+  font-weight: 900;
+}
+
+.phone-mock {
+  max-width: 13rem;
+  margin-inline: auto;
+}
+
+.phone-clock {
+  display: grid;
+  place-items: center;
+  min-height: 4rem;
+  color: #8df5e3;
+  font-size: 1.6rem;
+}
+
+.console-mock div,
+.tester-mock div {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.console-mock span {
+  color: #8fb0ff;
+}
+
+.tester-mock strong {
+  color: #5eead4;
+}
+
+.catan-mock strong {
+  display: block;
+  margin-top: 0.65rem;
+  color: #f5c77c;
+}
+
+.hex-grid span {
+  clip-path: polygon(25% 5%, 75% 5%, 100% 50%, 75% 95%, 25% 95%, 0 50%);
+  min-width: 5rem;
+  text-align: center;
+}
+
 .capability-layout {
   display: grid;
   grid-template-columns: minmax(0, 0.7fr) minmax(0, 1.2fr);
@@ -826,7 +974,7 @@
   padding: 0.35rem 0.55rem;
   background: rgba(102, 137, 255, 0.08);
   color: #b9caff;
-  font: 700 0.75rem 'JetBrains Mono', monospace;
+  font: 700 0.75rem ui-monospace, 'Cascadia Mono', 'Segoe UI Mono', monospace;
 }
 
 .experience-card p {
@@ -910,7 +1058,7 @@
   padding: 0.28rem 0.5rem;
   background: rgba(102, 137, 255, 0.08);
   color: #b9caff;
-  font: 700 0.75rem 'JetBrains Mono', monospace;
+  font: 700 0.75rem ui-monospace, 'Cascadia Mono', 'Segoe UI Mono', monospace;
 }
 
 .credential-card ul {
@@ -938,6 +1086,116 @@
   background:
     linear-gradient(180deg, rgba(15, 23, 42, 0.18), rgba(15, 23, 42, 0.04)),
     radial-gradient(circle at 80% 0%, rgba(38, 202, 218, 0.06), transparent 30rem);
+}
+
+.architecture-section {
+  border-block: 1px solid rgba(255, 255, 255, 0.06);
+  background:
+    linear-gradient(180deg, rgba(15, 23, 42, 0.14), rgba(15, 23, 42, 0.04)),
+    radial-gradient(circle at 50% 0%, rgba(236, 167, 76, 0.07), transparent 30rem);
+}
+
+.architecture-layout {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.35fr) minmax(0, 1fr);
+  gap: 0.85rem;
+}
+
+.architecture-tabs,
+.architecture-canvas,
+.detail-grid article,
+.not-found-layout {
+  border: 1px solid rgba(255, 255, 255, 0.085);
+  background:
+    linear-gradient(180deg, rgba(var(--surface-raised), 0.72), rgba(var(--surface), 0.54)),
+    radial-gradient(circle at top left, rgba(102, 137, 255, 0.055), transparent 34%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.045), 0 18px 48px rgba(2, 6, 23, 0.22);
+}
+
+.architecture-tabs {
+  display: grid;
+  align-content: start;
+  gap: 0.5rem;
+  border-radius: 0.95rem;
+  padding: 0.65rem;
+}
+
+.architecture-tabs button {
+  min-height: 2.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.75rem;
+  padding: 0.65rem 0.75rem;
+  background: rgba(2, 6, 23, 0.25);
+  color: #c8d4e6;
+  font-weight: 900;
+  text-align: left;
+}
+
+.architecture-tabs button.active,
+.architecture-tabs button:hover {
+  border-color: rgba(38, 202, 218, 0.28);
+  background: rgba(38, 202, 218, 0.1);
+  color: white;
+}
+
+.architecture-canvas {
+  border-radius: 0.95rem;
+  padding: clamp(0.9rem, 2.5vw, 1.25rem);
+}
+
+.architecture-summary h3 {
+  margin: 0;
+  color: white;
+  font-size: 1.4rem;
+  font-weight: 900;
+}
+
+.architecture-summary p {
+  max-width: 52rem;
+  color: #aebbd0;
+  line-height: 1.55;
+}
+
+.architecture-nodes {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.6rem;
+  margin-top: 1rem;
+}
+
+.architecture-node {
+  position: relative;
+  min-height: 7rem;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 0.85rem;
+  padding: 0.75rem;
+  background: rgba(2, 6, 23, 0.36);
+}
+
+.architecture-node::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: -0.6rem;
+  width: 0.6rem;
+  height: 1px;
+  background: rgba(38, 202, 218, 0.35);
+}
+
+.architecture-node:last-child::after {
+  display: none;
+}
+
+.architecture-node span {
+  color: #8adff0;
+  font: 800 0.72rem ui-monospace, 'Cascadia Mono', 'Segoe UI Mono', monospace;
+}
+
+.architecture-node strong {
+  display: block;
+  margin-top: 0.7rem;
+  color: white;
+  line-height: 1.15;
 }
 
 .github-card {
@@ -1174,6 +1432,22 @@
   text-decoration: none;
 }
 
+.contact-trust {
+  display: grid;
+  gap: 0.55rem;
+  margin-bottom: 0.5rem;
+}
+
+.contact-trust p {
+  margin: 0;
+  border-radius: 0.75rem;
+  padding: 0.7rem;
+  background: rgba(2, 6, 23, 0.28);
+  color: #c8d4e6;
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
 .contact-aside {
   display: grid;
   gap: 0.55rem;
@@ -1232,10 +1506,116 @@
   backdrop-filter: blur(14px);
 }
 
+.detail-page,
+.not-found-page {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 20% -10%, rgba(72, 116, 255, 0.16), transparent 34rem),
+    linear-gradient(180deg, #070b13 0%, #090d16 100%);
+}
+
+.detail-nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-top: 1rem;
+}
+
+.detail-hero {
+  padding: clamp(3rem, 7vw, 5.5rem) 0 2rem;
+}
+
+.detail-hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(300px, 0.7fr);
+  gap: clamp(1rem, 4vw, 3rem);
+  align-items: center;
+}
+
+.detail-hero h1,
+.not-found-layout h1 {
+  max-width: 760px;
+  margin: 0;
+  color: white;
+  font-size: clamp(2.5rem, 6vw, 5.4rem);
+  font-weight: 900;
+  line-height: 0.96;
+}
+
+.detail-hero p,
+.not-found-layout p {
+  max-width: 640px;
+  color: #c8d4e6;
+  line-height: 1.58;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.detail-grid.wide {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.detail-grid article {
+  border-radius: 0.95rem;
+  padding: clamp(1rem, 2.5vw, 1.35rem);
+}
+
+.detail-grid span {
+  color: #8adff0;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.detail-grid h2 {
+  margin: 0.65rem 0 0.5rem;
+  color: white;
+  font-size: 1.25rem;
+  font-weight: 900;
+}
+
+.detail-grid p,
+.detail-grid li {
+  color: #aebbd0;
+  line-height: 1.55;
+}
+
+.detail-grid ul {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0.75rem 0 0;
+  padding-left: 1.1rem;
+}
+
+.not-found-page {
+  display: grid;
+  place-items: center;
+  padding-block: 2rem;
+}
+
+.not-found-layout {
+  border-radius: 1rem;
+  padding: clamp(1.25rem, 4vw, 2.4rem);
+}
+
+.not-found-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: 1.2rem;
+}
+
 @media (max-width: 1024px) {
   .hero-grid,
   .featured-case,
   .capability-layout,
+  .architecture-layout,
+  .detail-hero-grid,
   .story-section,
   .contact-layout {
     grid-template-columns: 1fr;
@@ -1326,6 +1706,9 @@
   .tech-matrix,
   .credential-grid,
   .github-signal-grid,
+  .architecture-nodes,
+  .detail-grid,
+  .detail-grid.wide,
   .story-points,
   .contact-form,
   .github-card {
@@ -1340,7 +1723,10 @@
 
   .button-primary,
   .button-secondary,
-  .contact-form button {
+  .contact-form button,
+  .detail-button,
+  .not-found-actions a,
+  .not-found-actions button {
     width: 100%;
   }
 

@@ -17,8 +17,13 @@ import {
   X,
 } from 'lucide-react';
 import clsx from 'clsx';
-import { BUILDING_NOW, EXPERIENCE, HERO, HIGHLIGHTS, NAV_LINKS, PROJECTS, TECH_STACK } from './data';
+import { BUILDING_NOW, CONTACT_TRUST, EXPERIENCE, HERO, HIGHLIGHTS, NAV_LINKS, PROJECTS, TECH_STACK } from './data';
 import ScrollProgress from './ScrollProgress';
+import ArchitectureDiagram from './ArchitectureDiagram';
+import NotFound from './NotFound';
+import ProjectDetail from './ProjectDetail';
+import ProjectVisual from './ProjectVisual';
+import { trackEvent, trackPageView } from './analytics';
 
 const Certifications = lazy(() => import('./Certifications'));
 const GitHubActivity = lazy(() => import('./GitHubActivity'));
@@ -123,6 +128,7 @@ const projectAccent: Record<string, string> = {
 
 export default function App() {
   const prefersReducedMotion = useReducedMotion();
+  const [route, setRoute] = useState(() => window.location.pathname);
   const [scrolled, setScrolled] = useState(false);
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -157,6 +163,29 @@ export default function App() {
       }, {} as Record<string, string[]>),
     []
   );
+
+  const navigateHome = () => {
+    window.history.pushState({}, '', '/');
+    setRoute('/');
+    window.scrollTo({ top: 0, behavior: prefersReducedMotion ? 'auto' : 'smooth' });
+  };
+
+  const navigateToProject = (slug: string) => {
+    window.history.pushState({}, '', `/projects/${slug}`);
+    setRoute(`/projects/${slug}`);
+    window.scrollTo({ top: 0, behavior: prefersReducedMotion ? 'auto' : 'smooth' });
+    trackEvent({ name: 'Project detail opened', props: { project: slug } });
+  };
+
+  useEffect(() => {
+    const handlePopState = () => setRoute(window.location.pathname);
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  useEffect(() => {
+    trackPageView(route);
+  }, [route]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -237,12 +266,19 @@ export default function App() {
       if (!response.ok) throw new Error('Failed to send message');
       setContactSuccess(true);
       setContactForm({ name: '', email: '', message: '' });
+      trackEvent({ name: 'Contact form sent' });
     } catch {
       setContactError('Failed to send message. Please try again.');
     } finally {
       setContactLoading(false);
     }
   };
+
+  const projectSlug = route.match(/^\/projects\/([^/]+)\/?$/)?.[1];
+  if (projectSlug && PROJECTS.some((project) => project.slug === projectSlug)) {
+    return <ProjectDetail slug={projectSlug} onNavigateHome={navigateHome} />;
+  }
+  if (route !== '/') return <NotFound onNavigateHome={navigateHome} />;
 
   return (
     <>
@@ -253,7 +289,7 @@ export default function App() {
       <div className="min-h-screen overflow-x-hidden text-slate-200 selection:bg-blue-400/25">
         <nav className={clsx('site-nav', scrolled && 'site-nav--scrolled')}>
           <div className="site-container flex items-center justify-between">
-            <a href="#about" className="brand-lockup" aria-label="Peyton Campbell homepage">
+            <a href="#about" className="brand-lockup" aria-label="PC Peyton Campbell homepage" onClick={() => trackEvent({ name: 'Navigation click', props: { target: 'brand' } })}>
               <span className="brand-mark">PC</span>
               <span className="brand-name">Peyton Campbell</span>
             </a>
@@ -266,12 +302,12 @@ export default function App() {
               )}
               <div className="nav-links">
                 {NAV_LINKS.map((link) => (
-                  <a key={link.href} href={link.href}>
+                  <a key={link.href} href={link.href} onClick={() => trackEvent({ name: 'Navigation click', props: { target: link.label } })}>
                     {link.label}
                   </a>
                 ))}
               </div>
-              <a href={`${baseUrl}PeytonCampbellResume.pdf`} target="_blank" rel="noopener noreferrer" className="nav-resume">
+              <a href={`${baseUrl}PeytonCampbellResume.pdf`} target="_blank" rel="noopener noreferrer" className="nav-resume" onClick={() => trackEvent({ name: 'Resume click', props: { location: 'nav' } })}>
                 <Download size={16} />
                 Resume
               </a>
@@ -298,17 +334,21 @@ export default function App() {
               className="mobile-drawer lg:hidden"
             >
               {NAV_LINKS.map((link) => (
-                <a key={link.href} href={link.href} onClick={() => setIsMobileMenuOpen(false)}>
+                <a key={link.href} href={link.href} onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  trackEvent({ name: 'Navigation click', props: { target: link.label } });
+                }}>
                   {link.label}
                 </a>
               ))}
-              <a href={`${baseUrl}PeytonCampbellResume.pdf`} target="_blank" rel="noopener noreferrer">
+              <a href={`${baseUrl}PeytonCampbellResume.pdf`} target="_blank" rel="noopener noreferrer" onClick={() => trackEvent({ name: 'Resume click', props: { location: 'mobile menu' } })}>
                 Resume
               </a>
             </motion.div>
           )}
         </AnimatePresence>
 
+        <main id="main-content">
         <header id="about" className="hero-shell">
           <div className="hero-photo" style={{ backgroundImage: `url(${portraitImage})` }} aria-hidden="true" />
           <div className="hero-aurora" aria-hidden="true" />
@@ -318,15 +358,15 @@ export default function App() {
               <h1>{HERO.headline}</h1>
               <p className="hero-subtitle">{HERO.subheadline}</p>
               <div className="hero-actions">
-                <a href="#contact" className="button-primary">
+                <a href="#contact" className="button-primary" onClick={() => trackEvent({ name: 'Contact CTA click', props: { location: 'hero' } })}>
                   Start a conversation
                   <Mail size={18} />
                 </a>
-                <a href="#projects" className="button-primary">
+                <a href="#projects" className="button-primary" onClick={() => trackEvent({ name: 'Projects CTA click', props: { location: 'hero' } })}>
                   See selected work
                   <ArrowRight size={18} />
                 </a>
-                <a href={`${baseUrl}PeytonCampbellResume.pdf`} target="_blank" rel="noopener noreferrer" className="button-secondary">
+                <a href={`${baseUrl}PeytonCampbellResume.pdf`} target="_blank" rel="noopener noreferrer" className="button-secondary" onClick={() => trackEvent({ name: 'Resume click', props: { location: 'hero' } })}>
                   <Download size={18} />
                   Resume
                 </a>
@@ -417,7 +457,12 @@ export default function App() {
                     <ExternalLink size={16} />
                   </a>
                 )}
+                <button type="button" className="button-secondary compact detail-button" onClick={() => navigateToProject(featuredProject.slug)}>
+                  Full case study
+                  <ArrowRight size={16} />
+                </button>
               </div>
+              <ProjectVisual type={featuredProject.visual} title={featuredProject.title} />
               <div className="featured-metrics">
                 {featuredProject.metrics?.map((metric) => (
                   <div key={metric}>
@@ -456,11 +501,12 @@ export default function App() {
                     <div className="project-card-top">
                       <span>{project.category}</span>
                       {project.cta?.url && (
-                        <a href={project.cta.url} target="_blank" rel="noopener noreferrer" aria-label={`Open ${project.title}`} className="project-card-link">
+                        <a href={project.cta.url} target="_blank" rel="noopener noreferrer" aria-label={`Open ${project.title}`} className="project-card-link" onClick={() => trackEvent({ name: 'Project external click', props: { project: project.slug } })}>
                           <ExternalLink size={17} />
                         </a>
                       )}
                     </div>
+                    <ProjectVisual type={project.visual} title={project.title} />
                     <h3>{project.title}</h3>
                     <p className="project-role">{project.role}</p>
                     <p className="project-description">{project.description}</p>
@@ -475,12 +521,18 @@ export default function App() {
                         <span key={tech}>{tech}</span>
                       ))}
                     </div>
+                    <button type="button" className="project-detail-link" onClick={() => navigateToProject(project.slug)}>
+                      View case study
+                      <ArrowRight size={15} />
+                    </button>
                   </motion.article>
                 ))}
               </AnimatePresence>
             </motion.div>
           </div>
         </SectionShell>
+
+        <ArchitectureDiagram />
 
         <SectionShell
           eyebrow="Capabilities"
@@ -648,6 +700,11 @@ export default function App() {
             </div>
 
             <aside className="contact-aside">
+              <div className="contact-trust">
+                {CONTACT_TRUST.map((item) => (
+                  <p key={item}>{item}</p>
+                ))}
+              </div>
               <a href="https://github.com/peytoncampbell" target="_blank" rel="noopener noreferrer">
                 <Github size={20} />
                 GitHub
@@ -666,6 +723,7 @@ export default function App() {
             </aside>
           </div>
         </SectionShell>
+        </main>
 
         <footer className="site-footer">
           <div className="footer-line" />

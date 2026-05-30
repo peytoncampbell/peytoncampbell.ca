@@ -9,6 +9,7 @@
     "verify:resume": "node scripts/verifyResumeAlignment.js",
     "verify:compact": "node scripts/verifyCompactLayout.js",
     "verify:ticker": "node scripts/verifyTicker.js",
+    "verify:site": "node scripts/verifySiteConsistency.js",
     "optimize:images": "node scripts/optimizeImages.js",
     "build": "vite build",
     "postbuild": "node scripts/copy404.js",

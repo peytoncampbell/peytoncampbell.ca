@@ -3,8 +3,8 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
-  // Use relative base so the site works on GitHub Pages regardless of repo name
-  base: './',
+  // Custom-domain GitHub Pages site, so nested static routes need root-relative assets.
+  base: '/',
   build: {
     outDir: 'docs',
     emptyOutDir: false,

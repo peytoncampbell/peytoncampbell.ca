@@ -150,6 +150,7 @@ export const EDUCATION = [
 export const PROJECTS = [
   {
     id: 18,
+    slug: 'scoreboard-configurator',
     title: 'Scoreboard Configurator & Admin Layout Editor',
     category: 'Production',
     featured: true,
@@ -172,10 +173,12 @@ export const PROJECTS = [
         'Reduced ambiguity between sales, product, and production by turning configurable hardware layouts into inspectable software workflows.',
       details: ['Hardware-aware UI constraints', 'Reusable layout primitives', 'Preview-to-publishing workflow'],
     },
+    visual: 'scoreboard',
     cta: null,
   },
   {
     id: 19,
+    slug: 'provisioning-console',
     title: 'Provisioning Operations Console',
     category: 'Production',
     featured: false,
@@ -192,10 +195,12 @@ export const PROJECTS = [
         'Made field and production workflows easier to audit, repeat, and debug when devices or network services behaved unexpectedly.',
       details: ['Operator-first workflow', 'Live validation logs', 'Persistent provisioning records'],
     },
+    visual: 'console',
     cta: null,
   },
   {
     id: 20,
+    slug: 'scorecontroller',
     title: 'ScoreController',
     category: 'Production',
     featured: false,
@@ -212,10 +217,12 @@ export const PROJECTS = [
         'Delivered a steadier controller experience for real-time game operations where timing, device state, and operator confidence matter.',
       details: ['Cross-platform app delivery', 'BLE hardware communication', 'Sport-specific control flows'],
     },
+    visual: 'mobile',
     cta: { label: 'App Store', url: 'https://apps.apple.com/us/app/score-controller/id1563410119' },
   },
   {
     id: 21,
+    slug: 'production-test-jig',
     title: 'Python Production Test Jig',
     category: 'Systems',
     featured: false,
@@ -232,10 +239,12 @@ export const PROJECTS = [
         'Improved traceability and repeatability by turning manual board checks into testable, logged production steps.',
       details: ['Serial protocol validation', 'Firmware programming flow', 'Cloud-backed result logging'],
     },
+    visual: 'tester',
     cta: null,
   },
   {
     id: 15,
+    slug: 'catan-settlement-optimizer',
     title: 'Catan Settlement Optimizer',
     category: 'Tools',
     featured: false,
@@ -252,8 +261,36 @@ export const PROJECTS = [
         'Turned a strategy problem into an interactive decision tool that demonstrates algorithmic thinking in a playful format.',
       details: ['Weighted probability scoring', 'Port-aware heuristics', 'Interactive board analysis'],
     },
+    visual: 'catan',
     cta: { label: 'Try It', url: 'https://peytoncampbell.ca/catan/' },
   },
+];
+
+export const ARCHITECTURE_VIEWS = [
+  {
+    id: 'scoreboard',
+    label: 'Scoreboard product',
+    summary: 'Customer previews and internal editors publish layout data that maps cleanly to hardware-specific scoreboard models.',
+    nodes: ['React configurator', 'Admin layout editor', 'JSON layout schema', 'Model preview renderer', 'Scoreboard product team'],
+  },
+  {
+    id: 'scorecontroller',
+    label: 'ScoreController',
+    summary: 'A cross-platform MAUI app coordinates sport workflows, local state, and BLE communication with embedded scoreboard hardware.',
+    nodes: ['.NET MAUI app', 'Sport workflow state', 'BLE transport', 'Embedded controller', 'Game operator'],
+  },
+  {
+    id: 'operations',
+    label: 'IoT operations',
+    summary: 'Provisioning and production tools guide operators through device setup, network checks, firmware steps, and traceable results.',
+    nodes: ['Python operator UI', 'Serial validation', 'Gateway and TTN checks', 'DynamoDB logging', 'Production history'],
+  },
+];
+
+export const CONTACT_TRUST = [
+  'Best fit: full-stack product roles, internal tools, sports tech, IoT, automation.',
+  'Usually strongest on React/TypeScript surfaces connected to real hardware or operational workflows.',
+  'Based in London, Ontario with Toronto reach and remote-friendly delivery habits.',
 ];
 
 export const TECH_STACK = [

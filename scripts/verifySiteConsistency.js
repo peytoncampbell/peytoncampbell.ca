@@ -38,6 +38,15 @@ const allowedVisuals = new Set(['scoreboard', 'console', 'mobile', 'tester', 'ca
 const unknownVisuals = visuals.filter((visual) => !allowedVisuals.has(visual));
 if (unknownVisuals.length) failures.push(`Unknown project visual types: ${unknownVisuals.join(', ')}`);
 
+const referencedImages = [...data.matchAll(/src: '([^']+)'/g)].map((match) => `public/${match[1]}`);
+for (const image of referencedImages) {
+  try {
+    await access(image);
+  } catch {
+    failures.push(`Missing referenced project image: ${image}`);
+  }
+}
+
 const requiredSourceSignals = [
   'ArchitectureDiagram',
   'ProjectDetail',

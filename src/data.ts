@@ -174,6 +174,7 @@ export const PROJECTS = [
       details: ['Hardware-aware UI constraints', 'Reusable layout primitives', 'Preview-to-publishing workflow'],
     },
     visual: 'scoreboard',
+    imageTodo: 'Needs approved screenshot/photo of the internal scoreboard configurator or a sanitized export.',
     cta: null,
   },
   {
@@ -196,6 +197,7 @@ export const PROJECTS = [
       details: ['Operator-first workflow', 'Live validation logs', 'Persistent provisioning records'],
     },
     visual: 'console',
+    imageTodo: 'Needs approved screenshot/photo of the provisioning operations console with private device data removed.',
     cta: null,
   },
   {
@@ -218,6 +220,23 @@ export const PROJECTS = [
       details: ['Cross-platform app delivery', 'BLE hardware communication', 'Sport-specific control flows'],
     },
     visual: 'mobile',
+    images: [
+      {
+        src: 'project-images/scorecontroller-1.png',
+        alt: 'ScoreController app auto-connect screen from public App Store listing',
+        caption: 'Public App Store screenshot: auto-connect workflow',
+      },
+      {
+        src: 'project-images/scorecontroller-2.png',
+        alt: 'ScoreController app discovery list from public App Store listing',
+        caption: 'Public App Store screenshot: controller discovery',
+      },
+      {
+        src: 'project-images/scorecontroller-3.png',
+        alt: 'ScoreController baseball controls from public App Store listing',
+        caption: 'Public App Store screenshot: baseball controls',
+      },
+    ],
     cta: { label: 'App Store', url: 'https://apps.apple.com/us/app/score-controller/id1563410119' },
   },
   {
@@ -240,6 +259,7 @@ export const PROJECTS = [
       details: ['Serial protocol validation', 'Firmware programming flow', 'Cloud-backed result logging'],
     },
     visual: 'tester',
+    imageTodo: 'Needs approved production test jig screenshot/photo with serial numbers and customer/device identifiers removed.',
     cta: null,
   },
   {
@@ -262,6 +282,13 @@ export const PROJECTS = [
       details: ['Weighted probability scoring', 'Port-aware heuristics', 'Interactive board analysis'],
     },
     visual: 'catan',
+    images: [
+      {
+        src: 'project-images/catan-optimizer.png',
+        alt: 'Catan Settlement Optimizer interface showing board analysis and settlement scoring',
+        caption: 'Captured from the live Catan Settlement Optimizer',
+      },
+    ],
     cta: { label: 'Try It', url: 'https://peytoncampbell.ca/catan/' },
   },
 ];

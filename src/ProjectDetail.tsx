@@ -54,6 +54,36 @@ export default function ProjectDetail({ slug, onNavigateHome }: ProjectDetailPro
         </div>
       </header>
 
+      {project.images?.length ? (
+        <section className="site-section project-gallery-section">
+          <div className="site-container">
+            <div className="section-intro">
+              <p className="section-eyebrow">Project visuals</p>
+              <h2 className="section-title">
+                Real <span className="gradient-text">screenshots.</span>
+              </h2>
+            </div>
+            <div className="project-gallery">
+              {project.images.map((image) => (
+                <figure key={image.src} className="project-shot">
+                  <img src={`/${image.src}`} alt={image.alt} loading="lazy" />
+                  <figcaption>{image.caption}</figcaption>
+                </figure>
+              ))}
+            </div>
+          </div>
+        </section>
+      ) : (
+        <section className="site-section project-gallery-section">
+          <div className="site-container">
+            <div className="image-todo-note">
+              <span>Visual TODO</span>
+              <p>{project.imageTodo ?? 'Needs an approved real project screenshot or photo.'}</p>
+            </div>
+          </div>
+        </section>
+      )}
+
       {project.caseStudy && (
         <section className="site-section">
           <div className="site-container detail-grid">

@@ -506,7 +506,13 @@ export default function App() {
                         </a>
                       )}
                     </div>
-                    <ProjectVisual type={project.visual} title={project.title} />
+                    {project.images?.[0] ? (
+                      <figure className="project-card-shot">
+                        <img src={`/${project.images[0].src}`} alt={project.images[0].alt} loading="lazy" />
+                      </figure>
+                    ) : (
+                      <ProjectVisual type={project.visual} title={project.title} />
+                    )}
                     <h3>{project.title}</h3>
                     <p className="project-role">{project.role}</p>
                     <p className="project-description">{project.description}</p>

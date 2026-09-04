@@ -27,6 +27,7 @@ The repository is hosted at `peytoncampbell/peytoncampbell.ca` and publishes to:
 
 - https://peytoncampbell.ca/
 - https://peytoncampbell.ca/catan/
+- https://peytoncampbell.ca/stock-analysis/
 
 The custom domain is configured through the `CNAME` files in `public/` and `docs/`.
 

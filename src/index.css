@@ -2076,6 +2076,7 @@
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.04em;
+  white-space: nowrap;
 }
 
 .desk-call.hold { color: #cbd6e8; }

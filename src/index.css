@@ -1878,3 +1878,117 @@
     display: none !important;
   }
 }
+
+/* ---------------------------------------------------------------- live desk (pc_digest_public)
+   Matches the site's restrained surface language: one subtle border, no glare, tabular
+   numbers so the columns line up day to day. */
+.desk-shell {
+  display: grid;
+  gap: 1rem;
+}
+
+.desk-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+}
+
+.desk-stat {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(18, 27, 43, 0.72), rgba(13, 20, 34, 0.5));
+}
+
+.desk-stat-k {
+  color: #8fa0bb;
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.desk-stat-v {
+  color: var(--text);
+  font-size: 1.35rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.desk-stat-v.up { color: var(--cyan); }
+.desk-stat-v.down { color: var(--amber); }
+.desk-stat-v.flat { color: #d7e2f2; }
+
+.desk-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.9rem;
+  color: #aebbd0;
+  font-size: 0.86rem;
+}
+
+.desk-meta-quiet { color: #7c8aa3; }
+
+.desk-pill {
+  padding: 0.2rem 0.6rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.desk-pill.live { border-color: rgba(38, 202, 218, 0.45); color: var(--cyan); }
+.desk-pill.stale { border-color: rgba(236, 167, 76, 0.38); color: var(--amber); }
+
+.desk-history {
+  overflow-x: auto;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 14px;
+  background: rgba(13, 20, 34, 0.42);
+}
+
+.desk-history table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.desk-history th {
+  padding: 0.6rem 0.9rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  color: #8fa0bb;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-align: right;
+  text-transform: uppercase;
+}
+
+.desk-history th:first-child,
+.desk-history td:first-child { text-align: left; }
+
+.desk-history td {
+  padding: 0.5rem 0.9rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  color: #d7e2f2;
+  text-align: right;
+}
+
+.desk-history td.up { color: var(--cyan); }
+.desk-history td.down { color: var(--amber); }
+.desk-history td.flat { color: #d7e2f2; }
+
+.desk-note {
+  margin: 0;
+  color: #7c8aa3;
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.desk-note-warn { color: var(--amber); }

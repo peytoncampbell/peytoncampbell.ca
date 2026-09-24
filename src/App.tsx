@@ -20,6 +20,7 @@ import clsx from 'clsx';
 import { BUILDING_NOW, CONTACT_TRUST, EXPERIENCE, HERO, HIGHLIGHTS, NAV_LINKS, PROJECTS, TECH_STACK } from './data';
 import ScrollProgress from './ScrollProgress';
 import ArchitectureDiagram from './ArchitectureDiagram';
+import PortfolioDigest from './PortfolioDigest';
 import NotFound from './NotFound';
 import ProjectDetail from './ProjectDetail';
 import ProjectVisual from './ProjectVisual';
@@ -581,6 +582,20 @@ export default function App() {
                 ))}
             </div>
           </div>
+        </SectionShell>
+
+        <SectionShell
+          eyebrow="Live desk"
+          title={
+            <>
+              Published every weekday <span className="gradient-text">before the open.</span>
+            </>
+          }
+          copy="A local automation refreshes analyst targets, runs the hold/sell call on every holding, and publishes the digest to Supabase at 07:45 ET. This section reads that published row directly - no rebuild, no cache - so what is on screen is this morning's call."
+          id="desk"
+          className="surface-band"
+        >
+          <PortfolioDigest />
         </SectionShell>
 
         <SectionShell

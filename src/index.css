@@ -1992,3 +1992,92 @@
 }
 
 .desk-note-warn { color: var(--amber); }
+
+/* ---------------------------------------------------------------- private desk (sign-in)
+   Same surface language as the public desk: one border, no glare. The sign-in card sits
+   under the public stats so the public numbers stay the default view. */
+.desk-private {
+  margin-top: 0.35rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.desk-stat-v.sm { font-size: 1.05rem; }
+
+.desk-signin {
+  display: grid;
+  gap: 0.8rem;
+  max-width: 30rem;
+  padding: 1.1rem 1.2rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(18, 27, 43, 0.75), rgba(13, 20, 34, 0.5));
+}
+
+.desk-signin-head h3 {
+  margin: 0 0 0.35rem;
+  color: var(--text);
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.desk-field { display: grid; gap: 0.3rem; }
+
+.desk-field span {
+  color: #8fa0bb;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.desk-field input {
+  padding: 0.55rem 0.7rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  background: rgba(7, 11, 19, 0.6);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.92rem;
+}
+
+.desk-field input:focus {
+  outline: none;
+  border-color: rgba(102, 137, 255, 0.55);
+  box-shadow: 0 0 0 3px rgba(102, 137, 255, 0.12);
+}
+
+.desk-signin-actions { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+
+.desk-meta-signed { justify-content: flex-start; }
+
+.desk-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #8fa0bb;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.86rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.desk-link:hover { color: var(--text); }
+
+.desk-holding-cell { text-align: left; }
+.desk-ticker { display: block; color: var(--text); font-weight: 700; letter-spacing: 0.02em; }
+.desk-why { display: block; color: #7c8aa3; font-size: 0.76rem; }
+
+.desk-call {
+  padding: 0.15rem 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.desk-call.hold { color: #cbd6e8; }
+.desk-call.sell { color: var(--amber); border-color: rgba(236, 167, 76, 0.4); }
+.desk-call.na { color: #7c8aa3; }

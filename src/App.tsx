@@ -21,6 +21,7 @@ import { BUILDING_NOW, CONTACT_TRUST, EXPERIENCE, HERO, HIGHLIGHTS, NAV_LINKS, P
 import ScrollProgress from './ScrollProgress';
 import ArchitectureDiagram from './ArchitectureDiagram';
 import PortfolioDigest from './PortfolioDigest';
+import DeskPrivate from './DeskPrivate';
 import NotFound from './NotFound';
 import ProjectDetail from './ProjectDetail';
 import ProjectVisual from './ProjectVisual';
@@ -596,6 +597,7 @@ export default function App() {
           className="surface-band"
         >
           <PortfolioDigest />
+          <DeskPrivate />
         </SectionShell>
 
         <SectionShell

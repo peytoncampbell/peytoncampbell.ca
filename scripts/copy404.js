@@ -24,6 +24,21 @@ function copyEntrypoint(dest, label) {
 
 copyEntrypoint(resolve('docs', '404.html'), 'docs/404.html for GitHub Pages routing');
 
+// The owner routes are real paths too: GitHub Pages needs an index.html at each one or a
+// reload (or a link out of an inbox) would 404 before the SPA ever boots.
+for (const route of ['login', 'stocks']) {
+  const dir = resolve('docs', route);
+  mkdir(dir, { recursive: true }, (mkdirErr) => {
+    if (mkdirErr) {
+      console.error(`Failed to create route directory for ${route}:`, mkdirErr);
+      process.exitCode = 1;
+      return;
+    }
+
+    copyEntrypoint(resolve(dir, 'index.html'), `docs/${route}/index.html`);
+  });
+}
+
 for (const slug of projectSlugs) {
   const dir = resolve('docs', 'projects', slug);
   mkdir(dir, { recursive: true }, (mkdirErr) => {

@@ -2082,3 +2082,283 @@
 .desk-call.hold { color: #cbd6e8; }
 .desk-call.sell { color: var(--amber); border-color: rgba(236, 167, 76, 0.4); }
 .desk-call.na { color: #7c8aa3; }
+
+/* ---------------------------------------------------------------- owner gate + console
+   A different page from the marketing site on purpose: denser, app-like, no chrome to scroll
+   through. Same colour tokens, so it still reads as the same place. */
+.own-gate {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 2rem 1.25rem;
+  background:
+    radial-gradient(circle at 20% 10%, rgba(38, 202, 218, 0.07), transparent 45%),
+    radial-gradient(circle at 85% 85%, rgba(102, 137, 255, 0.07), transparent 45%),
+    #070b13;
+}
+
+.own-gate-card {
+  width: 100%;
+  max-width: 27rem;
+  display: grid;
+  gap: 1rem;
+  padding: 1.6rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(18, 27, 43, 0.9), rgba(11, 17, 29, 0.85));
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+}
+
+.own-gate-head { display: flex; gap: 0.85rem; align-items: center; }
+
+.own-gate-head h1 {
+  margin: 0;
+  color: var(--text);
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.own-gate-head p { margin: 0.2rem 0 0; color: #8fa0bb; font-size: 0.84rem; line-height: 1.5; }
+
+.own-mark {
+  display: grid;
+  place-items: center;
+  width: 2.4rem;
+  height: 2.4rem;
+  flex: 0 0 auto;
+  border: 1px solid rgba(38, 202, 218, 0.35);
+  border-radius: 12px;
+  background: rgba(38, 202, 218, 0.08);
+  color: var(--cyan);
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.own-form { display: grid; gap: 0.85rem; }
+
+.own-field { display: grid; gap: 0.3rem; }
+
+.own-field span {
+  color: #8fa0bb;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.own-field input {
+  padding: 0.6rem 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  background: rgba(7, 11, 19, 0.65);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.94rem;
+}
+
+.own-field input:focus {
+  outline: none;
+  border-color: rgba(102, 137, 255, 0.55);
+  box-shadow: 0 0 0 3px rgba(102, 137, 255, 0.12);
+}
+
+.own-form-actions { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+
+.own-btn {
+  padding: 0.55rem 1rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.own-btn:hover:not(:disabled) { border-color: rgba(255, 255, 255, 0.28); background: rgba(255, 255, 255, 0.06); }
+.own-btn:disabled { opacity: 0.55; cursor: progress; }
+.own-btn.primary { border-color: rgba(38, 202, 218, 0.45); background: rgba(38, 202, 218, 0.12); color: #d9fbff; }
+.own-btn.primary:hover:not(:disabled) { background: rgba(38, 202, 218, 0.2); }
+.own-btn.ghost { background: none; color: #aebbd0; }
+.own-btn.small { padding: 0.35rem 0.7rem; font-size: 0.8rem; }
+
+.own-gate-foot {
+  display: grid;
+  gap: 0.4rem;
+  padding-top: 0.4rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 0.82rem;
+}
+
+.own-gate-foot a { color: var(--cyan); text-decoration: none; }
+.own-gate-foot a:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+.own-note { margin: 0; color: #8fa0bb; font-size: 0.82rem; line-height: 1.55; }
+.own-note-warn { color: var(--amber); }
+.own-quiet { color: #7c8aa3; font-size: 0.78rem; }
+.own-ok { color: var(--cyan); }
+.own-warn { color: var(--amber); }
+
+.own-shell {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(38, 202, 218, 0.05), transparent 40%),
+    #070b13;
+  color: #d7e2f2;
+}
+
+.own-bar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem clamp(1rem, 4vw, 2.5rem);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(7, 11, 19, 0.82);
+  backdrop-filter: blur(10px);
+}
+
+.own-bar-left, .own-bar-right { display: flex; align-items: center; gap: 0.75rem; }
+.own-bar-title { display: grid; }
+.own-bar-title strong { color: var(--text); font-size: 0.98rem; font-weight: 700; }
+.own-bar-title span { color: #7c8aa3; font-size: 0.74rem; }
+.own-bar-right a { color: #aebbd0; font-size: 0.84rem; text-decoration: none; }
+.own-bar-right a:hover { color: var(--text); }
+
+.own-main {
+  display: grid;
+  gap: 1.1rem;
+  max-width: 78rem;
+  margin: 0 auto;
+  padding: clamp(1rem, 3vw, 2rem) clamp(1rem, 4vw, 2.5rem) 4rem;
+}
+
+.own-stats {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+}
+
+.own-stat {
+  display: grid;
+  gap: 0.3rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(18, 27, 43, 0.75), rgba(13, 20, 34, 0.5));
+}
+
+.own-stat span {
+  color: #8fa0bb;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.own-stat b { color: var(--text); font-size: 1.3rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.own-stat b.sm { font-size: 1.05rem; }
+.own-stat b.up, .own-table td.up { color: var(--cyan); }
+.own-stat b.down, .own-table td.down { color: var(--amber); }
+.own-stat b.flat, .own-table td.flat { color: #d7e2f2; }
+
+.own-split {
+  display: grid;
+  gap: 1.1rem;
+  grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+}
+
+.own-panel {
+  display: grid;
+  gap: 0.8rem;
+  padding: 1rem 1.1rem 1.15rem;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 16px;
+  background: rgba(13, 20, 34, 0.45);
+}
+
+.own-panel-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.own-panel-head h2 {
+  margin: 0;
+  color: var(--text);
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.own-table-wrap { overflow-x: auto; }
+
+.own-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.own-table th {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  color: #8fa0bb;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-align: right;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.own-table td {
+  padding: 0.6rem 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  text-align: right;
+  vertical-align: top;
+}
+
+.own-table th:first-child, .own-table td:first-child { text-align: left; }
+.own-table tbody tr:hover td { background: rgba(255, 255, 255, 0.02); }
+.own-table.compact { font-size: 0.84rem; }
+.own-table.compact td { padding: 0.45rem 0.75rem; }
+.own-date { white-space: nowrap; color: #aebbd0; }
+.own-name { min-width: 16rem; }
+.own-ticker { display: block; color: var(--text); font-weight: 700; letter-spacing: 0.02em; }
+.own-why { display: block; margin-top: 0.1rem; color: #7c8aa3; font-size: 0.75rem; line-height: 1.45; }
+
+.own-call {
+  padding: 0.15rem 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.own-call.hold { color: #cbd6e8; }
+.own-call.sell { color: var(--amber); border-color: rgba(236, 167, 76, 0.4); }
+.own-call.na { color: #7c8aa3; }
+
+.own-facts { display: grid; gap: 0.55rem; margin: 0; }
+.own-facts > div { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }
+.own-facts dt { color: #8fa0bb; font-size: 0.82rem; }
+.own-facts dd { margin: 0; color: var(--text); font-size: 0.88rem; font-variant-numeric: tabular-nums; }
+
+@media (max-width: 640px) {
+  .own-bar { align-items: flex-start; }
+  .own-bar-right { width: 100%; justify-content: space-between; }
+  .own-name { min-width: 12rem; }
+}

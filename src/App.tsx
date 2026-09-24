@@ -21,7 +21,8 @@ import { BUILDING_NOW, CONTACT_TRUST, EXPERIENCE, HERO, HIGHLIGHTS, NAV_LINKS, P
 import ScrollProgress from './ScrollProgress';
 import ArchitectureDiagram from './ArchitectureDiagram';
 import PortfolioDigest from './PortfolioDigest';
-import DeskPrivate from './DeskPrivate';
+import OwnerLogin from './OwnerLogin';
+import OwnerStocks from './OwnerStocks';
 import NotFound from './NotFound';
 import ProjectDetail from './ProjectDetail';
 import ProjectVisual from './ProjectVisual';
@@ -172,6 +173,13 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: prefersReducedMotion ? 'auto' : 'smooth' });
   };
 
+  const navigate = (path: string) => {
+    if (window.location.pathname === path) return;
+    window.history.pushState({}, '', path);
+    setRoute(path);
+    window.scrollTo({ top: 0, behavior: 'auto' });
+  };
+
   const navigateToProject = (slug: string) => {
     window.history.pushState({}, '', `/projects/${slug}`);
     setRoute(`/projects/${slug}`);
@@ -275,6 +283,13 @@ export default function App() {
       setContactLoading(false);
     }
   };
+
+  if (route === '/login') {
+    return <OwnerLogin onSignedIn={() => navigate('/stocks')} onHome={navigateHome} />;
+  }
+  if (route === '/stocks') {
+    return <OwnerStocks onSignedOut={() => navigate('/login')} onHome={navigateHome} />;
+  }
 
   const projectSlug = route.match(/^\/projects\/([^/]+)\/?$/)?.[1];
   if (projectSlug && PROJECTS.some((project) => project.slug === projectSlug)) {
@@ -597,7 +612,18 @@ export default function App() {
           className="surface-band"
         >
           <PortfolioDigest />
-          <DeskPrivate />
+          <p className="desk-note">
+            <a
+              href="/login"
+              onClick={(event) => {
+                event.preventDefault();
+                navigate('/login');
+              }}
+            >
+              Owner sign-in
+            </a>{' '}
+            for the full book - book value, cost basis and every position.
+          </p>
         </SectionShell>
 
         <SectionShell

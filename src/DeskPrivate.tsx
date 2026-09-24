@@ -206,7 +206,13 @@ export default function DeskPrivate() {
     }
     setBusy(true);
     setError(null);
-    const res = await authPost('otp', { email, create_user: false, options: { email_redirect_to: window.location.origin + window.location.pathname } });
+    const res = await authPost('otp', {
+      email,
+      // The public OTP endpoint reads its options from here - `should_create_user: false` keeps a
+      // typo'd address from silently creating an account, and email_redirect_to is what decides
+      // whether the link comes back to this site or to the project's fallback URL.
+      options: { email_redirect_to: window.location.origin + window.location.pathname, should_create_user: false },
+    });
     setBusy(false);
     if (!res.ok) {
       setError(`Could not send the link (HTTP ${res.status}).`);

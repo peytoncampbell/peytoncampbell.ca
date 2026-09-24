@@ -129,9 +129,16 @@ const projectAccent: Record<string, string> = {
   'ML/AI': 'violet',
 };
 
+/** GitHub Pages answers /login as a directory: /login and /login/ must be the same route. */
+function normalizePath(path: string): string {
+  return path.length > 1 ? path.replace(/\/+$/, '') || '/' : path;
+}
+
 export default function App() {
   const prefersReducedMotion = useReducedMotion();
-  const [route, setRoute] = useState(() => window.location.pathname);
+  // GitHub Pages serves /login as a directory and 301s /login -> /login/, so the trailing slash
+  // has to be normalised away or the route table below never matches.
+  const [route, setRoute] = useState(() => normalizePath(window.location.pathname));
   const [scrolled, setScrolled] = useState(false);
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -174,7 +181,7 @@ export default function App() {
   };
 
   const navigate = (path: string) => {
-    if (window.location.pathname === path) return;
+    if (normalizePath(window.location.pathname) === path) return;
     window.history.pushState({}, '', path);
     setRoute(path);
     window.scrollTo({ top: 0, behavior: 'auto' });
@@ -188,7 +195,7 @@ export default function App() {
   };
 
   useEffect(() => {
-    const handlePopState = () => setRoute(window.location.pathname);
+    const handlePopState = () => setRoute(normalizePath(window.location.pathname));
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);

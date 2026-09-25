@@ -3252,3 +3252,118 @@ html, body { background-color: var(--bg); }
 /* the cards replace the holdings markup outright, so nothing needs hiding; the history panel
    below still uses .own-table, and a blanket display:none on that class hid it. */
 .own-cards { align-items: start; }
+
+/* ---- the view switch -------------------------------------------------- */
+.own-head-right { display: flex; align-items: center; gap: 0.9rem; flex-wrap: wrap; }
+
+.own-views { display: flex; gap: 0.25rem; padding: 0.2rem; border: 1px solid var(--line); border-radius: 10px; }
+
+.own-view {
+  border: 0;
+  border-radius: 7px;
+  padding: 0.3rem 0.6rem;
+  background: none;
+  color: var(--ink-3);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.own-view:hover { color: var(--text); }
+.own-view.is-on { background: rgba(53, 208, 224, 0.12); color: var(--accent); }
+
+/* ---- grid: equal heights, so the rows line up -------------------------- */
+.own-cards { grid-auto-rows: 1fr; align-items: stretch; }
+.own-card { display: flex; flex-direction: column; }
+.own-card-foot { display: grid; gap: 0.55rem; margin-top: auto; }
+
+/* ---- list: every holding on one screen -------------------------------- */
+.own-list { border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+
+.own-row {
+  display: grid;
+  grid-template-columns: 5.5rem 5.5rem 5rem 4.5rem 4.5rem 5rem minmax(0, 1fr) 8rem;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0.8rem;
+  border-top: 1px solid var(--line);
+  font-size: 0.84rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.own-row:first-child { border-top: 0; }
+.own-row:not(.own-row-head):hover { background: rgba(255, 255, 255, 0.03); }
+
+.own-row-head {
+  color: var(--ink-3);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  background: rgba(0, 0, 0, 0.22);
+}
+
+.own-row-ticker { display: flex; align-items: center; gap: 0.4rem; }
+.own-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.own-num { text-align: right; }
+.own-num-last { text-align: right; }
+.own-list-read {
+  overflow: hidden;
+  color: var(--ink-3);
+  font-size: 0.82rem;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.own-list-link { color: var(--accent); font-size: 0.78rem; text-decoration: none; }
+.own-list-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+/* ---- comprehensive: nothing hidden ------------------------------------ */
+.own-full { display: grid; gap: 0.8rem; }
+
+.own-full-card {
+  display: grid;
+  gap: 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 0.95rem 1.05rem;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.own-full-head { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; justify-content: space-between; }
+.own-full-figs { display: flex; flex-wrap: wrap; gap: 0.4rem 1.1rem; color: var(--text); font-size: 0.85rem; font-variant-numeric: tabular-nums; }
+.own-full-figs em { color: var(--ink-3); font-style: normal; font-size: 0.72rem; margin-right: 0.25rem; }
+.own-full-read { margin: 0; max-width: 92ch; color: var(--ink-2); font-size: 0.92rem; line-height: 1.6; }
+
+.own-full-story {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  border-top: 1px solid var(--line);
+  padding-top: 0.65rem;
+  color: var(--ink-2);
+  text-decoration: none;
+}
+
+.own-full-story img { width: 56px; height: 56px; border-radius: 10px; object-fit: cover; flex: none; }
+.own-full-story .own-brief-tile { width: 56px; height: 56px; flex: none; }
+.own-full-story span { display: grid; gap: 0.15rem; }
+.own-full-story b { color: var(--text); font-weight: 600; font-size: 0.9rem; line-height: 1.45; }
+.own-full-story em { color: var(--ink-3); font-style: normal; font-size: 0.78rem; }
+.own-full-story:hover b { text-decoration: underline; text-underline-offset: 3px; }
+
+.own-full-more { display: grid; gap: 0.45rem; margin: 0; padding: 0; list-style: none; }
+.own-full-more a { color: var(--ink-2); font-size: 0.84rem; line-height: 1.45; text-decoration: none; }
+.own-full-more a:hover { color: var(--text); text-decoration: underline; text-underline-offset: 3px; }
+.own-full-more em { display: block; color: var(--ink-3); font-style: normal; font-size: 0.74rem; }
+
+@media (max-width: 1100px) {
+  .own-row { grid-template-columns: 4.5rem 5rem 4.5rem 4rem 4rem 4.5rem minmax(0, 1fr); }
+  .own-num-last { display: none; }
+}
+
+@media (max-width: 780px) {
+  .own-row { grid-template-columns: 5rem minmax(0, 1fr) 4.5rem 4.5rem; row-gap: 0.15rem; }
+  .own-row .own-num:nth-of-type(1), .own-row .own-num:nth-of-type(3) { display: none; }
+  .own-row .own-list-read { display: none; }
+  .own-row-head { display: none; }
+}

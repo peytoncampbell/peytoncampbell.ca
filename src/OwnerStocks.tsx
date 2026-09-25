@@ -74,6 +74,26 @@ type NewsRow = {
   model: { model?: string; seconds?: number; prompt_tokens?: number; completion_tokens?: number } | null;
 };
 
+type View = 'grid' | 'list' | 'full';
+
+const VIEW_LABELS: Record<View, string> = { grid: 'Cards', list: 'List', full: 'Detailed' };
+
+const readView = (): View => {
+  try {
+    const saved = localStorage.getItem('pc-desk-view');
+    return saved === 'list' || saved === 'full' ? saved : 'grid';
+  } catch {
+    return 'grid';
+  }
+};
+
+type BookRow = {
+  holding: Holding;
+  entry: NewsTicker | undefined;
+  cited: NewsStory | undefined;
+  more: NewsStory[];
+};
+
 const money = (value: number | null | undefined, digits = 2) =>
   value === null || value === undefined
     ? '--'
@@ -95,6 +115,9 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
   const [priv, setPriv] = useState<PrivateRow[] | null>(null);
   const [pub, setPub] = useState<PublicRow[]>([]);
   const [news, setNews] = useState<NewsRow[]>([]);
+  // Three ways to read the same book. The choice is remembered: the grid is the default, the list
+  // fits everything on one screen, the comprehensive view keeps nothing behind a disclosure.
+  const [view, setView] = useState<View>(() => readView());
   useNoIndex();
 
   useEffect(() => {
@@ -142,7 +165,6 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
 
   const newsLatest = news[0] ?? null;
 
-  // The brief and the book are two tables; the cards are where they meet.
   const newsByTicker = useMemo(
     () => new Map((newsLatest?.tickers ?? []).map((entry) => [entry.ticker, entry])),
     [newsLatest],
@@ -165,6 +187,25 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
     (weight: number) => ((latest?.book_value_cad ?? 0) * weight) / 100,
     [latest],
   );
+
+  const book = useMemo<BookRow[]>(
+    () =>
+      holdings.map((holding) => {
+        const entry = newsByTicker.get(holding.ticker);
+        const stories = storiesByTicker.get(holding.ticker) ?? [];
+        const cited = entry?.story_url ? stories.find((story) => story.url === entry.story_url) : undefined;
+        return {
+          holding,
+          entry,
+          cited,
+          // the cited headline is already quoted on the card; only the rest are "more"
+          more: stories.filter((story) => story.url !== entry?.story_url),
+        };
+      }),
+    [holdings, newsByTicker, storiesByTicker],
+  );
+
+  // The brief and the book are two tables; the cards are where they meet.
 
   const onSignOut = async () => {
     await signOut();
@@ -242,11 +283,33 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
             <section className="own-panel">
               <div className="own-panel-head">
                 <h2>The book</h2>
-                <span className="own-quiet">
-                  {today?.positions_held ?? holdings.length} positions ·{' '}
-                  {today?.positions_stocks ?? holdings.filter((h) => !h.is_etf).length} names + ETF · as of {latest.as_of}
-                  {newsLatest?.model?.seconds ? ` · brief read in ${newsLatest.model.seconds}s` : ''}
-                </span>
+                <div className="own-head-right">
+                  <span className="own-quiet">
+                    {today?.positions_held ?? holdings.length} positions ·{' '}
+                    {today?.positions_stocks ?? holdings.filter((h) => !h.is_etf).length} names + ETF · as of {latest.as_of}
+                    {newsLatest?.model?.seconds ? ` · brief read in ${newsLatest.model.seconds}s` : ''}
+                  </span>
+                  <div className="own-views" role="group" aria-label="How to show the book">
+                    {(Object.keys(VIEW_LABELS) as View[]).map((option) => (
+                      <button
+                        key={option}
+                        type="button"
+                        className={`own-view${view === option ? ' is-on' : ''}`}
+                        aria-pressed={view === option}
+                        onClick={() => {
+                          setView(option);
+                          try {
+                            localStorage.setItem('pc-desk-view', option);
+                          } catch {
+                            /* the choice just will not persist */
+                          }
+                        }}
+                      >
+                        {VIEW_LABELS[option]}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
 
               {newsLatest?.summary && <p className="own-brief-summary">{newsLatest.summary}</p>}
@@ -259,14 +322,9 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
                 </ul>
               )}
 
-              <div className="own-cards">
-                {holdings.map((holding) => {
-                  const entry = newsByTicker.get(holding.ticker);
-                  // the headline the editor cited is already on the card; only the rest go below
-                  const more = (storiesByTicker.get(holding.ticker) ?? []).filter(
-                    (story) => story.url !== entry?.story_url,
-                  );
-                  return (
+              {view === 'grid' && (
+                <div className="own-cards">
+                  {book.map(({ holding, entry, more }) => (
                     <article key={holding.ticker} className="own-card">
                       <div className="own-card-head">
                         <span className="own-ticker">{holding.ticker}</span>
@@ -303,16 +361,143 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
 
                       {entry?.read && <p className="own-card-read">{entry.read}</p>}
 
-                      {entry?.story_url && (
-                        <a
-                          className="own-card-story"
-                          href={entry.story_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                      <div className="own-card-foot">
+                        {entry?.story_url && (
+                          <a className="own-card-story" href={entry.story_url} target="_blank" rel="noopener noreferrer">
+                            {entry.story_image ? (
+                              <img
+                                src={entry.story_image}
+                                alt=""
+                                loading="lazy"
+                                onError={(event) => {
+                                  event.currentTarget.style.display = 'none';
+                                }}
+                              />
+                            ) : (
+                              <span className="own-brief-tile">{holding.ticker}</span>
+                            )}
+                            <span>
+                              <b>{entry.story_source ?? 'the story'}</b>
+                              <em>Open</em>
+                            </span>
+                          </a>
+                        )}
+
+                        {holding.reason && <p className="own-card-why">{holding.reason}</p>}
+
+                        {more.length > 0 && (
+                          <details className="own-card-more">
+                            <summary>
+                              {more.length} more headline{more.length === 1 ? '' : 's'}
+                            </summary>
+                            <ul>
+                              {more.map((story) => (
+                                <li key={story.url}>
+                                  <a href={story.url} target="_blank" rel="noopener noreferrer">
+                                    {story.title}
+                                  </a>
+                                  <em>
+                                    {story.source}
+                                    {story.published ? ` · ${clock(story.published)}` : ''}
+                                  </em>
+                                </li>
+                              ))}
+                            </ul>
+                          </details>
+                        )}
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              )}
+
+              {view === 'list' && (
+                <div className="own-list">
+                  <div className="own-row own-row-head">
+                    <span>Holding</span>
+                    <span className="own-num">Value</span>
+                    <span className="own-num">Weight</span>
+                    <span className="own-num">Day</span>
+                    <span className="own-num">Gap</span>
+                    <span>Call</span>
+                    <span className="own-list-read">Today</span>
+                    <span className="own-num-last" />
+                  </div>
+                  {book.map(({ holding, entry }) => (
+                    <div key={holding.ticker} className="own-row">
+                      <span className="own-row-ticker">
+                        <span className="own-ticker">{holding.ticker}</span>
+                        {entry && <span className={`own-dot own-sent-${entry.sentiment}`} aria-hidden="true" />}
+                      </span>
+                      <span className="own-num">{money(value(holding.weight_pct), 0)}</span>
+                      <span className="own-num">{holding.weight_pct.toFixed(2)}%</span>
+                      <span className={`own-num ${tone(holding.day_pct)}`}>{pct(holding.day_pct, 2)}</span>
+                      <span className={`own-num ${tone(holding.gap_pct)}`}>{pct(holding.gap_pct, 1)}</span>
+                      <span>
+                        <span
+                          className={`own-call ${
+                            holding.call === 'SELL' ? 'sell' : holding.call === 'HOLD' ? 'hold' : 'na'
+                          }`}
                         >
-                          {entry.story_image ? (
+                          {holding.call}
+                        </span>
+                      </span>
+                      <span className="own-list-read" title={entry?.read ?? ''}>
+                        {entry?.read ?? ''}
+                      </span>
+                      <span className="own-num-last">
+                        {entry?.story_url && (
+                          <a className="own-list-link" href={entry.story_url} target="_blank" rel="noopener noreferrer">
+                            {entry.story_source ?? 'story'}
+                          </a>
+                        )}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {view === 'full' && (
+                <div className="own-full">
+                  {book.map(({ holding, entry, cited, more }) => (
+                    <article key={holding.ticker} className="own-full-card">
+                      <div className="own-full-head">
+                        <span className="own-ticker">{holding.ticker}</span>
+                        <span className="own-full-figs">
+                          <span>
+                            <em>Value</em> {money(value(holding.weight_pct), 0)}
+                          </span>
+                          <span>
+                            <em>Weight</em> {holding.weight_pct.toFixed(2)}%
+                          </span>
+                          <span>
+                            <em>Day</em> <b className={tone(holding.day_pct)}>{pct(holding.day_pct, 2)}</b>
+                          </span>
+                          <span>
+                            <em>Gap to median</em>{' '}
+                            <b className={tone(holding.gap_pct)}>{pct(holding.gap_pct, 1)}</b>
+                          </span>
+                        </span>
+                        <span className="own-card-tags">
+                          {entry && <span className={`own-sent own-sent-${entry.sentiment}`}>{entry.sentiment}</span>}
+                          <span
+                            className={`own-call ${
+                              holding.call === 'SELL' ? 'sell' : holding.call === 'HOLD' ? 'hold' : 'na'
+                            }`}
+                          >
+                            {holding.call}
+                          </span>
+                        </span>
+                      </div>
+
+                      {entry?.read && <p className="own-full-read">{entry.read}</p>}
+                      {holding.reason && <p className="own-card-why">{holding.reason}</p>}
+
+                      {cited && (
+                        <a className="own-full-story" href={cited.url} target="_blank" rel="noopener noreferrer">
+                          {cited.image ? (
                             <img
-                              src={entry.story_image}
+                              src={cited.image}
                               alt=""
                               loading="lazy"
                               onError={(event) => {
@@ -323,38 +508,34 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
                             <span className="own-brief-tile">{holding.ticker}</span>
                           )}
                           <span>
-                            <b>{entry.story_source ?? 'the story'}</b>
-                            <em>Open</em>
+                            <b>{cited.title}</b>
+                            <em>
+                              {cited.source}
+                              {cited.published ? ` · ${clock(cited.published)}` : ''}
+                            </em>
                           </span>
                         </a>
                       )}
 
-                      {holding.reason && <p className="own-card-why">{holding.reason}</p>}
-
                       {more.length > 0 && (
-                        <details className="own-card-more">
-                          <summary>
-                            {more.length} more headline{more.length === 1 ? '' : 's'}
-                          </summary>
-                          <ul>
-                            {more.map((story) => (
-                              <li key={story.url}>
-                                <a href={story.url} target="_blank" rel="noopener noreferrer">
-                                  {story.title}
-                                </a>
-                                <em>
-                                  {story.source}
-                                  {story.published ? ` · ${clock(story.published)}` : ''}
-                                </em>
-                              </li>
-                            ))}
-                          </ul>
-                        </details>
+                        <ul className="own-full-more">
+                          {more.map((story) => (
+                            <li key={story.url}>
+                              <a href={story.url} target="_blank" rel="noopener noreferrer">
+                                {story.title}
+                              </a>
+                              <em>
+                                {story.source}
+                                {story.published ? ` · ${clock(story.published)}` : ''}
+                              </em>
+                            </li>
+                          ))}
+                        </ul>
                       )}
                     </article>
-                  );
-                })}
-              </div>
+                  ))}
+                </div>
+              )}
             </section>
 
             <div className="own-split">

@@ -598,9 +598,9 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
 
               <p className="own-note">
                 The cards lead with the rating the desk ranks on: the five-pillar composite, a 0–100
-                percentile weighted growth 25 · revisions 20 · momentum 20 · valuation 15 · quality
-                12. Percentiles sit inside the book, so they compare between holdings; the detailed
-                view adds each name&apos;s percentile in the 1,100-name universe.
+                percentile weighted growth 27.2 · revisions 21.7 · momentum 21.7 · valuation 16.3 ·
+                quality 13.0. Percentiles sit inside the book, so they compare between holdings; the
+                detailed view adds each name&apos;s percentile in the 1,100-name universe.
               </p>
 
               {newsLatest?.summary && <p className="own-brief-summary">{newsLatest.summary}</p>}

@@ -3627,6 +3627,9 @@ html, body { background-color: var(--bg); }
    reading material — plain rows, no chips, no borders — so nothing here
    can be mistaken for an order the desk has not sized, and a buy the cash
    cannot cover is dashed and marked instead of looking like an instruction.
+   The funding summary above the groups is the same reading material: a
+   quiet sentence stating what the sales raise against what the buys need,
+   with the one exception of a shortfall, which may not be passed over.
    Rows wrap on a phone rather than holding the page open (the console's
    earlier sideways-scroll defect came from unwrappable flex rows).
    ===================================================================== */
@@ -3689,6 +3692,27 @@ html, body { background-color: var(--bg); }
   font-weight: 600;
   white-space: nowrap;
 }
+
+/* why a sale is on the ticket. 'funding' is the desk raising the cash for the buys - a chip the
+   owner reads once - while 'exit rule' is the desk's own automatic call and wears the sell red,
+   which nobody chose and nobody should have to infer from the reason text. Colour alone decides
+   nothing: the two words differ, and a sale the desk left untagged gets no chip at all, so an
+   older payload renders exactly as it used to. */
+.own-ticket-reason {
+  padding: 0.06rem 0.42rem;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.own-ticket-reason.is-funding { color: var(--ink-3); }
+.own-ticket-reason.is-exit { color: #e98585; border-color: rgba(233, 133, 133, 0.45); }
+
+/* the funding summary rides directly under the market note as one brief, and speaks in the panel's
+   quiet voice because it states the day's plan rather than an order. Only a shortfall leaves that
+   tone (own-note-warn): a plan the cash cannot pay for has to be seen, not inferred. */
+.own-note + .own-ticket-funding { margin-top: -0.4rem; }
 
 .own-ticket-note { color: var(--ink-3); font-size: 0.76rem; }
 

@@ -180,6 +180,13 @@ type TodayLine = {
    * carries no limit, which is exactly what the owner has to see on the line.
    */
   market_order?: boolean | null;
+  /**
+   * sells and trims: why the desk is selling. 'funding' is a discretionary sale whose cash pays for
+   * the buys below; 'exit_rule' is the exit rule firing, which is the desk's own automatic call and
+   * not a decision anyone made today. Absent on a payload published before the desk funded its buys
+   * out of the book itself.
+   */
+  reason_kind?: string | null;
 };
 
 /**
@@ -205,6 +212,28 @@ type TodayUnfunded = {
   why?: string | null;
 };
 
+/** One sale the desk is making to raise cash, with the reason it is selling that name. */
+type TodayFundingSource = {
+  ticker: string;
+  /** the C$ that sale raises */
+  cad?: number | null;
+  /** 'funding' (the sale exists to raise the cash) or 'exit_rule' (the desk's automatic call) */
+  reason_kind?: string | null;
+  why?: string | null;
+};
+
+/**
+ * The desk's funding plan: what the day's buys need, what the day's sales raise, and the gap between
+ * them. Published beside the orders because with no new money the plan is only honest if both ends
+ * of it are on the panel - a buy the sales cannot pay for is a queue entry, not an instruction.
+ */
+type TodayFunding = {
+  needed_cad?: number | null;
+  raised_cad?: number | null;
+  shortfall_cad?: number | null;
+  sources?: TodayFundingSource[] | null;
+};
+
 /**
  * The daily order ticket the desk publishes inside the playbook payload. Every field is optional on
  * purpose: a missing block hides the whole panel, a missing field drops only the fragment that
@@ -221,6 +250,8 @@ type PlaybookToday = {
   buys?: TodayLine[] | null;
   unfunded?: TodayUnfunded[] | null;
   watch?: TodayWatch[] | null;
+  /** the plan that pays for the buys: what they need, what the sales raise, and any gap */
+  funding?: TodayFunding | null;
   counts?: Record<string, number> | null;
 };
 
@@ -555,10 +586,13 @@ const dayName = (iso: string) =>
 
    The desk publishes it as one block beside the playbook: what to sell, trim
    and buy today, the names the exit rule has flagged but not condemned, and
-   the buys the cash cannot cover yet. Everything below is a plain function so
-   the render logic can be driven with a real payload outside a signed-in
-   session; every read is tolerant, because the panel and the payload ship
-   separately and either may arrive first.
+   the buys the cash cannot cover yet. With no new money coming in, the block
+   also names its funding plan - which sales raise the cash that pays for which
+   buys - and each sale carries the desk's reason for it, so a discretionary
+   funding sale is never read as the exit rule firing. Everything below is a
+   plain function so the render logic can be driven with a real payload outside
+   a signed-in session; every read is tolerant, because the panel and the
+   payload ship separately and either may arrive first.
    ========================================================================= */
 
 /** Without the desk's block there is no ticket, and the panel is not rendered at all. */
@@ -692,6 +726,115 @@ const orderKind = (line: TodayLine): string | null => {
   return null;
 };
 
+/**
+ * The desk's reason for a sale, normalised: 'funding' is the sale whose cash pays for the day's
+ * buys, 'exit' is the exit rule firing. Anything else - including the field being absent, as it is
+ * on every payload published before the desk funded its buys out of the book - is null and gets no
+ * chip: an unknown reason must not be rendered as either of the two the panel can say.
+ */
+const saleReason = (line: TodayLine): 'funding' | 'exit' | null => {
+  const kind = (line.reason_kind || '').toLowerCase().replace(/[^a-z]/g, '');
+  if (kind === 'funding') return 'funding';
+  if (kind === 'exitrule') return 'exit';
+  return null;
+};
+
+/** How the two reasons are worded on the line: the desk's own words, said in the panel's voice. */
+const SALE_REASON_LABEL: Record<'funding' | 'exit', string> = { funding: 'funding', exit: 'exit rule' };
+
+/** A C$ figure the desk may not have sent, or may have sent as a bare null. */
+const fundingCad = (value: number | null | undefined): number | null =>
+  typeof value === 'number' && Number.isFinite(value) ? value : null;
+
+/** The desk's funding plan, or null when the block predates it and the panel must read as it did. */
+const fundingPlan = (today: PlaybookToday | null | undefined): TodayFunding | null => {
+  const funding = today?.funding;
+  return funding && typeof funding === 'object' ? funding : null;
+};
+
+/** The sales the plan names, and only the rows a reader could act on. */
+const fundingSources = (plan: TodayFunding): TodayFundingSource[] => {
+  const sources = plan.sources;
+  return Array.isArray(sources) ? sources.filter((row) => row && row.ticker) : [];
+};
+
+/** What the plan's own sources add up to, or null when none of them carries a figure. */
+const sourcesCad = (sources: TodayFundingSource[]): number | null => {
+  const cads = sources.map((row) => fundingCad(row.cad)).filter((cad): cad is number => cad !== null);
+  return cads.length ? cads.reduce((sum, cad) => sum + cad, 0) : null;
+};
+
+/**
+ * The sales that pay for the buys, as rendered: every SELL and TRIM line that carries a reason. The
+ * count in the summary comes from these lines rather than from the plan's own list, the way every
+ * other count on this panel does, so the sentence and the group under it cannot disagree; the
+ * plan's `sources` stand in only for a payload that shipped the plan without the per-line tag.
+ */
+const fundingSales = (groups: OrderGroup[]): TodayLine[] =>
+  groups
+    .filter((group) => group.key !== 'buys')
+    .reduce<TodayLine[]>(
+      (lines, group) => lines.concat(group.lines.filter((line) => saleReason(line) !== null)),
+      [],
+    );
+
+/**
+ * The funding summary: what is being sold today to pay for what is being bought, in the panel's
+ * quiet voice, and - when the sales do not cover the buys - the gap, said plainly rather than left
+ * out. The money is the desk's own (`raised_cad`/`needed_cad`, with the sources as the fallback for
+ * a figure the plan left out) rather than arithmetic over the lines, because a line's `limit_cad`
+ * is the C$ twin of its limit price and not the cash that line raises: only the desk can total a
+ * ticket. Null means there is no plan to state and the panel renders exactly as it always has.
+ */
+const fundingSummary = (
+  today: PlaybookToday | null | undefined,
+  groups: OrderGroup[],
+): { sentence: string | null; shortfall: string | null } | null => {
+  const plan = fundingPlan(today);
+  if (!plan) return null;
+  // the summary is the link between the two ends of the ticket, so it is only rendered where both
+  // ends are on the panel: with nothing being bought, a sentence about paying for the buys would
+  // describe a plan that is not there. A ticket of sells alone keeps its SELL group and nothing else.
+  if (!groups.some((group) => group.key === 'buys')) return null;
+
+  const sources = fundingSources(plan);
+  const count = fundingSales(groups).length || sources.length;
+  const raised = fundingCad(plan.raised_cad) ?? sourcesCad(sources);
+  const needed = fundingCad(plan.needed_cad);
+  // a plan that ships both figures and no gap still owes the owner the subtraction
+  const shortfall =
+    fundingCad(plan.shortfall_cad) ??
+    (raised !== null && needed !== null ? Math.max(0, needed - raised) : null);
+
+  // "across 7 names" - the names being sold, and only when there are any: a count of zero is a sale
+  // that does not exist
+  const names = count > 0 ? ` across ${count} name${count === 1 ? '' : 's'}` : '';
+  // the sentence is assembled from what the plan actually carries: a figure the desk left out is not
+  // invented out of the lines, it is simply not claimed
+  const sold = raised !== null && raised > 0 ? `Selling ${cadAmount(raised)}${names}` : null;
+  const bought = needed !== null && needed > 0 ? cadAmount(needed) : null;
+  const sentence = sold && bought
+    ? `${sold} to fund ${bought} of buys.`
+    : sold
+      ? `${sold} to fund today\u2019s buys.`
+      : bought
+        ? `Today\u2019s buys need ${bought}${
+          raised !== null ? '; nothing is being sold to pay for them' : ''
+        }.`
+        : null;
+
+  // the gap is the one fact on this panel that may not be rounded away, so it is said in full and
+  // only when it is real: "above zero" still has to be a figure the owner can see, never a float
+  // residue that prints as C$0
+  const gapText = shortfall !== null && shortfall > 0 ? cadAmount(shortfall) : null;
+  const shortfallLine =
+    gapText && gapText !== 'C$0'
+      ? `${gapText} still short \u2014 the rest needs a deposit or a smaller plan.`
+      : null;
+
+  return sentence || shortfallLine ? { sentence, shortfall: shortfallLine } : null;
+};
+
 /** How many weekly readings the exit rule has seen - the desk sends a count, a list would count too. */
 const readingCount = (value: number | number[] | null | undefined): number | null =>
   typeof value === 'number' ? value : Array.isArray(value) ? value.length : null;
@@ -716,6 +859,7 @@ function TodayTicket({ today }: { today: PlaybookToday | null | undefined }) {
   const groups = orderGroups(today);
   const watch = Array.isArray(today.watch) ? today.watch.filter((row) => row && row.ticker) : [];
   const unfunded = Array.isArray(today.unfunded) ? today.unfunded.filter((row) => row && row.ticker) : [];
+  const funding = fundingSummary(today, groups);
 
   return (
     <section className="own-panel own-ticket">
@@ -727,6 +871,17 @@ function TodayTicket({ today }: { today: PlaybookToday | null | undefined }) {
       {/* the panel's answer to "why is nothing open": a shut market is stated rather than left to be
           inferred from the session column of every line */}
       {today.market_note && <p className="own-note">{today.market_note}</p>}
+
+      {/* the plan behind the day's buys, directly under the note and in the same quiet voice: what is
+          being sold to pay for them, and - when the sales do not cover them - the gap, said out loud
+          instead of hidden behind the list. Not rendered when nothing is being bought: with no buys
+          there is no funding story, and a ticket of sells alone stays a ticket of sells. */}
+      {funding && (
+        <p className="own-note own-ticket-funding">
+          {funding.sentence}
+          {funding.shortfall && <span className="own-note-warn"> {funding.shortfall}</span>}
+        </p>
+      )}
 
       {groups.length === 0 && <p className="own-note">{NO_ORDERS_LINE}</p>}
 
@@ -748,6 +903,7 @@ function TodayTicket({ today }: { today: PlaybookToday | null | undefined }) {
                   const cad = orderCad(line, currency);
                   const session = orderSession(line);
                   const kind = orderKind(line);
+                  const reason = saleReason(line);
                   return (
                     <li
                       key={`${group.key}-${line.ticker}-${index}`}
@@ -765,6 +921,13 @@ function TodayTicket({ today }: { today: PlaybookToday | null | undefined }) {
                           !== line.ticker.replace(/[^A-Za-z0-9]/g, '').toLowerCase()
                           && <span className="own-ticket-name">{line.name}</span>}
                         {kind && <span className="own-ticket-kind">{kind}</span>}
+                        {/* why the desk is selling, on the sale itself: a funding sale raises the
+                            cash for the buys, while the exit rule is the desk's own automatic call.
+                            The two are never allowed to read alike, and a sale the desk did not
+                            tag gets no chip at all */}
+                        {reason && (
+                          <span className={`own-ticket-reason is-${reason}`}>{SALE_REASON_LABEL[reason]}</span>
+                        )}
                         {/* the name has no affordable single share, so the desk sends a market order
                             instead of a limit: same name, different instrument, said on the line */}
                         {market && <span className="own-ticket-market">Market order</span>}

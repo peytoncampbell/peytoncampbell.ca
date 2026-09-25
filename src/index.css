@@ -3078,3 +3078,7 @@ h1, h2, h3, h4,
 .detail-hero { padding-bottom: clamp(1.5rem, 3vw, 2.5rem); }
 
 @media (max-width: 1023px) { .hero-portrait { align-self: start; } }
+
+/* the shorthand above leaves the colour layer transparent; pin it so the canvas and the
+   theme-color meta agree */
+html, body { background-color: var(--bg); }

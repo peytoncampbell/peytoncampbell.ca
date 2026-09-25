@@ -3076,3 +3076,5 @@ h1, h2, h3, h4,
 /* labels sentence case here too; the uppercase micro-label is reserved for data tiles */
 .detail-grid article > span { text-transform: none; }
 .detail-hero { padding-bottom: clamp(1.5rem, 3vw, 2.5rem); }
+
+@media (max-width: 1023px) { .hero-portrait { align-self: start; } }

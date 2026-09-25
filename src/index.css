@@ -3088,3 +3088,6 @@ html, body { background-color: var(--bg); }
 .site-nav .nav-links a.nav-login:hover { color: var(--accent); background: rgba(53, 208, 224, 0.1); }
 .mobile-drawer a[href='/login'] { color: var(--accent); }
 .desk-note a { color: var(--accent); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+
+/* form labels are sentence case like every other label; uppercase stays for data tiles only */
+.own-field span { text-transform: none; letter-spacing: 0.01em; }

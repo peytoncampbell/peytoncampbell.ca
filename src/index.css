@@ -3536,6 +3536,16 @@ html, body { background-color: var(--bg); }
 .github-card-header { align-items: start; }
 .github-card-header svg { order: -1; color: var(--accent); }
 
+/* 11 — the console's wide tables scrolled the whole PAGE sideways on a phone.
+   An overflow-x wrapper still takes its content's minimum width: the automatic
+   minimum size of a grid item has to be lifted, or the table's min-content width
+   becomes the page width (the console's layout viewport measured 588px inside a
+   390px screen, which clipped every card). */
+.own-table-wrap,
+.own-rank-wrap { overflow-x: auto; min-width: 0; }
+
+.own-panel { min-width: 0; }
+
 /* ---- owner console: the model rating on the cards ---------------------
    The book's cards lead with the composite the desk ranks on, so they carry the rating and the six
    pillar percentiles where the gap to a target used to sit. Quiet chips: the number is the point,

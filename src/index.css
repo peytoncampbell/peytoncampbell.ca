@@ -3546,6 +3546,12 @@ html, body { background-color: var(--bg); }
 
 .own-panel { min-width: 0; }
 
+/* the panel head is a title plus a long quiet line plus a segmented control: on a
+   phone it has to wrap instead of holding the page open */
+.own-panel-head { flex-wrap: wrap; }
+.own-panel-head > *,
+.own-head-right { min-width: 0; }
+
 /* ---- owner console: the model rating on the cards ---------------------
    The book's cards lead with the composite the desk ranks on, so they carry the rating and the six
    pillar percentiles where the gap to a target used to sit. Quiet chips: the number is the point,

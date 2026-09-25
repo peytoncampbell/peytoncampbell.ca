@@ -3249,5 +3249,6 @@ html, body { background-color: var(--bg); }
   .own-cards { grid-template-columns: minmax(0, 1fr); }
 }
 
-/* the table it replaced is gone */
-.own-table-wrap, .own-table { display: none; }
+/* the cards replace the holdings markup outright, so nothing needs hiding; the history panel
+   below still uses .own-table, and a blanket display:none on that class hid it. */
+.own-cards { align-items: start; }

@@ -778,8 +778,8 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
                             </td>
                             {/* CAD and US rows are side by side, so the currency has to be on the
                                 number rather than implied by the market chip */}
-                            <td>{row.market === 'CAD' ? 'C$' : '$'}{money(row.median_target, 2)}</td>
-                            <td>{row.market === 'CAD' ? 'C$' : '$'}{money(row.price, 2)}</td>
+                            <td>{money(row.median_target, 2).replace('$', row.market === 'CAD' ? 'C$' : '$')}</td>
+                            <td>{money(row.price, 2).replace('$', row.market === 'CAD' ? 'C$' : '$')}</td>
                             <td className="own-rank-gap">+{row.median_gap_pct.toFixed(1)}%</td>
                             <td>{row.targets}</td>
                             <td>{row.fwd_pe ? `${row.fwd_pe.toFixed(1)}x` : '--'}</td>

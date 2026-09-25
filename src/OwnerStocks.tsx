@@ -142,6 +142,20 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
 
   const newsLatest = news[0] ?? null;
 
+  // The brief and the book are two tables; the cards are where they meet.
+  const newsByTicker = useMemo(
+    () => new Map((newsLatest?.tickers ?? []).map((entry) => [entry.ticker, entry])),
+    [newsLatest],
+  );
+
+  const storiesByTicker = useMemo(() => {
+    const groups = new Map<string, NewsStory[]>();
+    for (const story of newsLatest?.stories ?? []) {
+      groups.set(story.ticker, [...(groups.get(story.ticker) ?? []), story]);
+    }
+    return groups;
+  }, [newsLatest]);
+
   const holdings = useMemo(
     () => (latest?.holdings ?? []).slice().sort((a, b) => b.weight_pct - a.weight_pct),
     [latest],
@@ -225,48 +239,88 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
               </div>
             </section>
 
-            {newsLatest && (
-              <section className="own-panel own-brief">
-                <div className="own-panel-head">
-                  <h2>Morning brief</h2>
-                  <span className="own-quiet">
-                    {dayName(newsLatest.as_of)} · {newsLatest.tickers.length} names with news
-                    {newsLatest.model?.seconds ? ` · read in ${newsLatest.model.seconds}s` : ''}
-                  </span>
-                </div>
+            <section className="own-panel">
+              <div className="own-panel-head">
+                <h2>The book</h2>
+                <span className="own-quiet">
+                  {today?.positions_held ?? holdings.length} positions ·{' '}
+                  {today?.positions_stocks ?? holdings.filter((h) => !h.is_etf).length} names + ETF · as of {latest.as_of}
+                  {newsLatest?.model?.seconds ? ` · brief read in ${newsLatest.model.seconds}s` : ''}
+                </span>
+              </div>
 
-                {newsLatest.summary && <p className="own-brief-summary">{newsLatest.summary}</p>}
+              {newsLatest?.summary && <p className="own-brief-summary">{newsLatest.summary}</p>}
 
-                {newsLatest.watch.length > 0 && (
-                  <ul className="own-brief-watch">
-                    {newsLatest.watch.map((item) => (
-                      <li key={item}>{item}</li>
-                    ))}
-                  </ul>
-                )}
+              {newsLatest && newsLatest.watch.length > 0 && (
+                <ul className="own-brief-watch">
+                  {newsLatest.watch.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              )}
 
-                <div className="own-brief-grid">
-                  {newsLatest.tickers.map((entry) => (
-                    <article key={entry.ticker} className="own-brief-card">
-                      <div className="own-brief-cardhead">
-                        <span className="own-ticker">{entry.ticker}</span>
-                        <span className={`own-sent own-sent-${entry.sentiment}`}>{entry.sentiment}</span>
+              <div className="own-cards">
+                {holdings.map((holding) => {
+                  const entry = newsByTicker.get(holding.ticker);
+                  // the headline the editor cited is already on the card; only the rest go below
+                  const more = (storiesByTicker.get(holding.ticker) ?? []).filter(
+                    (story) => story.url !== entry?.story_url,
+                  );
+                  return (
+                    <article key={holding.ticker} className="own-card">
+                      <div className="own-card-head">
+                        <span className="own-ticker">{holding.ticker}</span>
+                        <span className="own-card-tags">
+                          {entry && <span className={`own-sent own-sent-${entry.sentiment}`}>{entry.sentiment}</span>}
+                          <span
+                            className={`own-call ${
+                              holding.call === 'SELL' ? 'sell' : holding.call === 'HOLD' ? 'hold' : 'na'
+                            }`}
+                          >
+                            {holding.call}
+                          </span>
+                        </span>
                       </div>
-                      <p>{entry.read}</p>
-                      {entry.story_url && (
-                        <a className="own-brief-story" href={entry.story_url} target="_blank" rel="noopener noreferrer">
+
+                      <dl className="own-card-metrics">
+                        <div>
+                          <dt>Value</dt>
+                          <dd>{money(value(holding.weight_pct), 0)}</dd>
+                        </div>
+                        <div>
+                          <dt>Weight</dt>
+                          <dd>{holding.weight_pct.toFixed(2)}%</dd>
+                        </div>
+                        <div>
+                          <dt>Day</dt>
+                          <dd className={tone(holding.day_pct)}>{pct(holding.day_pct, 2)}</dd>
+                        </div>
+                        <div>
+                          <dt>Gap</dt>
+                          <dd className={tone(holding.gap_pct)}>{pct(holding.gap_pct, 1)}</dd>
+                        </div>
+                      </dl>
+
+                      {entry?.read && <p className="own-card-read">{entry.read}</p>}
+
+                      {entry?.story_url && (
+                        <a
+                          className="own-card-story"
+                          href={entry.story_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
                           {entry.story_image ? (
                             <img
                               src={entry.story_image}
                               alt=""
                               loading="lazy"
                               onError={(event) => {
-                                const image = event.currentTarget;
-                                image.style.display = 'none';
+                                event.currentTarget.style.display = 'none';
                               }}
                             />
                           ) : (
-                            <span className="own-brief-tile">{entry.ticker}</span>
+                            <span className="own-brief-tile">{holding.ticker}</span>
                           )}
                           <span>
                             <b>{entry.story_source ?? 'the story'}</b>
@@ -274,81 +328,32 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
                           </span>
                         </a>
                       )}
+
+                      {holding.reason && <p className="own-card-why">{holding.reason}</p>}
+
+                      {more.length > 0 && (
+                        <details className="own-card-more">
+                          <summary>
+                            {more.length} more headline{more.length === 1 ? '' : 's'}
+                          </summary>
+                          <ul>
+                            {more.map((story) => (
+                              <li key={story.url}>
+                                <a href={story.url} target="_blank" rel="noopener noreferrer">
+                                  {story.title}
+                                </a>
+                                <em>
+                                  {story.source}
+                                  {story.published ? ` · ${clock(story.published)}` : ''}
+                                </em>
+                              </li>
+                            ))}
+                          </ul>
+                        </details>
+                      )}
                     </article>
-                  ))}
-                </div>
-
-                {newsLatest.stories.length > 0 && (
-                  <details className="own-brief-all">
-                    <summary>All {newsLatest.stories.length} headlines</summary>
-                    {Object.entries(
-                      newsLatest.stories.reduce<Record<string, NewsStory[]>>((groups, story) => {
-                        (groups[story.ticker] ||= []).push(story);
-                        return groups;
-                      }, {}),
-                    ).map(([ticker, items]) => (
-                      <div key={ticker} className="own-brief-group">
-                        <span className="own-ticker">{ticker}</span>
-                        <ul>
-                          {items.map((story) => (
-                            <li key={story.url}>
-                              <a href={story.url} target="_blank" rel="noopener noreferrer">
-                                {story.title}
-                              </a>
-                              <em>
-                                {story.source}
-                                {story.published ? ` · ${clock(story.published)}` : ''}
-                              </em>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    ))}
-                  </details>
-                )}
-              </section>
-            )}
-
-            <section className="own-panel">
-              <div className="own-panel-head">
-                <h2>Holdings</h2>
-                <span className="own-quiet">
-                  {today?.positions_held ?? holdings.length} positions ·{' '}
-                  {today?.positions_stocks ?? holdings.filter((h) => !h.is_etf).length} names + ETF · as of {latest.as_of}
-                </span>
-              </div>
-              <div className="own-table-wrap">
-                <table className="own-table">
-                  <thead>
-                    <tr>
-                      <th scope="col">Holding</th>
-                      <th scope="col">Value</th>
-                      <th scope="col">Weight</th>
-                      <th scope="col">Day</th>
-                      <th scope="col">Gap to median</th>
-                      <th scope="col">Call</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {holdings.map((h) => (
-                      <tr key={h.ticker}>
-                        <td className="own-name">
-                          <span className="own-ticker">{h.ticker}</span>
-                          {h.reason && <span className="own-why">{h.reason}</span>}
-                        </td>
-                        <td>{money(value(h.weight_pct), 0)}</td>
-                        <td>{h.weight_pct.toFixed(2)}%</td>
-                        <td className={tone(h.day_pct)}>{pct(h.day_pct, 2)}</td>
-                        <td className={tone(h.gap_pct)}>{pct(h.gap_pct, 1)}</td>
-                        <td>
-                          <span className={`own-call ${h.call === 'SELL' ? 'sell' : h.call === 'HOLD' ? 'hold' : 'na'}`}>
-                            {h.call}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                  );
+                })}
               </div>
             </section>
 

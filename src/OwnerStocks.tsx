@@ -809,12 +809,13 @@ const fundingSummary = (
   // "across 7 names" - the names being sold, and only when there are any: a count of zero is a sale
   // that does not exist
   const names = count > 0 ? ` across ${count} name${count === 1 ? '' : 's'}` : '';
-  // the sentence is assembled from what the plan actually carries: a figure the desk left out is not
-  // invented out of the lines, it is simply not claimed. Money is formatted with the SAME 2-decimal
-  // formatter the line-level C$ figures use - a plan sentence reading C$2,534.6 beside a line reading
-  // C$254.13 looks like two different currencies.
-  const sold = raised !== null && raised > 0 ? `Selling ${cadEquivalent(raised)}${names}` : null;
-  const bought = needed !== null && needed > 0 ? cadEquivalent(needed) : null;
+  // Money in the plan sentence is CAD and always two decimals, and it does NOT wear the "≈" that the
+  // line-level twins use: those are conversions of a foreign price, while these are the plan's own
+  // totals - 2,534.60 exactly, not "about 2,534.6 of something else".
+  const cadMoney = (v: number) =>
+    `C$${v.toLocaleString('en-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const sold = raised !== null && raised > 0 ? `Selling ${cadMoney(raised)}${names}` : null;
+  const bought = needed !== null && needed > 0 ? cadMoney(needed) : null;
   const sentence = sold && bought
     ? `${sold} to fund ${bought} of buys.`
     : sold
@@ -830,7 +831,9 @@ const fundingSummary = (
   // residue that prints as C$0
   // A residue smaller than half a cent is not a shortfall, it is rounding: the formatter prints two
   // decimals, so 0.004 must render nothing at all rather than "C$0.00 still short".
-  const gapText = shortfall !== null && shortfall >= 0.005 ? cadEquivalent(shortfall) : null;
+  const gapText = shortfall !== null && shortfall >= 0.005
+    ? `C$${shortfall.toLocaleString('en-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    : null;
   const shortfallLine =
     gapText && gapText !== 'C$0'
       ? `${gapText} still short \u2014 the rest needs a deposit or a smaller plan.`

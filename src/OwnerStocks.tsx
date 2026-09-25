@@ -55,6 +55,35 @@ type WeeklyTarget = {
   rec: string;
 };
 
+type PlaybookHolding = {
+  ticker: string;
+  action: 'HOLD' | 'ADD' | 'TRIM' | 'EXIT';
+  weight: number | null;
+  pl: number | null;
+  revisions: number | null;
+  price: number | null;
+  ma200: number | null;
+  gap: number | null;
+  target_mismatch: boolean;
+  is_etf: boolean;
+  flags: string[];
+};
+
+type PlaybookEntry = {
+  ticker: string;
+  market: string;
+  score: number;
+  revisions: number;
+  px_vs_200d: number;
+  px_vs_50d: number | null;
+  buy_to: number | null;
+  gap: number | null;
+  fwd_pe: number | null;
+  timing: string;
+};
+
+type PlaybookRow = { as_of: string; holdings: PlaybookHolding[]; entries: PlaybookEntry[] };
+
 type WeeklyRow = {
   as_of: string;
   generated_at: string;
@@ -296,6 +325,7 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
   const [pub, setPub] = useState<PublicRow[]>([]);
   const [news, setNews] = useState<NewsRow[]>([]);
   const [weekly, setWeekly] = useState<WeeklyRow | null>(null);
+  const [playbook, setPlaybook] = useState<PlaybookRow | null>(null);
   // Three ways to read the same book. The choice is remembered: the grid is the default, the list
   // fits everything on one screen, the comprehensive view keeps nothing behind a disclosure.
   const [view, setView] = useState<View>(() => readView());
@@ -311,11 +341,12 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
   }, [ready, session, onSignedOut]);
 
   const load = useCallback(async () => {
-    const [privateRes, publicRes, newsRes, weeklyRes] = await Promise.all([
+    const [privateRes, publicRes, newsRes, weeklyRes, playbookRes] = await Promise.all([
       ownerFetch('pc_digest_private?select=*&order=as_of.desc&limit=30', ensureFresh),
       ownerFetch('pc_digest_public?select=*&order=as_of.desc&limit=30', ensureFresh),
       ownerFetch('pc_news?select=*&order=as_of.desc&limit=5', ensureFresh),
       ownerFetch('pc_weekly?select=*&order=as_of.desc&limit=1', ensureFresh),
+      ownerFetch('pc_playbook?select=*&order=as_of.desc&limit=1', ensureFresh),
     ]);
     if (!privateRes.ok && privateRes.status === 401) {
       setError('Your session is no longer valid. Sign in again.');
@@ -333,6 +364,7 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
     setNews(((newsRes.ok ? newsRes.rows : []) ?? []) as NewsRow[]);
     // The weekly screen is published every Sunday; an empty result just means the panel is absent.
     setWeekly((((weeklyRes.ok ? weeklyRes.rows : []) ?? []) as WeeklyRow[])[0] ?? null);
+    setPlaybook((((playbookRes.ok ? playbookRes.rows : []) ?? []) as PlaybookRow[])[0] ?? null);
   }, [ensureFresh, onSignedOut, setError]);
 
   useEffect(() => {
@@ -731,6 +763,88 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
                 </div>
               )}
             </section>
+
+              {playbook && (
+                <section className="own-panel">
+                  <div className="own-panel-head">
+                    <h2>Playbook — what to do today</h2>
+                    <span className="own-quiet">
+                      {playbook.holdings.filter((h) => h.action === 'ADD').length} add ·{' '}
+                      {playbook.holdings.filter((h) => h.action === 'TRIM').length} trim ·{' '}
+                      {playbook.holdings.filter((h) => h.action === 'EXIT').length} exit ·{' '}
+                      {playbook.holdings.filter((h) => h.action === 'HOLD').length} hold · {playbook.as_of}
+                    </span>
+                  </div>
+
+                  <p className="own-brief-summary">
+                    No stop-losses. Twenty-one mechanical exit rules were backtested on 487 names over 2.4
+                    years and every one lost to buy-and-hold — a trailing −20% stop cut MU 16 points on the
+                    way to +734%. A position leaves only when the situation is unambiguous: catastrophic
+                    (50%+ below cost <em>and</em> 50%+ behind SPY over six months) or the thesis broken (the
+                    median target below the price <em>and</em> two or more firms cutting the rating within
+                    90 days). A drawdown is not a reason to sell: MU fell 58% on its way to +734%.
+                  </p>
+
+                  <div className="own-rank-wrap">
+                    <table className="own-rank">
+                      <thead>
+                        <tr>
+                          <th>ticker</th><th>action</th><th>weight</th><th>P/L</th>
+                          <th>revisions</th><th>vs 200d</th><th>target gap</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {playbook.holdings.map((h) => (
+                          <tr key={h.ticker}>
+                            <td className="own-rank-sym">{h.ticker}</td>
+                            <td><span className={`own-call own-call-${h.action.toLowerCase()}`}>{h.action}</span></td>
+                            <td>{h.weight !== null ? `${(h.weight * 100).toFixed(1)}%` : '--'}</td>
+                            <td className={tone(h.pl)}>{h.pl !== null ? pct(h.pl, 1) : '--'}</td>
+                            <td className={tone(h.revisions)}>{h.revisions !== null ? h.revisions.toFixed(2) : '--'}</td>
+                            <td>{h.ma200 && h.price ? pct(h.price / h.ma200 - 1, 1) : '--'}</td>
+                            <td>{h.gap !== null ? pct(h.gap, 1) : h.target_mismatch ? 'underlying' : '--'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <details className="own-report" open>
+                    <summary>What to buy — gated, tradeable, revisions rising, trend intact</summary>
+                    <div className="own-rank-wrap">
+                      <table className="own-rank">
+                        <thead>
+                          <tr>
+                            <th>#</th><th>ticker</th><th>mkt</th><th>score</th><th>rev</th>
+                            <th>vs 200d</th><th>gap</th><th>P/E</th><th>when</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {playbook.entries.map((e, i) => (
+                            <tr key={e.ticker}>
+                              <td>{i + 1}</td>
+                              <td className="own-rank-sym">{e.ticker}</td>
+                              <td><span className="own-mkt">{e.market}</span></td>
+                              <td>{e.score.toFixed(1)}</td>
+                              <td className={tone(e.revisions)}>{e.revisions.toFixed(2)}</td>
+                              <td>{pct(e.px_vs_200d, 1)}</td>
+                              <td>{e.gap !== null ? pct(e.gap, 1) : '--'}</td>
+                              <td>{e.fwd_pe ? `${e.fwd_pe.toFixed(1)}x` : '--'}</td>
+                              <td className="own-rank-name">{e.timing}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <p className="own-card-why">
+                      Entry is ranked on net estimate revisions and price momentum — the two pillars with
+                      evidence behind them — rather than on the gap to a target. It refuses to chase a name
+                      more than 15% above its 50-day average, and it sizes a new position to match the
+                      smallest existing holding. If these cluster in one industry, treat them as one bet.
+                    </p>
+                  </details>
+                </section>
+              )}
 
               {weekly && (
                 <section className="own-panel">

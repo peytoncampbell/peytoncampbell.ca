@@ -3461,6 +3461,19 @@ html, body { background-color: var(--bg); }
   text-align: center;
 }
 
+/* the name the desk cannot buy at the owner's broker, on the weekly ranking and the buy list. The
+   owner asked for those names to stay visible with the reason on them, so the chip is a flag rather
+   than a filter: it sits beside the market and currency chips and never shortens the row. */
+.own-broker {
+  display: inline-block;
+  padding: 0.05rem 0.3rem;
+  border: 1px solid rgba(232, 165, 82, 0.45);
+  border-radius: 5px;
+  color: var(--warn);
+  font-size: 0.66rem;
+  white-space: nowrap;
+}
+
 /* =====================================================================
    Polish pass, 2026-09-25 — dead space and small-screen defects found in
    a screenshot audit at 1440px and 390px. Later position wins ties, so
@@ -3603,3 +3616,97 @@ html, body { background-color: var(--bg); }
   .desk-history th,
   .desk-history td { padding: 0.5rem 0.45rem; font-size: 0.8rem; }
 }
+
+/* =====================================================================
+   Today's ticket — the console's daily action list, rendered above the
+   book because it is the only panel that asks for a decision.
+
+   The orders are the only thing on the panel that gets a chip and a
+   bordered row: SELL carries the exit red, TRIM the playbook's amber, BUY
+   the one accent. The exit-rule watch list and the unfunded queue are
+   reading material — plain rows, no chips, no borders — so nothing here
+   can be mistaken for an order the desk has not sized, and a buy the cash
+   cannot cover is dashed and marked instead of looking like an instruction.
+   Rows wrap on a phone rather than holding the page open (the console's
+   earlier sideways-scroll defect came from unwrappable flex rows).
+   ===================================================================== */
+
+.own-ticket-groups { display: grid; gap: 0.95rem; min-width: 0; }
+.own-ticket-group { display: grid; gap: 0.1rem; min-width: 0; }
+
+/* caps, unlike the panel's section labels: these are the desk's own action words (SELL/TRIM/BUY) */
+.own-ticket-group h3 {
+  margin: 0;
+  color: var(--ink-3);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+
+.own-ticket-lines { display: grid; margin: 0; padding: 0; list-style: none; min-width: 0; }
+
+.own-ticket-line {
+  display: grid;
+  gap: 0.3rem;
+  min-width: 0;
+  padding: 0.55rem 0;
+  border-top: 1px solid var(--line);
+}
+
+.own-ticket-line:first-child { padding-top: 0.15rem; border-top: 0; }
+
+/* the line the cash cannot cover: dashed, so it reads as a queue entry at a glance */
+.own-ticket-line.is-waiting { border-top-style: dashed; }
+
+/* a market order is not the same instrument as a limit order: dotted, so the row type reads before
+   the chip does */
+.own-ticket-line.is-market { border-top-style: dotted; }
+
+.own-ticket-top,
+.own-ticket-fig {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.6rem;
+  min-width: 0;
+}
+
+.own-ticket-name { color: var(--ink-2); font-size: 0.84rem; }
+.own-ticket-kind { color: var(--ink-3); font-size: 0.74rem; }
+
+.own-ticket-fig { font-size: 0.86rem; font-variant-numeric: tabular-nums; }
+.own-ticket-fig b { color: var(--text); font-weight: 600; }
+
+/* the two things on this panel that are not an ordinary instruction: a buy the cash cannot cover,
+   and a market order with no limit behind it */
+.own-ticket-wait,
+.own-ticket-market {
+  padding: 0.06rem 0.42rem;
+  border: 1px solid rgba(232, 165, 82, 0.45);
+  border-radius: 5px;
+  color: var(--warn);
+  font-size: 0.68rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.own-ticket-note { color: var(--ink-3); font-size: 0.76rem; }
+
+/* the two reading lists: one row per name, no chip and no border to look like an order */
+.own-ticket-quiet-head { margin: 0; color: var(--ink-3); font-size: 0.78rem; font-weight: 600; }
+.own-ticket-quiet { display: grid; gap: 0.4rem; margin: 0.55rem 0 0; padding: 0; list-style: none; }
+.own-ticket-quiet li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.2rem 0.6rem;
+  min-width: 0;
+  font-size: 0.82rem;
+}
+.own-ticket-sym { color: var(--ink-2); font-weight: 600; }
+.own-ticket-quiet em { color: var(--ink-3); font-style: normal; font-size: 0.76rem; }
+
+/* the ticket is the only place the console renders a SELL or a BUY, so its two chips are new
+   (trim and the quiet hold tone already exist with the ranked tables) */
+.own-call-buy { color: var(--accent); border: 1px solid rgba(53, 208, 224, 0.45); }
+.own-call-sell { color: #e98585; border: 1px solid rgba(233, 133, 133, 0.45); }

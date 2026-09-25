@@ -70,11 +70,21 @@ type WeeklyPick = {
 type WeeklyMove = { ticker: string; name: string; was: number; now: number; change: number };
 
 /**
+ * What the desk adds to a row it could not buy at the owner's broker. `broker_note` is empty when
+ * the answer is yes, and both fields are absent on a publish written before the desk asked the
+ * broker at all - so only an explicit false counts as blocked, and absence is never a flag.
+ */
+type Brokered = {
+  broker_ok?: boolean | null;
+  broker_note?: string | null;
+};
+
+/**
  * A pc_weekly.actionable row: the gate-passed names the weekly screen ranks. The desk's composite
  * rating orders them now, so the fields the median-target gap was rendered from (price, median_target,
  * spread) are gone from the payload rather than merely unused here.
  */
-type WeeklyTarget = {
+type WeeklyTarget = Brokered & {
   ticker: string;
   name: string;
   /** the desk's short region label (US, CA, JP, TW, KR, CN, HK, EU, UK, AU ...) */
@@ -105,7 +115,7 @@ type PlaybookHolding = {
   flags: string[];
 };
 
-type PlaybookEntry = {
+type PlaybookEntry = Brokered & {
   ticker: string;
   /** region label, with the US/CAD-only `market` kept as the fallback */
   region?: string | null;
@@ -124,7 +134,95 @@ type PlaybookEntry = {
   timing: string;
 };
 
-type PlaybookRow = { as_of: string; holdings: PlaybookHolding[]; entries: PlaybookEntry[] };
+type PlaybookRow = {
+  as_of: string;
+  holdings: PlaybookHolding[];
+  entries: PlaybookEntry[];
+  /**
+   * the desk's daily order ticket, published inside this row. Absent until the desk ships it, and
+   * the desk and this page deploy independently, so neither may assume the other has landed.
+   */
+  today?: PlaybookToday | null;
+};
+
+/**
+ * One line of the daily ticket: the quantity the desk would work, at a limit in the line's own
+ * currency, with the CAD equivalent beside it. `funded` is the desk telling us whether the cash is
+ * actually there - a buy the account cannot pay for is a queue entry, not an instruction.
+ */
+type TodayLine = {
+  ticker: string;
+  action?: string | null;
+  name?: string | null;
+  qty?: number | null;
+  limit_local?: number | null;
+  /** the ISO code the line is quoted in - never assumed from the region */
+  currency?: string | null;
+  limit_cad?: number | null;
+  est_cad?: number | null;
+  region?: string | null;
+  /** the desk's session window, e.g. "09:30-16:00 ET", and whether it is open right now */
+  session_et?: string | null;
+  session_state?: string | null;
+  next_open?: string | null;
+  whole_shares?: boolean | null;
+  rating?: number | null;
+  why?: string | null;
+  funded?: boolean | null;
+  /**
+   * buys only: adds to a holding (TOP_UP) or opens one (NEW). A fractional market order carries
+   * MARKET_FRACTIONAL instead, which is a different instrument rather than a different reason.
+   */
+  kind?: string | null;
+  /**
+   * the desk's alternative for a name whose single share costs more than the tranche: a market
+   * order it can fill fractionally. It is sized in C$ rather than a whole-share count, and it
+   * carries no limit, which is exactly what the owner has to see on the line.
+   */
+  market_order?: boolean | null;
+};
+
+/**
+ * A name the exit rule has flagged but not yet condemned: it needs one more weekly reading before
+ * it becomes a SELL. Rendered as a reading list, never as an order.
+ */
+type TodayWatch = {
+  ticker: string;
+  name?: string | null;
+  rating?: number | null;
+  revisions?: number | null;
+  /** the readings seen so far: the desk sends a count, a list of them would count as well */
+  readings?: number | number[] | null;
+  weeks_needed?: number | null;
+  why?: string | null;
+};
+
+/** A buy the account cannot fund yet, with the cash it would take. */
+type TodayUnfunded = {
+  ticker: string;
+  name?: string | null;
+  est_cad?: number | null;
+  why?: string | null;
+};
+
+/**
+ * The daily order ticket the desk publishes inside the playbook payload. Every field is optional on
+ * purpose: a missing block hides the whole panel, a missing field drops only the fragment that
+ * would have shown it, and neither can take the console down.
+ */
+type PlaybookToday = {
+  as_of?: string | null;
+  generated_at?: string | null;
+  /** how stale the FX rates behind every C$ figure are */
+  fx_age_days?: number | null;
+  market_note?: string | null;
+  sells?: TodayLine[] | null;
+  trims?: TodayLine[] | null;
+  buys?: TodayLine[] | null;
+  unfunded?: TodayUnfunded[] | null;
+  watch?: TodayWatch[] | null;
+  counts?: Record<string, number> | null;
+};
 
 type QuantPillar = {
   name: string;
@@ -405,6 +503,17 @@ const rowCurrency = (currency: string | null | undefined, usd?: boolean | null) 
 const isHouseCurrency = (code: string | null) => code === 'USD' || code === 'CAD';
 
 /**
+ * Whether the desk could actually buy the row at the owner's broker. `broker_note` is empty when
+ * the answer is yes, and a publish written before the desk asked carries neither field. Only an
+ * explicit false is a flag - a missing field is an older payload, not a blocked name - and the row
+ * is shown either way: a name that cannot be bought has to say so, not disappear.
+ */
+const brokerBlocked = (row: Brokered) => row.broker_ok === false;
+
+/** The desk's reason a name is not on the broker, shown on the row it belongs to. */
+const brokerNote = (row: Brokered) => (brokerBlocked(row) && row.broker_note ? row.broker_note : null);
+
+/**
  * A price in the row's own currency. Intl throws a RangeError on a code it does not know and these
  * codes come from the desk's data source, so an unrecognised one degrades to "CODE 1,234" rather than
  * taking the whole panel down with it.
@@ -440,6 +549,284 @@ const clock = (iso: string) =>
 
 const dayName = (iso: string) =>
   new Date(`${iso}T12:00:00`).toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric' });
+
+/* ============================================================================
+   Today's ticket - the desk's daily order list.
+
+   The desk publishes it as one block beside the playbook: what to sell, trim
+   and buy today, the names the exit rule has flagged but not condemned, and
+   the buys the cash cannot cover yet. Everything below is a plain function so
+   the render logic can be driven with a real payload outside a signed-in
+   session; every read is tolerant, because the panel and the payload ship
+   separately and either may arrive first.
+   ========================================================================= */
+
+/** Without the desk's block there is no ticket, and the panel is not rendered at all. */
+const hasTicket = (today: PlaybookToday | null | undefined): today is PlaybookToday =>
+  today !== null && today !== undefined && typeof today === 'object';
+
+type OrderGroup = { key: 'sells' | 'trims' | 'buys'; label: string; lines: TodayLine[] };
+
+/** A list the desk may not have written yet, or may have written with gaps in it. */
+const orderLines = (lines: TodayLine[] | null | undefined): TodayLine[] =>
+  Array.isArray(lines) ? lines.filter((line) => line && line.ticker) : [];
+
+/**
+ * SELL, then TRIM, then BUY, in that order. A group with nothing in it is not rendered: an empty
+ * table and its heading cost a screenful to say "nothing".
+ */
+const orderGroups = (today: PlaybookToday | null | undefined): OrderGroup[] => {
+  const groups: OrderGroup[] = [
+    { key: 'sells', label: 'SELL', lines: orderLines(today?.sells) },
+    { key: 'trims', label: 'TRIM', lines: orderLines(today?.trims) },
+    { key: 'buys', label: 'BUY', lines: orderLines(today?.buys) },
+  ];
+  return groups.filter((group) => group.lines.length > 0);
+};
+
+/** The one line that stands in for three empty groups. */
+const NO_ORDERS_LINE = 'No orders today \u2014 nothing to sell, trim or buy.';
+
+/**
+ * Counts come from the lines themselves rather than from the block's own `counts`: a count that
+ * disagrees with the list it describes is worse than no count.
+ */
+const ticketCounts = (groups: OrderGroup[]): string =>
+  groups.map((group) => `${group.lines.length} ${group.label.toLowerCase()}`).join(' \u00b7 ');
+
+/**
+ * The head's quiet line: what is in the ticket and the date it was built for. The FX age rides here
+ * because every C$ figure below is converted with those rates.
+ */
+const ticketHead = (today: PlaybookToday | null | undefined, groups: OrderGroup[]): string =>
+  [
+    ticketCounts(groups),
+    today?.as_of ? `as of ${today.as_of}` : '',
+    // only when the rates behind the C$ figures are actually stale: "fx 0d old" is noise
+    typeof today?.fx_age_days === 'number' && today.fx_age_days > 0 ? `fx ${today.fx_age_days}d old` : '',
+  ]
+    .filter(Boolean)
+    .join(' \u00b7 ');
+
+/**
+ * Whether the line is a fractional market order rather than a whole-share limit order. The desk
+ * signals it twice - a flag, and the kind that stands in for TOP_UP/NEW - so accept either, and
+ * treat a line as a limit order whenever neither says otherwise.
+ */
+const orderMarket = (line: TodayLine): boolean =>
+  line.market_order === true || line.kind?.toUpperCase() === 'MARKET_FRACTIONAL';
+
+/** A C$ amount spelled out: the en-CA formatter prints a bare $ for CAD and this panel is full of other $s. */
+const cadAmount = (value: number | null | undefined): string | null =>
+  value === null || value === undefined
+    ? null
+    : `C$${value.toLocaleString('en-CA', { maximumFractionDigits: 2 })}`;
+
+/**
+ * The size of a market order, which the desk sends in C$ rather than as a share count. `est_cad` is
+ * the cash it would take; `limit_cad` is the fallback for a payload that carries only the limit side.
+ */
+const marketSize = (line: TodayLine): string | null =>
+  orderMarket(line) ? cadAmount(line.est_cad ?? line.limit_cad) : null;
+
+/**
+ * "120 @ ₩41,200" - the quantity at the desk's limit, priced in the line's own currency (a KRW line
+ * must never print as a bare $). A share count the desk sized as fractional is printed as sized
+ * rather than rounded to a number of shares nobody can buy.
+ */
+const orderQty = (line: TodayLine): string | null => {
+  // a market order has no limit and no share count; marketSize() carries that line's number instead
+  if (orderMarket(line)) return null;
+  const qty = line.qty;
+  if (qty === null || qty === undefined) return null;
+  const shares = qty.toLocaleString('en-CA', { maximumFractionDigits: line.whole_shares === false ? 3 : 0 });
+  const limit =
+    line.limit_local === null || line.limit_local === undefined
+      ? null
+      : priceIn(line.limit_local, rowCurrency(line.currency, undefined));
+  return limit ? `${shares} @ ${limit}` : `${shares} shares`;
+};
+
+/**
+ * The CAD side of the line. Dropped when the line already trades in CAD - the same number in two
+ * formats says nothing - and dropped on a market line too, whose whole size is already that number.
+ * `est_cad` covers a payload that carries only the estimate.
+ */
+const orderCad = (line: TodayLine, currency: string | null): string | null =>
+  currency === 'CAD' || orderMarket(line) ? null : cadEquivalent(line.limit_cad ?? line.est_cad);
+
+/**
+ * Where the line can be worked: the desk's session window and whether it is open right now. The
+ * next open stays on the line because a Korean or Australian order is not waiting on New York.
+ */
+const orderSession = (line: TodayLine): string => {
+  const parts: string[] = [];
+  if (line.session_et) parts.push(line.session_et);
+  if (line.session_state === 'open') parts.push('open now');
+  else if (line.session_state === 'closed') parts.push('closed now');
+  if (line.session_state === 'closed' && line.next_open) parts.push(`next ${line.next_open}`);
+  return parts.join(' \u00b7 ');
+};
+
+/** The chip's tone: the desk's own action word names it, the group's label is the fallback. */
+const orderChip = (action: string | null | undefined, fallback: string): 'sell' | 'trim' | 'buy' | 'hold' => {
+  const word = (action || fallback).toUpperCase();
+  if (word.startsWith('SELL') || word.startsWith('EXIT')) return 'sell';
+  if (word.startsWith('TRIM')) return 'trim';
+  if (word.startsWith('BUY') || word.startsWith('ADD') || word.startsWith('TOP')) return 'buy';
+  return 'hold';
+};
+
+/** A buy says whether it adds to a name or opens one; anything else says nothing. */
+const orderKind = (line: TodayLine): string | null => {
+  const kind = line.kind?.toUpperCase();
+  if (kind === 'TOP_UP') return 'top up';
+  if (kind === 'NEW') return 'new position';
+  // MARKET_FRACTIONAL is the market line's own marker and gets its own chip; it is not a kind of buy
+  return null;
+};
+
+/** How many weekly readings the exit rule has seen - the desk sends a count, a list would count too. */
+const readingCount = (value: number | number[] | null | undefined): number | null =>
+  typeof value === 'number' ? value : Array.isArray(value) ? value.length : null;
+
+/** "2 of 3 readings" - the exit rule's clock, kept as a reading because it is not an order. */
+const watchReadings = (row: TodayWatch): string => {
+  const seen = readingCount(row.readings);
+  const need = row.weeks_needed ?? null;
+  if (seen === null && need === null) return '';
+  if (need === null) return `${seen} reading${seen === 1 ? '' : 's'}`;
+  return `${seen ?? '\u2014'} of ${need} readings`;
+};
+
+/**
+ * Today's ticket: the day's action list, and the first thing on the console because it is the only
+ * panel that asks for a decision. The book, the weekly ranking and the research all explain and
+ * support those decisions; this is the list itself.
+ */
+function TodayTicket({ today }: { today: PlaybookToday | null | undefined }) {
+  if (!hasTicket(today)) return null;
+
+  const groups = orderGroups(today);
+  const watch = Array.isArray(today.watch) ? today.watch.filter((row) => row && row.ticker) : [];
+  const unfunded = Array.isArray(today.unfunded) ? today.unfunded.filter((row) => row && row.ticker) : [];
+
+  return (
+    <section className="own-panel own-ticket">
+      <div className="own-panel-head">
+        <h2>Today&apos;s ticket</h2>
+        <span className="own-quiet">{ticketHead(today, groups)}</span>
+      </div>
+
+      {/* the panel's answer to "why is nothing open": a shut market is stated rather than left to be
+          inferred from the session column of every line */}
+      {today.market_note && <p className="own-note">{today.market_note}</p>}
+
+      {groups.length === 0 && <p className="own-note">{NO_ORDERS_LINE}</p>}
+
+      {groups.length > 0 && (
+        <div className="own-ticket-groups">
+          {groups.map((group) => (
+            <div className="own-ticket-group" key={group.key}>
+              <h3>
+                {group.label} <span className="own-quiet">{group.lines.length}</span>
+              </h3>
+              <ul className="own-ticket-lines">
+                {group.lines.map((line, index) => {
+                  const currency = rowCurrency(line.currency, undefined);
+                  // one of these two carries the line's number: a limit line its shares at a price,
+                  // a market line the C$ it is sized in
+                  const qty = orderQty(line);
+                  const size = marketSize(line);
+                  const market = orderMarket(line);
+                  const cad = orderCad(line, currency);
+                  const session = orderSession(line);
+                  const kind = orderKind(line);
+                  return (
+                    <li
+                      key={`${group.key}-${line.ticker}-${index}`}
+                      className={`own-ticket-line${line.funded === false ? ' is-waiting' : ''}${
+                        market ? ' is-market' : ''
+                      }`}
+                    >
+                      <span className="own-ticket-top">
+                        <span className={`own-call own-call-${orderChip(line.action, group.label)}`}>
+                          {line.action || group.label}
+                        </span>
+                        <span className="own-ticker">{line.ticker}</span>
+                        {line.name && <span className="own-ticket-name">{line.name}</span>}
+                        {kind && <span className="own-ticket-kind">{kind}</span>}
+                        {/* the name has no affordable single share, so the desk sends a market order
+                            instead of a limit: same name, different instrument, said on the line */}
+                        {market && <span className="own-ticket-market">Market order</span>}
+                        {/* a buy the cash cannot cover is marked, not presented as an order to place */}
+                        {line.funded === false && <span className="own-ticket-wait">Waiting on cash</span>}
+                      </span>
+
+                      <span className="own-ticket-fig">
+                        {(qty || size) && <b>{qty ?? size}</b>}
+                        {market && <span className="own-ticket-note">fractional, no price protection</span>}
+                        {currency && <span className="own-cur">{currency}</span>}
+                        {cad && <span className="own-quiet">{cad}</span>}
+                        {line.region && <span className="own-mkt">{line.region}</span>}
+                        {session && <span className="own-quiet">{session}</span>}
+                      </span>
+
+                      {line.why && <p className="own-card-why">{line.why}</p>}
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {(watch.length > 0 || unfunded.length > 0) && (
+        <div className="own-split">
+          {watch.length > 0 && (
+            <div>
+              <h3 className="own-ticket-quiet-head">Flagged, one reading to go</h3>
+              <ul className="own-ticket-quiet">
+                {watch.map((row, index) => (
+                  <li key={`${row.ticker}-${index}`}>
+                    <span className="own-ticket-sym">{row.ticker}</span>
+                    {row.name && <span className="own-ticket-name">{row.name}</span>}
+                    {typeof row.rating === 'number' && <b className="own-rating">{row.rating.toFixed(1)}</b>}
+                    {typeof row.revisions === 'number' && (
+                      <span className={tone(row.revisions)}>{signed(row.revisions)}</span>
+                    )}
+                    {watchReadings(row) && <em>{watchReadings(row)}</em>}
+                    {row.why && <span className="own-card-why">{row.why}</span>}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {unfunded.length > 0 && (
+            <div>
+              <h3 className="own-ticket-quiet-head">Unfunded queue</h3>
+              <ul className="own-ticket-quiet">
+                {unfunded.map((row, index) => (
+                  <li key={`${row.ticker}-${index}`}>
+                    <span className="own-ticket-sym">{row.ticker}</span>
+                    {row.name && <span className="own-ticket-name">{row.name}</span>}
+                    <b className="own-rating">{cadEquivalent(row.est_cad) ?? '--'}</b>
+                    {row.why && <span className="own-card-why">{row.why}</span>}
+                  </li>
+                ))}
+              </ul>
+              <p className="own-card-why">
+                Buys marked waiting on cash above are queued here until the account can pay for them.
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
 
 export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () => void; onHome: () => void }) {
   const { session, ready, error, setError, signOut, ensureFresh } = useOwnerSession();
@@ -640,6 +1027,10 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
 
         {latest && (
           <>
+            {/* the ticket leads: it is the day's action list, and every panel below it explains or
+                supports a line in it. Hidden outright when the desk has not published a block. */}
+            <TodayTicket today={playbook?.today} />
+
             <section className="own-stats">
               <div className="own-stat">
                 <span>Book value</span>
@@ -1043,8 +1434,16 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
                           {playbookEntries.map((e, i) => (
                             <tr key={e.ticker}>
                               <td>{i + 1}</td>
-                              <td className="own-rank-sym">{e.ticker}</td>
-                              <td><span className="own-mkt">{e.region}</span></td>
+                              <td className="own-rank-sym">
+                                {e.ticker}
+                                {/* the entry cleared the gates but this broker cannot buy it: the row
+                                    stays, with the desk's reason under it */}
+                                {brokerNote(e) && <span className="own-why">{brokerNote(e)}</span>}
+                              </td>
+                              <td>
+                                <span className="own-mkt">{e.region}</span>{' '}
+                                {brokerBlocked(e) && <span className="own-broker">not on your broker</span>}
+                              </td>
                               <td>
                                 {priceIn(e.price, e.currency)}
                                 {e.cad && <em className="own-quiet"> {e.cad}</em>}
@@ -1108,6 +1507,9 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
                             <td>
                               <span className="own-rank-sym">{row.ticker}</span>{' '}
                               <span className="own-rank-name">{row.name}</span>
+                              {/* a gate-passed name the broker cannot buy is shown and flagged, never
+                                  dropped: the note says why it is missing from the buy list */}
+                              {brokerNote(row) && <span className="own-why">{brokerNote(row)}</span>}
                             </td>
                             <td>
                               <span className="own-mkt">{row.region}</span>{' '}
@@ -1115,7 +1517,8 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
                                   or CAD row needs no second chip, a KRW or TWD row cannot go without */}
                               {row.currency && !isHouseCurrency(row.currency) && (
                                 <span className="own-cur">{row.currency}</span>
-                              )}
+                              )}{' '}
+                              {brokerBlocked(row) && <span className="own-broker">not on your broker</span>}
                             </td>
                             <td className="own-rating">{row.rating.toFixed(1)}</td>
                             <td className={tone(row.revisions_net)}>{row.revisions_net.toFixed(2)}</td>

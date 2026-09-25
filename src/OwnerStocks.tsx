@@ -799,10 +799,10 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
                             <td className="own-rank-sym">{h.ticker}</td>
                             <td><span className={`own-call own-call-${h.action.toLowerCase()}`}>{h.action}</span></td>
                             <td>{h.weight !== null ? `${(h.weight * 100).toFixed(1)}%` : '--'}</td>
-                            <td className={tone(h.pl)}>{h.pl !== null ? pct(h.pl, 1) : '--'}</td>
+                            <td className={tone(h.pl)}>{h.pl !== null ? pct(h.pl * 100, 1) : '--'}</td>
                             <td className={tone(h.revisions)}>{h.revisions !== null ? h.revisions.toFixed(2) : '--'}</td>
-                            <td>{h.ma200 && h.price ? pct(h.price / h.ma200 - 1, 1) : '--'}</td>
-                            <td>{h.gap !== null ? pct(h.gap, 1) : h.target_mismatch ? 'underlying' : '--'}</td>
+                            <td>{h.ma200 && h.price ? pct((h.price / h.ma200 - 1) * 100, 1) : '--'}</td>
+                            <td>{h.gap !== null ? pct(h.gap * 100, 1) : h.target_mismatch ? 'underlying' : '--'}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -827,8 +827,8 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
                               <td><span className="own-mkt">{e.market}</span></td>
                               <td>{e.score.toFixed(1)}</td>
                               <td className={tone(e.revisions)}>{e.revisions.toFixed(2)}</td>
-                              <td>{pct(e.px_vs_200d, 1)}</td>
-                              <td>{e.gap !== null ? pct(e.gap, 1) : '--'}</td>
+                              <td>{pct(e.px_vs_200d * 100, 1)}</td>
+                              <td>{e.gap !== null ? pct(e.gap * 100, 1) : '--'}</td>
                               <td>{e.fwd_pe ? `${e.fwd_pe.toFixed(1)}x` : '--'}</td>
                               <td className="own-rank-name">{e.timing}</td>
                             </tr>

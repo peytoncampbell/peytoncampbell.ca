@@ -3369,3 +3369,57 @@ html, body { background-color: var(--bg); }
 }
 
 .own-card-quiet { color: var(--ink-3); }
+
+/* ---- weekly screen: the names we do not own --------------------------- */
+.own-pick-name { margin: -0.15rem 0 0; color: var(--ink-2); font-size: 0.84rem; }
+.own-sent-neutral { color: var(--ink-3); }
+
+.own-moves {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1rem;
+  margin: 0 0 0.3rem;
+  padding: 0;
+  list-style: none;
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.own-moves li { display: flex; align-items: center; gap: 0.35rem; }
+.own-moves em { color: var(--ink-3); font-style: normal; font-size: 0.75rem; }
+
+.own-report { margin-top: 0.25rem; border-top: 1px solid var(--line); padding-top: 0.75rem; }
+.own-report > summary { color: var(--accent); font-size: 0.86rem; font-weight: 600; cursor: pointer; }
+
+.own-md { max-width: 94ch; margin-top: 0.85rem; color: var(--ink-2); font-size: 0.9rem; line-height: 1.62; }
+.own-md-h { margin: 1.15rem 0 0.45rem; color: var(--text); font-size: 1rem; font-weight: 600; }
+.own-md-p { margin: 0 0 0.6rem; }
+.own-md-ul { margin: 0 0 0.7rem 1.05rem; padding: 0; }
+.own-md-ul li { margin-bottom: 0.2rem; }
+.own-md-hr { margin: 1.1rem 0; border: 0; border-top: 1px solid var(--line); }
+
+.own-md-quote {
+  margin: 0.7rem 0;
+  padding: 0.5rem 0.9rem;
+  border-left: 2px solid var(--accent);
+  background: rgba(53, 208, 224, 0.06);
+}
+
+.own-md-quote p { margin: 0.2rem 0; }
+
+.own-md-tablewrap { overflow-x: auto; margin: 0.7rem 0 0.9rem; }
+.own-md-table { border-collapse: collapse; font-size: 0.8rem; font-variant-numeric: tabular-nums; }
+.own-md-table th,
+.own-md-table td { padding: 0.32rem 0.6rem; border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap; }
+.own-md-table th { color: var(--ink-3); font-weight: 600; }
+
+.own-md-pre {
+  overflow-x: auto;
+  margin: 0.7rem 0;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: var(--ink-3);
+  font-size: 0.76rem;
+  line-height: 1.5;
+}

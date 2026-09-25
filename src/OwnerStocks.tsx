@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { ReactNode } from 'react';
 import { ownerFetch, useNoIndex, useOwnerSession } from './ownerAuth';
 
 /**
@@ -19,6 +20,38 @@ type Holding = {
   reason: string | null;
   buys: number | null;
   ratings: number | null;
+};
+
+type WeeklyPick = {
+  ticker: string;
+  name: string;
+  country: string;
+  exchange: string;
+  us_listed: boolean;
+  gate_passed: boolean;
+  median_gap_pct: number | null;
+  targets: number | null;
+  rank_in_screen: number;
+  score: number;
+  expected_return_pct: number;
+  target_upside_pct: number;
+  fwd_pe: number | null;
+  vol_pct: number;
+  analysts: number;
+};
+
+type WeeklyMove = { ticker: string; name: string; was: number; now: number; change: number };
+
+type WeeklyRow = {
+  as_of: string;
+  generated_at: string;
+  gate: string | null;
+  universe_size: number | null;
+  resolved: number | null;
+  picks: WeeklyPick[];
+  moves: WeeklyMove[];
+  report_md: string | null;
+  weekly_md: string | null;
 };
 
 type PrivateRow = {
@@ -94,6 +127,135 @@ type BookRow = {
   more: NewsStory[];
 };
 
+/**
+ * Enough markdown for the weekly report: headings, bold/italic/code, tables, bullets, quotes, rules
+ * and fenced blocks. The site carries no markdown dependency and the input is a document this repo
+ * generates, so the subset is known rather than guessed.
+ */
+const inline = (text: string, prefix: string): ReactNode[] =>
+  text
+    .split(/(\*\*[^*]+\*\*|`[^`]+`|\*[^*]+\*)/g)
+    .filter(Boolean)
+    .map((part, index) => {
+      const key = `${prefix}-${index}`;
+      if (part.startsWith('**') && part.endsWith('**')) return <strong key={key}>{part.slice(2, -2)}</strong>;
+      if (part.startsWith('`') && part.endsWith('`')) return <code key={key}>{part.slice(1, -1)}</code>;
+      if (part.startsWith('*') && part.endsWith('*') && part.length > 2) return <em key={key}>{part.slice(1, -1)}</em>;
+      return <span key={key}>{part}</span>;
+    });
+
+const isTableRule = (line: string) => /^\|?[\s:|-]+\|?$/.test(line) && line.includes('-');
+
+const renderMarkdown = (md: string): ReactNode[] => {
+  const out: ReactNode[] = [];
+  const lines = md.split('\n');
+  let i = 0;
+  let key = 0;
+
+  while (i < lines.length) {
+    const line = lines[i];
+
+    if (!line.trim()) {
+      i += 1;
+      continue;
+    }
+
+    if (/^```/.test(line)) {
+      const buffer: string[] = [];
+      i += 1;
+      while (i < lines.length && !/^```/.test(lines[i])) buffer.push(lines[i++]);
+      i += 1;
+      out.push(
+        <pre key={key++} className="own-md-pre">
+          {buffer.join('\n')}
+        </pre>,
+      );
+      continue;
+    }
+
+    if (/^#{1,3} /.test(line)) {
+      const level = (line.match(/^#+/) ?? ['#'])[0].length;
+      const heading = line.replace(/^#+ /, '');
+      const Tag = (level === 1 ? 'h3' : level === 2 ? 'h4' : 'h5') as 'h3' | 'h4' | 'h5';
+      out.push(
+        <Tag key={key++} className="own-md-h">
+          {inline(heading, `h${key}`)}
+        </Tag>,
+      );
+      i += 1;
+      continue;
+    }
+
+    if (/^>/.test(line)) {
+      const buffer: string[] = [];
+      while (i < lines.length && /^>/.test(lines[i])) buffer.push(lines[i++].replace(/^>\s?/, ''));
+      out.push(
+        <blockquote key={key++} className="own-md-quote">
+          {buffer
+            .filter((entry) => entry.trim())
+            .map((entry, j) => (
+              <p key={j}>{inline(entry, `q${key}-${j}`)}</p>
+            ))}
+        </blockquote>,
+      );
+      continue;
+    }
+
+    if (/^\|/.test(line)) {
+      const rows: string[][] = [];
+      while (i < lines.length && /^\|/.test(lines[i])) {
+        if (!isTableRule(lines[i])) rows.push(lines[i].split('|').slice(1, -1).map((cell) => cell.trim()));
+        i += 1;
+      }
+      const [head, ...body] = rows;
+      out.push(
+        <div key={key++} className="own-md-tablewrap">
+          <table className="own-md-table">
+            <thead>
+              <tr>{(head ?? []).map((cell, j) => <th key={j}>{inline(cell, `th${key}-${j}`)}</th>)}</tr>
+            </thead>
+            <tbody>
+              {body.map((row, ri) => (
+                <tr key={ri}>
+                  {row.map((cell, ci) => <td key={ci}>{inline(cell, `td${key}-${ri}-${ci}`)}</td>)}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>,
+      );
+      continue;
+    }
+
+    if (/^[-*] /.test(line)) {
+      const buffer: string[] = [];
+      while (i < lines.length && /^[-*] /.test(lines[i])) buffer.push(lines[i++].replace(/^[-*] /, ''));
+      out.push(
+        <ul key={key++} className="own-md-ul">
+          {buffer.map((item, j) => <li key={j}>{inline(item, `li${key}-${j}`)}</li>)}
+        </ul>,
+      );
+      continue;
+    }
+
+    if (/^---+$/.test(line.trim())) {
+      out.push(<hr key={key++} className="own-md-hr" />);
+      i += 1;
+      continue;
+    }
+
+    const buffer: string[] = [];
+    while (i < lines.length && lines[i].trim() && !/^(#|>|\||[-*] |```|---)/.test(lines[i])) buffer.push(lines[i++]);
+    out.push(
+      <p key={key++} className="own-md-p">
+        {inline(buffer.join(' '), `p${key}`)}
+      </p>,
+    );
+  }
+
+  return out;
+};
+
 const money = (value: number | null | undefined, digits = 2) =>
   value === null || value === undefined
     ? '--'
@@ -115,6 +277,7 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
   const [priv, setPriv] = useState<PrivateRow[] | null>(null);
   const [pub, setPub] = useState<PublicRow[]>([]);
   const [news, setNews] = useState<NewsRow[]>([]);
+  const [weekly, setWeekly] = useState<WeeklyRow | null>(null);
   // Three ways to read the same book. The choice is remembered: the grid is the default, the list
   // fits everything on one screen, the comprehensive view keeps nothing behind a disclosure.
   const [view, setView] = useState<View>(() => readView());
@@ -130,10 +293,11 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
   }, [ready, session, onSignedOut]);
 
   const load = useCallback(async () => {
-    const [privateRes, publicRes, newsRes] = await Promise.all([
+    const [privateRes, publicRes, newsRes, weeklyRes] = await Promise.all([
       ownerFetch('pc_digest_private?select=*&order=as_of.desc&limit=30', ensureFresh),
       ownerFetch('pc_digest_public?select=*&order=as_of.desc&limit=30', ensureFresh),
       ownerFetch('pc_news?select=*&order=as_of.desc&limit=5', ensureFresh),
+      ownerFetch('pc_weekly?select=*&order=as_of.desc&limit=1', ensureFresh),
     ]);
     if (!privateRes.ok && privateRes.status === 401) {
       setError('Your session is no longer valid. Sign in again.');
@@ -149,6 +313,8 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
     // The brief is a separate table and may not exist yet (first run of the day); an empty list
     // simply means the panel is not rendered.
     setNews(((newsRes.ok ? newsRes.rows : []) ?? []) as NewsRow[]);
+    // The weekly screen is published every Sunday; an empty result just means the panel is absent.
+    setWeekly((((weeklyRes.ok ? weeklyRes.rows : []) ?? []) as WeeklyRow[])[0] ?? null);
   }, [ensureFresh, onSignedOut, setError]);
 
   useEffect(() => {
@@ -547,6 +713,110 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
                 </div>
               )}
             </section>
+
+              {weekly && (
+                <section className="own-panel">
+                  <div className="own-panel-head">
+                    <h2>Weekly screen</h2>
+                    <span className="own-quiet">
+                      {weekly.picks.length} names worth owning that we do not · ranked on composite score · as of{' '}
+                      {weekly.as_of} · gate {weekly.gate ?? 'unknown'}
+                    </span>
+                  </div>
+
+                  <p className="own-brief-summary">
+                    Everything the book holds is removed, then the screen&apos;s own ranking sets the order —
+                    so this cannot disagree with the report it sits under.
+                    {weekly.moves.length > 0
+                      ? ` ${weekly.moves.length} composites moved at least two points this week.`
+                      : ' Nothing moved two points or more this week.'}
+                  </p>
+
+                  {weekly.moves.length > 0 && (
+                    <ul className="own-moves">
+                      {weekly.moves.map((move) => (
+                        <li key={move.ticker}>
+                          <span className="own-ticker">{move.ticker}</span>
+                          <span className={tone(move.change)}>
+                            {move.change > 0 ? '+' : ''}
+                            {move.change.toFixed(1)}
+                          </span>
+                          <em>
+                            {move.was.toFixed(1)} → {move.now.toFixed(1)}
+                          </em>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+
+                  <div className="own-cards">
+                    {weekly.picks.map((pick) => (
+                      <article key={pick.ticker} className="own-card">
+                        <div className="own-card-head">
+                          <span className="own-ticker">{pick.ticker}</span>
+                          <span className="own-card-tags">
+                            <span className="own-quiet">#{pick.rank_in_screen} in the screen</span>
+                            {pick.us_listed ? (
+                              <span className="own-sent own-sent-positive">US-listed</span>
+                            ) : (
+                              <span className="own-sent own-sent-neutral">{pick.exchange || pick.country}</span>
+                            )}
+                          </span>
+                        </div>
+
+                        <p className="own-pick-name">{pick.name}</p>
+
+                        <dl className="own-card-metrics">
+                          <div>
+                            <dt>Score</dt>
+                            <dd>{pick.score.toFixed(1)}</dd>
+                          </div>
+                          <div>
+                            <dt>E[r]</dt>
+                            <dd className={tone(pick.expected_return_pct)}>{pick.expected_return_pct.toFixed(1)}%</dd>
+                          </div>
+                          <div>
+                            <dt>Target</dt>
+                            <dd className={tone(pick.target_upside_pct)}>{pick.target_upside_pct.toFixed(1)}%</dd>
+                          </div>
+                          <div>
+                            <dt>P/E</dt>
+                            <dd>{pick.fwd_pe ? `${pick.fwd_pe.toFixed(1)}x` : '--'}</dd>
+                          </div>
+                        </dl>
+
+                        <div className="own-card-foot">
+                          <p className="own-card-why">
+                            {pick.analysts} analysts · {pick.vol_pct.toFixed(0)}% vol ·{' '}
+                            {pick.gate_passed
+                              ? `passes the buy gates${
+                                  pick.median_gap_pct !== null
+                                    ? ` (median gap ${pick.median_gap_pct.toFixed(1)}%)`
+                                    : ''
+                                }`
+                              : 'not in the screened buy list'}
+                          </p>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+
+                  {weekly.report_md && (
+                    <details className="own-report">
+                      <summary>
+                        Full weekly report — gate {weekly.gate === 'PASSED' ? 'passed' : (weekly.gate ?? 'unknown')}
+                      </summary>
+                      <div className="own-md">{renderMarkdown(weekly.report_md)}</div>
+                      {weekly.weekly_md && (
+                        <details className="own-report">
+                          <summary>This week&apos;s run log and gate</summary>
+                          <pre className="own-md-pre">{weekly.weekly_md}</pre>
+                        </details>
+                      )}
+                    </details>
+                  )}
+                </section>
+              )}
 
             <div className="own-split">
               <section className="own-panel">

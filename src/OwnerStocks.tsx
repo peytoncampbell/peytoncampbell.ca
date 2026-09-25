@@ -810,9 +810,11 @@ const fundingSummary = (
   // that does not exist
   const names = count > 0 ? ` across ${count} name${count === 1 ? '' : 's'}` : '';
   // the sentence is assembled from what the plan actually carries: a figure the desk left out is not
-  // invented out of the lines, it is simply not claimed
-  const sold = raised !== null && raised > 0 ? `Selling ${cadAmount(raised)}${names}` : null;
-  const bought = needed !== null && needed > 0 ? cadAmount(needed) : null;
+  // invented out of the lines, it is simply not claimed. Money is formatted with the SAME 2-decimal
+  // formatter the line-level C$ figures use - a plan sentence reading C$2,534.6 beside a line reading
+  // C$254.13 looks like two different currencies.
+  const sold = raised !== null && raised > 0 ? `Selling ${cadEquivalent(raised)}${names}` : null;
+  const bought = needed !== null && needed > 0 ? cadEquivalent(needed) : null;
   const sentence = sold && bought
     ? `${sold} to fund ${bought} of buys.`
     : sold
@@ -826,7 +828,9 @@ const fundingSummary = (
   // the gap is the one fact on this panel that may not be rounded away, so it is said in full and
   // only when it is real: "above zero" still has to be a figure the owner can see, never a float
   // residue that prints as C$0
-  const gapText = shortfall !== null && shortfall > 0 ? cadAmount(shortfall) : null;
+  // A residue smaller than half a cent is not a shortfall, it is rounding: the formatter prints two
+  // decimals, so 0.004 must render nothing at all rather than "C$0.00 still short".
+  const gapText = shortfall !== null && shortfall >= 0.005 ? cadEquivalent(shortfall) : null;
   const shortfallLine =
     gapText && gapText !== 'C$0'
       ? `${gapText} still short \u2014 the rest needs a deposit or a smaller plan.`
@@ -900,10 +904,14 @@ function TodayTicket({ today }: { today: PlaybookToday | null | undefined }) {
                   const qty = orderQty(line);
                   const size = marketSize(line);
                   const market = orderMarket(line);
-                  const cad = orderCad(line, currency);
+                  const reason = saleReason(line);
+                  // A sale line's C$ figure is the PROCEEDS - the cash it raises - not the per-share
+                  // price converted. When a sale exists to fund a buy, the total it raises is the
+                  // number the owner is reading the panel for; a buy line keeps the per-share twin,
+                  // because there the question is what one share costs.
+                  const cad = reason ? cadEquivalent(line.est_cad) : orderCad(line, currency);
                   const session = orderSession(line);
                   const kind = orderKind(line);
-                  const reason = saleReason(line);
                   return (
                     <li
                       key={`${group.key}-${line.ticker}-${index}`}

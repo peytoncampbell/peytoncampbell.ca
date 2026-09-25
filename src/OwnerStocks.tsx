@@ -910,8 +910,12 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
                       <strong>25% growth</strong>, <strong>20% net estimate revisions</strong>,{' '}
                       <strong>20% momentum</strong>, 15% valuation, 12% quality, 8% analyst upside — then
                       damped toward 50 by how thin the analyst coverage is (
-                      <code>composite = 50 + (base − 50) × (0.55 + 0.45 × coverage)</code>), with a penalty
-                      where a below-median multiple sits on peak margins. Size carries no weight: the
+                      <code>composite = 50 + (base − 50) × (0.55 + 0.45 × coverage)</code>). Momentum is built
+                      on the 12-1 return (the most recent month measures as noise) and no longer counts the
+                      52-week range position, which measured as carrying no information. A cheap multiple on
+                      peak margins is flagged on each name but no longer penalised: reconstructed over 726
+                      company-years those names returned <em>more</em>, not less, and the flag is kept as
+                      information rather than a cost. Size carries no weight: the
                       universe is already the 500 largest companies, so ranking inside it is not the size
                       premium. The weights were revised on 25 Sep 2026 from the audit in{' '}
                       <code>QUANT_REVIEW.md</code> — momentum held 15% despite being the only pillar with a

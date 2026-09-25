@@ -359,7 +359,13 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
                         </div>
                       </dl>
 
-                      {entry?.read && <p className="own-card-read">{entry.read}</p>}
+                      {entry?.read ? (
+                        <p className="own-card-read">{entry.read}</p>
+                      ) : (
+                        // A holding with no coverage gets a line that says so, rather than the
+                        // empty space an absent paragraph leaves in an equal-height card.
+                        <p className="own-card-read own-card-quiet">No fresh headlines today.</p>
+                      )}
 
                       <div className="own-card-foot">
                         {entry?.story_url && (
@@ -490,7 +496,11 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
                         </span>
                       </div>
 
-                      {entry?.read && <p className="own-full-read">{entry.read}</p>}
+                      {entry?.read ? (
+                        <p className="own-full-read">{entry.read}</p>
+                      ) : (
+                        <p className="own-full-read own-card-quiet">No fresh headlines today.</p>
+                      )}
                       {holding.reason && <p className="own-card-why">{holding.reason}</p>}
 
                       {cited && (

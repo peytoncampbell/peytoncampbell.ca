@@ -3367,3 +3367,5 @@ html, body { background-color: var(--bg); }
   .own-row .own-list-read { display: none; }
   .own-row-head { display: none; }
 }
+
+.own-card-quiet { color: var(--ink-3); }

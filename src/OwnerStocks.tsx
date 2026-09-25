@@ -194,7 +194,11 @@ const renderMarkdown = (md: string): ReactNode[] => {
           {buffer
             .filter((entry) => entry.trim())
             .map((entry, j) => (
-              <p key={j}>{inline(entry, `q${key}-${j}`)}</p>
+              // the report puts a heading inside its callout ("> ## NVIDIA ..."), which would
+              // otherwise print its hashes
+              <p key={j} className={/^#{1,6} /.test(entry) ? 'own-md-quote-lead' : undefined}>
+                {inline(entry.replace(/^#{1,6} /, ''), `q${key}-${j}`)}
+              </p>
             ))}
         </blockquote>,
       );

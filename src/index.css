@@ -3423,3 +3423,5 @@ html, body { background-color: var(--bg); }
   font-size: 0.76rem;
   line-height: 1.5;
 }
+
+.own-md-quote-lead { font-weight: 700; color: var(--text); }

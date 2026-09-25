@@ -793,12 +793,19 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
                     <summary>The screen&apos;s own composite ranking — 5 names we do not own</summary>
                     <p className="own-brief-summary">
                       The composite is a six-pillar blend, each pillar a 0–100 cross-sectional percentile:{' '}
-                      <strong>30% growth</strong>, <strong>25% consensus upside</strong>, 15% valuation, 15% momentum,
-                      10% quality, 5% size — then damped toward 50 by how thin the analyst coverage is (
-                      <code>composite = 50 + (base − 50) × (0.55 + 0.45 × coverage)</code>). It ranks a 500-name global
-                      universe, so it will happily lead with a Korean listing you cannot buy. The expected return
-                      beside each name is a simpler blend: 55% consensus target upside and 45% forward EPS growth.
-                      This is the ranking the weekly write-up refers to.
+                      <strong>25% growth</strong>, <strong>20% net estimate revisions</strong>,{' '}
+                      <strong>20% momentum</strong>, 15% valuation, 12% quality, 8% analyst upside — then
+                      damped toward 50 by how thin the analyst coverage is (
+                      <code>composite = 50 + (base − 50) × (0.55 + 0.45 × coverage)</code>), with a penalty
+                      where a below-median multiple sits on peak margins. Size carries no weight: the
+                      universe is already the 500 largest companies, so ranking inside it is not the size
+                      premium. The weights were revised on 25 Sep 2026 from the audit in{' '}
+                      <code>QUANT_REVIEW.md</code> — momentum held 15% despite being the only pillar with a
+                      real forward test behind it, while the untestable target-upside pillar held 25%; net
+                      revisions were fetched every week and never used. It still ranks a 500-name global
+                      universe, so it will happily lead with a Korean listing you cannot buy. The expected
+                      return beside each name is a simpler blend: 55% consensus target upside and 45%
+                      forward EPS growth. This is the ranking the weekly write-up refers to.
                     </p>
                     <div className="own-cards">
                       {weekly.picks.map((pick) => (

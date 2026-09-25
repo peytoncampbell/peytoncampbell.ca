@@ -161,7 +161,8 @@ export default function PortfolioDigest() {
     {
       k: 'Breadth',
       v: `${latest.names_up ?? 0} up / ${latest.names_down ?? 0} down`,
-      t: (latest.names_up ?? 0) >= (latest.names_down ?? 0) ? 'up' : 'down',
+      // a count that holds both directions is neutral: tinting it one way reads as a verdict
+      t: 'flat',
     },
   ];
 

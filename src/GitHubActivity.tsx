@@ -28,7 +28,7 @@ export default function GitHubActivity() {
         <div className="section-intro">
           <p className="section-eyebrow">GitHub</p>
           <h2 className="section-title">
-            Shipping <span className="gradient-text">signal.</span>
+            Shipping signal.
           </h2>
           <p className="section-copy">
             A quick read on how consistently I ship across automation, product, and infrastructure work.

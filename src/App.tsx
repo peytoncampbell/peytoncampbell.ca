@@ -401,10 +401,6 @@ export default function App() {
                   See selected work
                   <ArrowRight size={18} />
                 </a>
-                <a href={`${baseUrl}PeytonCampbellResume.pdf`} target="_blank" rel="noopener noreferrer" className="button-secondary" onClick={() => trackEvent({ name: 'Resume click', props: { location: 'hero' } })}>
-                  <Download size={18} />
-                  Resume
-                </a>
               </div>
             </div>
 
@@ -449,7 +445,7 @@ export default function App() {
           eyebrow="Selected work"
           title={
             <>
-              Products with <span className="gradient-text">operational weight.</span>
+              Products with operational weight.
             </>
           }
           copy="Clearer project stories. Easier technical scanning."
@@ -470,22 +466,6 @@ export default function App() {
                     <span key={tech}>{tech}</span>
                   ))}
                 </div>
-                {featuredProject.caseStudy && (
-                  <div className="case-study-strip">
-                    <div>
-                      <span>Problem</span>
-                      <p>{featuredProject.caseStudy.problem}</p>
-                    </div>
-                    <div>
-                      <span>Approach</span>
-                      <p>{featuredProject.caseStudy.approach}</p>
-                    </div>
-                    <div>
-                      <span>Outcome</span>
-                      <p>{featuredProject.caseStudy.outcome}</p>
-                    </div>
-                  </div>
-                )}
                 {featuredProject.cta?.url && (
                   <a href={featuredProject.cta.url} target="_blank" rel="noopener noreferrer" className="button-primary compact">
                     {featuredProject.cta.label}
@@ -497,6 +477,22 @@ export default function App() {
                 </button>
               </div>
               <ProjectVisual type={featuredProject.visual} title={featuredProject.title} />
+              {featuredProject.caseStudy && (
+                <div className="case-study-strip">
+                  <div>
+                    <span>Problem</span>
+                    <p>{featuredProject.caseStudy.problem}</p>
+                  </div>
+                  <div>
+                    <span>Approach</span>
+                    <p>{featuredProject.caseStudy.approach}</p>
+                  </div>
+                  <div>
+                    <span>Outcome</span>
+                    <p>{featuredProject.caseStudy.outcome}</p>
+                  </div>
+                </div>
+              )}
               <div className="featured-metrics">
                 {featuredProject.metrics?.map((metric) => (
                   <div key={metric}>
@@ -578,7 +574,7 @@ export default function App() {
           eyebrow="Capabilities"
           title={
             <>
-              A stack built for <span className="gradient-text">shipping and operating.</span>
+              A stack built for shipping and operating.
             </>
           }
           copy="The technical surface is grouped around the real systems from the resume: product UI, backend data flows, infrastructure, and hardware-adjacent delivery."
@@ -621,7 +617,7 @@ export default function App() {
           eyebrow="Live desk"
           title={
             <>
-              Published every weekday <span className="gradient-text">before the open.</span>
+              Published every weekday before the open.
             </>
           }
           copy="A local automation refreshes analyst targets, runs the hold/sell call on every holding, and publishes the digest to Supabase at 07:45 ET. This section reads that published row directly - no rebuild, no cache - so what is on screen is this morning's call."
@@ -647,7 +643,7 @@ export default function App() {
           eyebrow="Experience"
           title={
             <>
-              Product delivery in <span className="gradient-text">real environments.</span>
+              Product delivery in real environments.
             </>
           }
           copy="The work history is framed around release quality, cross-platform systems, and operational clarity."
@@ -728,10 +724,10 @@ export default function App() {
           eyebrow="Contact"
           title={
             <>
-              Let&apos;s talk <span className="gradient-text">game plan.</span>
+              Let&apos;s talk game plan.
             </>
           }
-          copy="Based in London, ON with Toronto reach. Send a note about product work, full-stack roles, or systems worth building."
+          copy="Based in London, ON. Send a note about product work, full-stack roles, or systems worth building."
           className="contact-section"
         >
           <div className="contact-layout">
@@ -786,7 +782,7 @@ export default function App() {
         <footer className="site-footer">
           <div className="footer-line" />
           <p>Built with React, Tailwind, and a bias toward useful software.</p>
-          <span>(c) {new Date().getFullYear()} Peyton Campbell</span>
+          <span>&copy; {new Date().getFullYear()} Peyton Campbell</span>
         </footer>
 
         <AnimatePresence>

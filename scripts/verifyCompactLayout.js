@@ -19,7 +19,8 @@ requireIncludes(css, 'padding: 7.2rem 0 3.2rem;', 'Hero vertical padding should 
 requireIncludes(css, 'padding-block: clamp(3.6rem, 6vw, 5.5rem);', 'Sections should use compact vertical spacing.');
 requireIncludes(css, 'margin-bottom: clamp(1.35rem, 3vw, 2.25rem);', 'Section intros should not create excessive dead space.');
 requireIncludes(css, 'font-size: clamp(2rem, 4.4vw, 3.75rem);', 'Section titles should be large but not oversized.');
-requireIncludes(css, 'grid-template-columns: minmax(0, 1fr) minmax(240px, 0.78fr);', 'Featured project layout should use a denser metric column.');
+requireIncludes(css, 'grid-template-columns: minmax(0, 1.1fr) minmax(240px, 0.8fr);', 'Featured project layout should keep the product mock in a bounded second column.');
+requireIncludes(css, 'grid-column: 1 / -1;', 'The featured metrics and proof band should run as full-width rows of the featured card.');
 requireIncludes(css, 'padding: clamp(1rem, 2.5vw, 1.8rem);', 'Featured project card padding should be reduced.');
 requireIncludes(css, 'min-height: 18rem;', 'Project cards should be shorter and more scan-friendly.');
 requireIncludes(css, 'padding: 1rem;', 'Project cards and repeated cards should use tighter padding.');
@@ -32,7 +33,11 @@ requireIncludes(css, 'height: 700px;', 'Mobile hero overlay should match compact
 requireIncludes(app, 'projects-compact', 'Projects section should opt into compact section spacing.');
 requireIncludes(app, 'capabilities-compact', 'Capabilities section should opt into compact section spacing.');
 
-requireExcludes(css, 'min-height: 100svh;', 'Full viewport hero height wastes space.');
+// scope the hero check to the hero rule itself: the 404 page's centred 100svh layout is
+// not a hero regression (the old file-wide exclude read it as one)
+const heroStart = css.indexOf('.hero-shell {');
+const heroRule = css.slice(heroStart, css.indexOf('}', heroStart));
+requireExcludes(heroRule, '100svh', 'Full viewport hero height wastes space.');
 requireExcludes(css, 'padding-block: clamp(5rem, 9vw, 8rem);', 'Old section padding is too tall.');
 requireExcludes(css, 'min-height: 22rem;', 'Old project card minimum height is too tall.');
 requireExcludes(css, 'min-height: 44rem;', 'Old story section minimum height is too tall.');

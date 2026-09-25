@@ -302,7 +302,7 @@ export const ARCHITECTURE_VIEWS = [
 export const CONTACT_TRUST = [
   'Best fit: full-stack product roles, internal tools, sports tech, IoT, automation.',
   'Usually strongest on React/TypeScript surfaces connected to real hardware or operational workflows.',
-  'Based in London, Ontario with Toronto reach and remote-friendly delivery habits.',
+  'Based in London, Ontario, with remote-friendly delivery habits.',
 ];
 
 export const TECH_STACK = [

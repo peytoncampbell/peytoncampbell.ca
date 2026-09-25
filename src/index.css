@@ -3460,3 +3460,94 @@ html, body { background-color: var(--bg); }
   font-size: 0.66rem;
   text-align: center;
 }
+
+/* =====================================================================
+   Polish pass, 2026-09-25 — dead space and small-screen defects found in
+   a screenshot audit at 1440px and 390px. Later position wins ties, so
+   this block overrides the earlier rules without editing them.
+
+   1. The featured card kept its two-column grid at every width: that
+      override sits after the older `@media (max-width: 1024px)` collapse,
+      so on a phone the copy column fell to ~80px, the headline broke to
+      one word per line, and the card grew to 2390px. The collapse is
+      restored here, and the Problem / Approach / Outcome boxes - 111px
+      wide on a 390px screen - go full width below 720px.
+   2. The same card's second column held only the short product mock,
+      leaving ~300px of empty card beside the copy. The mock now fills its
+      column and the proof band spans the card under both columns, so the
+      card has no hollow.
+   3. Four project cards ran in three columns, so the fourth sat alone
+      beside two empty slots. Two columns make two even rows; the rows
+      share a height and the case-study link is pinned to the card floor.
+   4. The experience rail was capped at 860px inside a 1180px container.
+   5. The architecture tab rail stretched to the canvas height, leaving an
+      empty block under three short tabs.
+   6. Desk: a breadth count that holds both directions no longer carries a
+      direction colour (see PortfolioDigest), and the history table's date
+      cell stops wrapping to three lines on a narrow screen.
+   7. Small print: the textarea's resize grip, the portrait as the
+      brightest surface on the page, and the GitHub mark that floated in
+      the middle of its card header.
+   ===================================================================== */
+
+/* 2 — featured card: mock fills its column, proof band spans the card */
+.featured-copy { grid-column: 1; grid-row: 1; }
+.featured-case > .project-visual { grid-column: 2; grid-row: 1; align-self: stretch; }
+.case-study-strip { grid-column: 1 / -1; grid-row: 2; }
+.featured-metrics { grid-row: 3; }
+
+/* 1 — collapse the featured card on small screens */
+@media (max-width: 1024px) {
+  .featured-case { grid-template-columns: minmax(0, 1fr); }
+  .featured-copy,
+  .featured-case > .project-visual,
+  .case-study-strip,
+  .featured-metrics { grid-column: 1 / -1; grid-row: auto; }
+  .featured-case > .project-visual { align-self: start; }
+}
+
+@media (max-width: 720px) {
+  .case-study-strip { grid-template-columns: minmax(0, 1fr); }
+  .featured-copy h3 { font-size: clamp(1.5rem, 6.4vw, 1.9rem); }
+  .desk-stat-v { font-size: 1.15rem; }
+}
+
+/* 3 — projects: two even rows instead of three columns plus a stray card */
+@media (min-width: 1025px) {
+  .project-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+.project-grid { grid-auto-rows: 1fr; }
+.project-detail-link { margin-top: auto; }
+
+/* 4 — the CV row uses the whole container */
+.timeline { max-width: none; }
+
+/* 5 — the tab rail sizes to its tabs, not to the canvas */
+.architecture-layout { align-items: start; }
+
+/* 6 — one-line dates in the desk history */
+.desk-history td:first-child { white-space: nowrap; }
+
+/* 7 — small print */
+.contact-form textarea { resize: none; }
+.hero-portrait { filter: brightness(0.93); }
+
+/* 8 — the GitHub mark leads its card header instead of floating mid-row */
+.github-card-header { align-items: start; }
+.github-card-header svg { order: -1; color: var(--accent); }
+
+/* 9 — the GitHub card joins the site's label convention: its signal labels
+   were the last tracked ALL-CAPS row in a card, and its icons carried a
+   second accent the rest of the page reserves for alerts */
+.github-signal span { color: var(--ink-3); font-size: 0.75rem; font-weight: 600; letter-spacing: 0.03em; text-transform: none; }
+.github-signal svg { color: var(--ink-3); }
+
+/* 10 — wrapped tag rows: the separator dot must not start a line; and the desk
+   history fits all five columns on a phone instead of scrolling SELL out of
+   sight */
+@media (max-width: 720px) {
+  .tag-row { gap: 0.3rem 0.9rem; }
+  .tag-row span + span::before { display: none; }
+  .desk-history th,
+  .desk-history td { padding: 0.5rem 0.45rem; font-size: 0.8rem; }
+}

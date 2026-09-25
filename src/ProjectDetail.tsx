@@ -73,16 +73,7 @@ export default function ProjectDetail({ slug, onNavigateHome }: ProjectDetailPro
             </div>
           </div>
         </section>
-      ) : (
-        <section className="site-section project-gallery-section">
-          <div className="site-container">
-            <div className="image-todo-note">
-              <span>Visual TODO</span>
-              <p>{project.imageTodo ?? 'Needs an approved real project screenshot or photo.'}</p>
-            </div>
-          </div>
-        </section>
-      )}
+      ) : null}
 
       {project.caseStudy && (
         <section className="site-section">

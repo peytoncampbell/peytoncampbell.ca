@@ -30,7 +30,6 @@ import { trackEvent, trackPageView } from './analytics';
 
 const Certifications = lazy(() => import('./Certifications'));
 const GitHubActivity = lazy(() => import('./GitHubActivity'));
-const LiveTicker = lazy(() => import('./LiveTicker'));
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 24 },
@@ -147,7 +146,6 @@ export default function App() {
   const [contactError, setContactError] = useState<string | null>(null);
   const [contactSuccess, setContactSuccess] = useState(false);
   const [contactLoading, setContactLoading] = useState(false);
-  const [isLiveTickerReady, setIsLiveTickerReady] = useState(false);
   const [athleteImageIndex, setAthleteImageIndex] = useState(0);
   const cursorGlowRef = useRef<HTMLDivElement>(null);
   const storyRef = useRef<HTMLDivElement>(null);
@@ -213,7 +211,6 @@ export default function App() {
     window.addEventListener('scroll', handleScroll, { passive: true });
     handleScroll();
 
-    const tickerTimer = window.setTimeout(() => setIsLiveTickerReady(true), 900);
     const imageTimer = prefersReducedMotion
       ? undefined
       : window.setInterval(() => {
@@ -222,7 +219,6 @@ export default function App() {
 
     return () => {
       window.removeEventListener('scroll', handleScroll);
-      window.clearTimeout(tickerTimer);
       if (imageTimer) window.clearInterval(imageTimer);
     };
   }, [athleteImages.length, prefersReducedMotion]);
@@ -319,11 +315,6 @@ export default function App() {
             </a>
 
             <div className="hidden items-center gap-3 lg:flex">
-              {isLiveTickerReady && (
-                <Suspense fallback={null}>
-                  <LiveTicker />
-                </Suspense>
-              )}
               <div className="nav-links">
                 {NAV_LINKS.map((link) => (
                   <a key={link.href} href={link.href} onClick={() => trackEvent({ name: 'Navigation click', props: { target: link.label } })}>
@@ -374,7 +365,6 @@ export default function App() {
 
         <main id="main-content">
         <header id="about" className="hero-shell">
-          <div className="hero-photo" style={{ backgroundImage: `url(${portraitImage})` }} aria-hidden="true" />
           <div className="hero-aurora" aria-hidden="true" />
           <div className="site-container hero-grid">
             <div className="hero-copy">
@@ -386,7 +376,7 @@ export default function App() {
                   Start a conversation
                   <Mail size={18} />
                 </a>
-                <a href="#projects" className="button-primary" onClick={() => trackEvent({ name: 'Projects CTA click', props: { location: 'hero' } })}>
+                <a href="#projects" className="button-secondary" onClick={() => trackEvent({ name: 'Projects CTA click', props: { location: 'hero' } })}>
                   See selected work
                   <ArrowRight size={18} />
                 </a>
@@ -395,22 +385,21 @@ export default function App() {
                   Resume
                 </a>
               </div>
-              <div className="hero-proof">
-                {HERO.stats.map((stat) => (
-                  <div key={stat.label}>
-                    <stat.icon size={19} />
-                    <span>{stat.label}</span>
-                  </div>
-                ))}
-              </div>
             </div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 28, scale: 0.96 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ duration: 0.7, delay: 0.25, ease: [0.16, 1, 0.3, 1] }}
-              className="hero-panel"
-            >
+            <div className="hero-aside">
+              <div
+                className="hero-portrait"
+                style={{ backgroundImage: `url(${portraitImage})` }}
+                role="img"
+                aria-label="Peyton Campbell"
+              />
+              <motion.div
+                initial={{ opacity: 0, y: 28, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 0.7, delay: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                className="hero-panel"
+              >
               <div className="hero-panel-header">
                 <span>Now building</span>
                 <span className="status-pill">Available</span>
@@ -430,7 +419,8 @@ export default function App() {
                   </div>
                 ))}
               </div>
-            </motion.div>
+              </motion.div>
+            </div>
           </div>
         </header>
 
@@ -483,7 +473,6 @@ export default function App() {
                 )}
                 <button type="button" className="button-secondary compact detail-button" onClick={() => navigateToProject(featuredProject.slug)}>
                   Full case study
-                  <ArrowRight size={16} />
                 </button>
               </div>
               <ProjectVisual type={featuredProject.visual} title={featuredProject.title} />
@@ -756,25 +745,17 @@ export default function App() {
             </div>
 
             <aside className="contact-aside">
-              <div className="contact-trust">
-                {CONTACT_TRUST.map((item) => (
-                  <p key={item}>{item}</p>
-                ))}
-              </div>
               <a href="https://github.com/peytoncampbell" target="_blank" rel="noopener noreferrer">
                 <Github size={20} />
                 GitHub
-                <ArrowRight size={16} />
               </a>
               <a href="https://www.linkedin.com/in/peyton-campbell/" target="_blank" rel="noopener noreferrer">
                 <Linkedin size={20} />
                 LinkedIn
-                <ArrowRight size={16} />
               </a>
               <a href={`${baseUrl}PeytonCampbellResume.pdf`} target="_blank" rel="noopener noreferrer">
                 <CalendarClock size={20} />
                 Resume
-                <ArrowRight size={16} />
               </a>
             </aside>
           </div>

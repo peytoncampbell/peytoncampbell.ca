@@ -84,6 +84,42 @@ type PlaybookEntry = {
 
 type PlaybookRow = { as_of: string; holdings: PlaybookHolding[]; entries: PlaybookEntry[] };
 
+type QuantPillar = {
+  name: string;
+  weight: number;
+  status: string;
+  inputs: string;
+  influence: number | null;
+  influence_before: number | null;
+};
+type QuantCell = { ic: number; t: number; n: number } | null;
+type QuantSignal = { signal: string; cells: QuantCell[]; spread: (number | null)[] };
+type QuantSurprise = {
+  events: number;
+  names: number;
+  window: string;
+  buckets: { label: string; n: number; f63: number; f126: number; up_rate: number }[];
+};
+type QuantPit = {
+  captures: number;
+  rows: number;
+  ladders: number;
+  days: number;
+  next: { label: string; in_days: number } | null;
+};
+type QuantRow = {
+  as_of: string;
+  pillars: QuantPillar[];
+  measured: { names: number; anchors: number; horizons: string[]; rows: QuantSignal[] } | null;
+  surprise: QuantSurprise | null;
+  pit: QuantPit | null;
+  top: { symbol: string; score: number }[];
+  headline: string;
+  drift_warning: string | null;
+};
+
+const signed = (v: number | null) => (v === null ? '\u2014' : `${v >= 0 ? '+' : ''}${v.toFixed(2)}`);
+
 type WeeklyRow = {
   as_of: string;
   generated_at: string;
@@ -326,6 +362,7 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
   const [news, setNews] = useState<NewsRow[]>([]);
   const [weekly, setWeekly] = useState<WeeklyRow | null>(null);
   const [playbook, setPlaybook] = useState<PlaybookRow | null>(null);
+  const [quant, setQuant] = useState<QuantRow | null>(null);
   // Three ways to read the same book. The choice is remembered: the grid is the default, the list
   // fits everything on one screen, the comprehensive view keeps nothing behind a disclosure.
   const [view, setView] = useState<View>(() => readView());
@@ -341,12 +378,13 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
   }, [ready, session, onSignedOut]);
 
   const load = useCallback(async () => {
-    const [privateRes, publicRes, newsRes, weeklyRes, playbookRes] = await Promise.all([
+    const [privateRes, publicRes, newsRes, weeklyRes, playbookRes, quantRes] = await Promise.all([
       ownerFetch('pc_digest_private?select=*&order=as_of.desc&limit=30', ensureFresh),
       ownerFetch('pc_digest_public?select=*&order=as_of.desc&limit=30', ensureFresh),
       ownerFetch('pc_news?select=*&order=as_of.desc&limit=5', ensureFresh),
       ownerFetch('pc_weekly?select=*&order=as_of.desc&limit=1', ensureFresh),
       ownerFetch('pc_playbook?select=*&order=as_of.desc&limit=1', ensureFresh),
+      ownerFetch('pc_quant?select=*&order=as_of.desc&limit=1', ensureFresh),
     ]);
     if (!privateRes.ok && privateRes.status === 401) {
       setError('Your session is no longer valid. Sign in again.');
@@ -365,6 +403,7 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
     // The weekly screen is published every Sunday; an empty result just means the panel is absent.
     setWeekly((((weeklyRes.ok ? weeklyRes.rows : []) ?? []) as WeeklyRow[])[0] ?? null);
     setPlaybook((((playbookRes.ok ? playbookRes.rows : []) ?? []) as PlaybookRow[])[0] ?? null);
+    setQuant((((quantRes.ok ? quantRes.rows : []) ?? []) as QuantRow[])[0] ?? null);
   }, [ensureFresh, onSignedOut, setError]);
 
   useEffect(() => {
@@ -1004,6 +1043,150 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
                   )}
                 </section>
               )}
+
+            {quant && (
+              <section className="own-panel">
+                <div className="own-panel-head">
+                  <h2>Quant research — what is measured, what is argued</h2>
+                  <span className="own-quiet">
+                    {quant.pillars.filter((p) => p.status === 'measured').length} of{' '}
+                    {quant.pillars.filter((p) => p.weight > 0).length} weighted pillars measured ·{' '}
+                    {quant.as_of}
+                  </span>
+                </div>
+
+                <p className="own-brief-summary">{quant.headline}</p>
+                {quant.drift_warning && <p className="own-card-why">{quant.drift_warning}</p>}
+
+                <div className="own-rank-wrap">
+                  <table className="own-rank">
+                    <thead>
+                      <tr>
+                        <th>pillar</th>
+                        <th>weight</th>
+                        <th>evidence</th>
+                        <th>influence</th>
+                        <th>before</th>
+                        <th>built from</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {quant.pillars.map((p) => (
+                        <tr key={p.name}>
+                          <td className="own-rank-sym">{p.name}</td>
+                          <td>{p.weight > 0 ? `${p.weight}%` : '\u2014'}</td>
+                          <td>
+                            <span
+                              className={`own-call own-call-${
+                                p.status === 'measured' ? 'add' : p.status === 'argued' ? 'hold' : 'trim'
+                              }`}
+                            >
+                              {p.status}
+                            </span>
+                          </td>
+                          <td>{signed(p.influence)}</td>
+                          <td className="own-quiet">{signed(p.influence_before)}</td>
+                          <td className="own-rank-name own-quiet">{p.inputs}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {quant.measured && (
+                  <details className="own-report" open>
+                    <summary>
+                      Rank correlation with the following returns — {quant.measured.names} names,{' '}
+                      {quant.measured.anchors} rolling anchors
+                    </summary>
+                    <div className="own-rank-wrap">
+                      <table className="own-rank">
+                        <thead>
+                          <tr>
+                            <th>signal</th>
+                            {quant.measured.horizons.map((h) => (
+                              <th key={h}>{h}</th>
+                            ))}
+                            <th>t (12m)</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {quant.measured.rows.map((r) => {
+                            const last = r.cells[r.cells.length - 1];
+                            return (
+                              <tr key={r.signal}>
+                                <td className="own-rank-sym">{r.signal}</td>
+                                {r.cells.map((c, i) => (
+                                  <td key={i} className={c ? tone(c.ic) : ''}>
+                                    {c ? `${c.ic >= 0 ? '+' : ''}${c.ic.toFixed(3)}` : '\u2014'}
+                                  </td>
+                                ))}
+                                <td className="own-quiet">{last ? last.t.toFixed(1) : '\u2014'}</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                    <p className="own-card-why">
+                      The strongest signal in the table is not scored. Volatility measured best of all, but
+                      it paid inside one AI/memory upcycle and scoring it would be a bet on that regime
+                      repeating; range position measured as empty, which is why it lost its place in the
+                      momentum pillar.
+                    </p>
+                  </details>
+                )}
+
+                {quant.surprise && (
+                  <details className="own-report">
+                    <summary>
+                      The street&apos;s error — {quant.surprise.events} past reports across{' '}
+                      {quant.surprise.names} names ({quant.surprise.window})
+                    </summary>
+                    <div className="own-rank-wrap">
+                      <table className="own-rank">
+                        <thead>
+                          <tr>
+                            <th>the report</th>
+                            <th>n</th>
+                            <th>next 63d</th>
+                            <th>next 126d</th>
+                            <th>up-rate</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {quant.surprise.buckets.map((b) => (
+                            <tr key={b.label}>
+                              <td className="own-rank-name">{b.label}</td>
+                              <td>{b.n}</td>
+                              <td className={tone(b.f63)}>{b.f63.toFixed(1)}%</td>
+                              <td className={tone(b.f126)}>{b.f126.toFixed(1)}%</td>
+                              <td>{b.up_rate.toFixed(1)}%</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <p className="own-card-why">
+                      The closest available test of the revisions pillar&apos;s mechanism: the size of a beat
+                      orders the return that follows it, which is what an under-reacting street looks like.
+                      The gradient runs the right way but the spread is small, so it supports the 20% weight
+                      rather than a larger one.
+                    </p>
+                  </details>
+                )}
+
+                {quant.pit && (
+                  <p className="own-card-why">
+                    Point-in-time record: {quant.pit.captures} capture{quant.pit.captures === 1 ? '' : 's'},{' '}
+                    {quant.pit.rows.toLocaleString()} rows, {quant.pit.ladders} full estimate ladders.{' '}
+                    {quant.pit.next
+                      ? `${quant.pit.next.label} becomes measurable in ${quant.pit.next.in_days} days — until then those pillars are argued, not proven.`
+                      : 'The forward study runs on captured history rather than argument.'}
+                  </p>
+                )}
+              </section>
+            )}
 
             <div className="own-split">
               <section className="own-panel">

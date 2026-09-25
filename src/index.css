@@ -3536,6 +3536,42 @@ html, body { background-color: var(--bg); }
 .github-card-header { align-items: start; }
 .github-card-header svg { order: -1; color: var(--accent); }
 
+/* ---- owner console: the model rating on the cards ---------------------
+   The book's cards lead with the composite the desk ranks on, so they carry the rating and the six
+   pillar percentiles where the gap to a target used to sit. Quiet chips: the number is the point,
+   the layout only has to keep six of them scannable on a narrow card. */
+.own-rating { color: var(--text); font-weight: 700; font-variant-numeric: tabular-nums; }
+
+.own-pillars {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.3rem;
+  margin: 0.65rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.own-pillars li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.3rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0.25rem 0.45rem;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.own-pillars span { color: var(--ink-3); font-size: 0.72rem; }
+.own-pillars b {
+  color: var(--ink-2);
+  font-size: 0.78rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.own-pillars-note { margin: 0.65rem 0 0; }
+
 /* 9 — the GitHub card joins the site's label convention: its signal labels
    were the last tracked ALL-CAPS row in a card, and its icons carried a
    second accent the rest of the page reserves for alerts */

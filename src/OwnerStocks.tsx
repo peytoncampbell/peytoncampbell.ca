@@ -20,7 +20,31 @@ type Holding = {
   reason: string | null;
   buys: number | null;
   ratings: number | null;
+  /** the six-pillar composite, as a percentile inside the book (null for the ETF / unscored) */
+  rating: number | null;
+  rating_scope: 'book' | 'universe' | null;
+  /** the same name's percentile in the ~1,100-name universe the weekly screen ranks */
+  rating_universe: number | null;
+  pillars: Record<string, number | null> | null;
+  model_version: string | null;
 };
+
+/**
+ * The pillars the composite is built from, in weight order, with the weights the desk's quant review
+ * settled on (QUANT_REVIEW.md, 2026-09-25). The cards show these because they are what the desk
+ * rates on - the target gap they used to lead with is not predictive.
+ */
+const PILLAR_META: { key: string; label: string; weight: number }[] = [
+  { key: 'growth', label: 'Growth', weight: 25 },
+  { key: 'revisions', label: 'Revisions', weight: 20 },
+  { key: 'momentum', label: 'Momentum', weight: 20 },
+  { key: 'valuation', label: 'Valuation', weight: 15 },
+  { key: 'quality', label: 'Quality', weight: 12 },
+  { key: 'upside', label: 'Upside', weight: 8 },
+];
+
+const pillarScore = (value: number | null | undefined) =>
+  value === null || value === undefined ? '--' : value.toFixed(0);
 
 type WeeklyPick = {
   ticker: string;
@@ -567,6 +591,14 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
                 </div>
               </div>
 
+              <p className="own-note">
+                The cards lead with the rating the desk ranks on: the six-pillar composite, a 0–100
+                percentile weighted growth 25 · revisions 20 · momentum 20 · valuation 15 · quality
+                12 · upside 8. Percentiles sit inside the book, so they compare between holdings;
+                the detailed view adds each name&apos;s percentile in the 1,100-name universe and
+                keeps the gap to the median target.
+              </p>
+
               {newsLatest?.summary && <p className="own-brief-summary">{newsLatest.summary}</p>}
 
               {newsLatest && newsLatest.watch.length > 0 && (
@@ -609,10 +641,29 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
                           <dd className={tone(holding.day_pct)}>{pct(holding.day_pct, 2)}</dd>
                         </div>
                         <div>
-                          <dt>Gap</dt>
-                          <dd className={tone(holding.gap_pct)}>{pct(holding.gap_pct, 1)}</dd>
+                          <dt>Rating</dt>
+                          <dd className="own-rating">
+                            {holding.rating !== null ? holding.rating.toFixed(1) : '--'}
+                          </dd>
                         </div>
                       </dl>
+
+                      {holding.pillars && holding.rating !== null ? (
+                        <ul className="own-pillars" aria-label="Model pillar percentiles">
+                          {PILLAR_META.map(({ key, label, weight }) => (
+                            <li key={key} title={`${weight}% of the composite`}>
+                              <span>{label}</span>
+                              <b>{pillarScore(holding.pillars?.[key])}</b>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="own-card-read own-card-quiet own-pillars-note">
+                          {holding.is_etf
+                            ? 'ETF — the equity model does not score a basket.'
+                            : 'Outside the scored universe — no model rating.'}
+                        </p>
+                      )}
 
                       {entry?.read ? (
                         <p className="own-card-read">{entry.read}</p>
@@ -679,7 +730,7 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
                     <span className="own-num">Value</span>
                     <span className="own-num">Weight</span>
                     <span className="own-num">Day</span>
-                    <span className="own-num">Gap</span>
+                    <span className="own-num">Rating</span>
                     <span>Call</span>
                     <span className="own-list-read">Today</span>
                     <span className="own-num-last" />
@@ -693,7 +744,9 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
                       <span className="own-num">{money(value(holding.weight_pct), 0)}</span>
                       <span className="own-num">{holding.weight_pct.toFixed(2)}%</span>
                       <span className={`own-num ${tone(holding.day_pct)}`}>{pct(holding.day_pct, 2)}</span>
-                      <span className={`own-num ${tone(holding.gap_pct)}`}>{pct(holding.gap_pct, 1)}</span>
+                      <span className="own-num own-rating">
+                        {holding.rating !== null ? holding.rating.toFixed(1) : '--'}
+                      </span>
                       <span>
                         <span
                           className={`own-call ${
@@ -735,6 +788,15 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
                             <em>Day</em> <b className={tone(holding.day_pct)}>{pct(holding.day_pct, 2)}</b>
                           </span>
                           <span>
+                            <em>Rating</em>{' '}
+                            <b className="own-rating">
+                              {holding.rating !== null ? holding.rating.toFixed(1) : '--'}
+                            </b>
+                            {holding.rating_universe !== null && (
+                              <em className="own-quiet"> · universe {holding.rating_universe.toFixed(1)}</em>
+                            )}
+                          </span>
+                          <span>
                             <em>Gap to median</em>{' '}
                             <b className={tone(holding.gap_pct)}>{pct(holding.gap_pct, 1)}</b>
                           </span>
@@ -750,6 +812,17 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
                           </span>
                         </span>
                       </div>
+
+                      {holding.pillars && holding.rating !== null && (
+                        <ul className="own-pillars" aria-label="Model pillar percentiles">
+                          {PILLAR_META.map(({ key, label, weight }) => (
+                            <li key={key} title={`${weight}% of the composite`}>
+                              <span>{label}</span>
+                              <b>{pillarScore(holding.pillars?.[key])}</b>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
 
                       {entry?.read ? (
                         <p className="own-full-read">{entry.read}</p>

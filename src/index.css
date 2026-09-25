@@ -3425,3 +3425,32 @@ html, body { background-color: var(--bg); }
 }
 
 .own-md-quote-lead { font-weight: 700; color: var(--text); }
+
+/* ---- the ranked median-target table -------------------------------- */
+.own-rank-wrap { overflow-x: auto; margin-top: 0.2rem; }
+.own-rank { width: 100%; border-collapse: collapse; font-size: 0.85rem; font-variant-numeric: tabular-nums; }
+.own-rank th {
+  padding: 0 0.6rem 0.4rem;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink-3);
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-align: left;
+}
+.own-rank td { padding: 0.42rem 0.6rem; border-bottom: 1px solid var(--line); }
+.own-rank tr:last-child td { border-bottom: 0; }
+.own-rank-rank { color: var(--ink-3); }
+.own-rank-sym { color: var(--text); font-weight: 600; }
+.own-rank-name { color: var(--ink-3); }
+.own-rank-gap { color: var(--accent); font-weight: 600; }
+
+.own-mkt {
+  display: inline-block;
+  min-width: 2.5rem;
+  padding: 0.05rem 0.3rem;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  color: var(--ink-3);
+  font-size: 0.66rem;
+  text-align: center;
+}

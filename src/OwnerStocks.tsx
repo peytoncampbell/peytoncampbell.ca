@@ -42,6 +42,19 @@ type WeeklyPick = {
 
 type WeeklyMove = { ticker: string; name: string; was: number; now: number; change: number };
 
+type WeeklyTarget = {
+  ticker: string;
+  name: string;
+  market: string;
+  price: number;
+  median_target: number;
+  median_gap_pct: number;
+  targets: number;
+  spread: number;
+  fwd_pe: number | null;
+  rec: string;
+};
+
 type WeeklyRow = {
   as_of: string;
   generated_at: string;
@@ -49,6 +62,7 @@ type WeeklyRow = {
   universe_size: number | null;
   resolved: number | null;
   picks: WeeklyPick[];
+  actionable: WeeklyTarget[];
   moves: WeeklyMove[];
   report_md: string | null;
   weekly_md: string | null;
@@ -721,91 +735,131 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
               {weekly && (
                 <section className="own-panel">
                   <div className="own-panel-head">
-                    <h2>Weekly screen</h2>
+                    <h2>Highest median analyst target</h2>
                     <span className="own-quiet">
-                      {weekly.picks.length} names worth owning that we do not · ranked on composite score · as of{' '}
-                      {weekly.as_of} · gate {weekly.gate ?? 'unknown'}
+                      US + CAD combined · {weekly.actionable.length} shown · as of {weekly.as_of} · gate{' '}
+                      {weekly.gate ?? 'unknown'}
                     </span>
                   </div>
 
                   <p className="own-brief-summary">
-                    Everything the book holds is removed, then the screen&apos;s own ranking sets the order —
-                    so this cannot disagree with the report it sits under. The buy list is stricter than
-                    this ranking (US-listed, ten or more price targets, spread under 1.8x), so a name can
-                    rank here and still sit outside it.
-                    {weekly.moves.length > 0
-                      ? ` ${weekly.moves.length} composites moved at least two points this week.`
-                      : ' Nothing moved two points or more this week.'}
+                    Ranked on the gap between the price and the <strong>median</strong> analyst target — the median,
+                    not the mean, because one $515 target among sixty barely moves the median and moves the average a
+                    lot. Every name here cleared the buy list&apos;s gates: a US or Canadian listing, ten or more price
+                    targets, a low-to-high spread under 1.8×, and a median target above the price. That is what makes
+                    the number something you can act on, and it is also why the composite ranking below reaches names
+                    that are not on this list at all.
                   </p>
 
-                  {weekly.moves.length > 0 && (
-                    <ul className="own-moves">
-                      {weekly.moves.map((move) => (
-                        <li key={move.ticker}>
-                          <span className="own-ticker">{move.ticker}</span>
-                          <span className={tone(move.change)}>
-                            {move.change > 0 ? '+' : ''}
-                            {move.change.toFixed(1)}
-                          </span>
-                          <em>
-                            {move.was.toFixed(1)} → {move.now.toFixed(1)}
-                          </em>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-
-                  <div className="own-cards">
-                    {weekly.picks.map((pick) => (
-                      <article key={pick.ticker} className="own-card">
-                        <div className="own-card-head">
-                          <span className="own-ticker">{pick.ticker}</span>
-                          <span className="own-card-tags">
-                            <span className="own-quiet">#{pick.rank_in_screen} in the screen</span>
-                            {pick.us_listed ? (
-                              <span className="own-sent own-sent-positive">US-listed</span>
-                            ) : (
-                              <span className="own-sent own-sent-neutral">{pick.exchange || pick.country}</span>
-                            )}
-                          </span>
-                        </div>
-
-                        <p className="own-pick-name">{pick.name}</p>
-
-                        <dl className="own-card-metrics">
-                          <div>
-                            <dt>Score</dt>
-                            <dd>{pick.score.toFixed(1)}</dd>
-                          </div>
-                          <div>
-                            <dt>E[r]</dt>
-                            <dd className={tone(pick.expected_return_pct)}>{pick.expected_return_pct.toFixed(1)}%</dd>
-                          </div>
-                          <div>
-                            <dt>Target</dt>
-                            <dd className={tone(pick.target_upside_pct)}>{pick.target_upside_pct.toFixed(1)}%</dd>
-                          </div>
-                          <div>
-                            <dt>P/E</dt>
-                            <dd>{pick.fwd_pe ? `${pick.fwd_pe.toFixed(1)}x` : '--'}</dd>
-                          </div>
-                        </dl>
-
-                        <div className="own-card-foot">
-                          <p className="own-card-why">
-                            {pick.analysts} analysts · {pick.vol_pct.toFixed(0)}% vol ·{' '}
-                            {pick.gate_passed
-                              ? `passes the buy gates${
-                                  pick.median_gap_pct !== null
-                                    ? ` (median gap ${pick.median_gap_pct.toFixed(1)}%)`
-                                    : ''
-                                }`
-                              : 'outside the gated buy list'}
-                          </p>
-                        </div>
-                      </article>
-                    ))}
+                  <div className="own-rank-wrap">
+                    <table className="own-rank">
+                      <thead>
+                        <tr>
+                          <th>#</th>
+                          <th>Name</th>
+                          <th>Mkt</th>
+                          <th>Median target</th>
+                          <th>Price</th>
+                          <th>Gap</th>
+                          <th>Targets</th>
+                          <th>P/E</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {weekly.actionable.map((row, index) => (
+                          <tr key={row.ticker}>
+                            <td className="own-rank-rank">{index + 1}</td>
+                            <td>
+                              <span className="own-rank-sym">{row.ticker}</span>{' '}
+                              <span className="own-rank-name">{row.name}</span>
+                            </td>
+                            <td>
+                              <span className="own-mkt">{row.market}</span>
+                            </td>
+                            <td>{money(row.median_target, 2)}</td>
+                            <td>{money(row.price, 2)}</td>
+                            <td className="own-rank-gap">+{row.median_gap_pct.toFixed(1)}%</td>
+                            <td>{row.targets}</td>
+                            <td>{row.fwd_pe ? `${row.fwd_pe.toFixed(1)}x` : '--'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
+
+                  <details className="own-report">
+                    <summary>The screen&apos;s own composite ranking — 5 names we do not own</summary>
+                    <p className="own-brief-summary">
+                      The composite is a six-pillar blend, each pillar a 0–100 cross-sectional percentile:{' '}
+                      <strong>30% growth</strong>, <strong>25% consensus upside</strong>, 15% valuation, 15% momentum,
+                      10% quality, 5% size — then damped toward 50 by how thin the analyst coverage is (
+                      <code>composite = 50 + (base − 50) × (0.55 + 0.45 × coverage)</code>). It ranks a 500-name global
+                      universe, so it will happily lead with a Korean listing you cannot buy. The expected return
+                      beside each name is a simpler blend: 55% consensus target upside and 45% forward EPS growth.
+                      This is the ranking the weekly write-up refers to.
+                    </p>
+                    <div className="own-cards">
+                      {weekly.picks.map((pick) => (
+                        <article key={pick.ticker} className="own-card">
+                          <div className="own-card-head">
+                            <span className="own-ticker">{pick.ticker}</span>
+                            <span className="own-card-tags">
+                              <span className="own-quiet">#{pick.rank_in_screen} in the screen</span>
+                              {pick.us_listed ? (
+                                <span className="own-sent own-sent-positive">US-listed</span>
+                              ) : (
+                                <span className="own-sent own-sent-neutral">{pick.exchange || pick.country}</span>
+                              )}
+                            </span>
+                          </div>
+
+                          <p className="own-pick-name">{pick.name}</p>
+
+                          <dl className="own-card-metrics">
+                            <div>
+                              <dt>Score</dt>
+                              <dd>{pick.score.toFixed(1)}</dd>
+                            </div>
+                            <div>
+                              <dt>E[r]</dt>
+                              <dd className={tone(pick.expected_return_pct)}>{pick.expected_return_pct.toFixed(1)}%</dd>
+                            </div>
+                            <div>
+                              <dt>Target</dt>
+                              <dd className={tone(pick.target_upside_pct)}>{pick.target_upside_pct.toFixed(1)}%</dd>
+                            </div>
+                            <div>
+                              <dt>P/E</dt>
+                              <dd>{pick.fwd_pe ? `${pick.fwd_pe.toFixed(1)}x` : '--'}</dd>
+                            </div>
+                          </dl>
+
+                          <div className="own-card-foot">
+                            <p className="own-card-why">
+                              {pick.analysts} analysts · {pick.vol_pct.toFixed(0)}% vol ·{' '}
+                              {pick.gate_passed ? 'passes the buy gates' : 'outside the gated buy list'}
+                            </p>
+                          </div>
+                        </article>
+                      ))}
+                    </div>
+                    {weekly.moves.length > 0 && (
+                      <ul className="own-moves">
+                        {weekly.moves.map((move) => (
+                          <li key={move.ticker}>
+                            <span className="own-ticker">{move.ticker}</span>
+                            <span className={tone(move.change)}>
+                              {move.change > 0 ? '+' : ''}
+                              {move.change.toFixed(1)}
+                            </span>
+                            <em>
+                              {move.was.toFixed(1)} → {move.now.toFixed(1)}
+                            </em>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </details>
 
                   {weekly.report_md && (
                     <details className="own-report">

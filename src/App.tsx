@@ -321,6 +321,17 @@ export default function App() {
                     {link.label}
                   </a>
                 ))}
+                <a
+                  href="/login"
+                  className="nav-login"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    trackEvent({ name: 'Navigation click', props: { target: 'log in' } });
+                    navigate('/login');
+                  }}
+                >
+                  Log in
+                </a>
               </div>
               <a href={`${baseUrl}PeytonCampbellResume.pdf`} target="_blank" rel="noopener noreferrer" className="nav-resume" onClick={() => trackEvent({ name: 'Resume click', props: { location: 'nav' } })}>
                 <Download size={16} />
@@ -358,6 +369,16 @@ export default function App() {
               ))}
               <a href={`${baseUrl}PeytonCampbellResume.pdf`} target="_blank" rel="noopener noreferrer" onClick={() => trackEvent({ name: 'Resume click', props: { location: 'mobile menu' } })}>
                 Resume
+              </a>
+              <a
+                href="/login"
+                onClick={(event) => {
+                  event.preventDefault();
+                  setIsMobileMenuOpen(false);
+                  navigate('/login');
+                }}
+              >
+                Log in
               </a>
             </motion.div>
           )}

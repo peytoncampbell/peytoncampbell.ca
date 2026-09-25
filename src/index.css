@@ -3082,3 +3082,9 @@ h1, h2, h3, h4,
 /* the shorthand above leaves the colour layer transparent; pin it so the canvas and the
    theme-color meta agree */
 html, body { background-color: var(--bg); }
+
+/* the sign-in route gets its own entry in the navigation instead of hiding under the desk */
+.site-nav .nav-links a.nav-login { color: var(--accent); font-weight: 600; }
+.site-nav .nav-links a.nav-login:hover { color: var(--accent); background: rgba(53, 208, 224, 0.1); }
+.mobile-drawer a[href='/login'] { color: var(--accent); }
+.desk-note a { color: var(--accent); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }

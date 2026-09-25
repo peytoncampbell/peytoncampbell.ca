@@ -955,12 +955,13 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
                       peak margins is flagged on each name but no longer penalised: reconstructed over 726
                       company-years those names returned <em>more</em>, not less, and the flag is kept as
                       information rather than a cost. Size carries no weight: the
-                      universe is already the 500 largest companies, so ranking inside it is not the size
+                      universe is already the largest companies, so ranking inside it is not the size
                       premium. The weights were revised on 25 Sep 2026 from the audit in{' '}
                       <code>QUANT_REVIEW.md</code> — momentum held 15% despite being the only pillar with a
                       real forward test behind it, while the untestable target-upside pillar held 25%; net
-                      revisions were fetched every week and never used. It still ranks a 500-name global
-                      universe, so it will happily lead with a Korean listing you cannot buy. The expected
+                      revisions were fetched every week and never used. It ranks a 1,100-name universe - the global
+                      top 500 plus the next tranche of US and TSX names by market cap, added 25 Sep 2026 -
+                      so it will happily lead with a Korean listing you cannot buy. The expected
                       return beside each name is a simpler blend: 55% consensus target upside and 45%
                       forward EPS growth. This is the ranking the weekly write-up refers to.
                     </p>

@@ -730,7 +730,9 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
 
                   <p className="own-brief-summary">
                     Everything the book holds is removed, then the screen&apos;s own ranking sets the order —
-                    so this cannot disagree with the report it sits under.
+                    so this cannot disagree with the report it sits under. The buy list is stricter than
+                    this ranking (US-listed, ten or more price targets, spread under 1.8x), so a name can
+                    rank here and still sit outside it.
                     {weekly.moves.length > 0
                       ? ` ${weekly.moves.length} composites moved at least two points this week.`
                       : ' Nothing moved two points or more this week.'}
@@ -798,7 +800,7 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
                                     ? ` (median gap ${pick.median_gap_pct.toFixed(1)}%)`
                                     : ''
                                 }`
-                              : 'not in the screened buy list'}
+                              : 'outside the gated buy list'}
                           </p>
                         </div>
                       </article>

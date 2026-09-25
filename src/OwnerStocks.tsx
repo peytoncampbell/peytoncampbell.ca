@@ -15,12 +15,11 @@ type Holding = {
   is_etf: boolean;
   weight_pct: number;
   day_pct: number | null;
-  gap_pct: number | null;
   call: string;
   reason: string | null;
   buys: number | null;
   ratings: number | null;
-  /** the six-pillar composite, as a percentile inside the book (null for the ETF / unscored) */
+  /** the five-pillar composite, as a percentile inside the book (null for the ETF / unscored) */
   rating: number | null;
   rating_scope: 'book' | 'universe' | null;
   /** the same name's percentile in the ~1,100-name universe the weekly screen ranks */
@@ -31,16 +30,16 @@ type Holding = {
 
 /**
  * The pillars the composite is built from, in weight order, with the weights the desk's quant review
- * settled on (QUANT_REVIEW.md, 2026-09-25). The cards show these because they are what the desk
- * rates on - the target gap they used to lead with is not predictive.
+ * settled on (QUANT_REVIEW.md, 2026-09-25). Five of them, and the cards show these because they are
+ * what the desk rates on - the target-derived sixth pillar was retired, so the list is five long and
+ * no chip slot is reserved for a pillar that is gone.
  */
 const PILLAR_META: { key: string; label: string; weight: number }[] = [
-  { key: 'growth', label: 'Growth', weight: 25 },
-  { key: 'revisions', label: 'Revisions', weight: 20 },
-  { key: 'momentum', label: 'Momentum', weight: 20 },
-  { key: 'valuation', label: 'Valuation', weight: 15 },
-  { key: 'quality', label: 'Quality', weight: 12 },
-  { key: 'upside', label: 'Upside', weight: 8 },
+  { key: 'growth', label: 'Growth', weight: 27.2 },
+  { key: 'revisions', label: 'Revisions', weight: 21.7 },
+  { key: 'momentum', label: 'Momentum', weight: 21.7 },
+  { key: 'valuation', label: 'Valuation', weight: 16.3 },
+  { key: 'quality', label: 'Quality', weight: 13.0 },
 ];
 
 const pillarScore = (value: number | null | undefined) =>
@@ -53,12 +52,9 @@ type WeeklyPick = {
   exchange: string;
   us_listed: boolean;
   gate_passed: boolean;
-  median_gap_pct: number | null;
   targets: number | null;
   rank_in_screen: number;
   score: number;
-  expected_return_pct: number;
-  target_upside_pct: number;
   fwd_pe: number | null;
   vol_pct: number;
   analysts: number;
@@ -66,17 +62,20 @@ type WeeklyPick = {
 
 type WeeklyMove = { ticker: string; name: string; was: number; now: number; change: number };
 
+/**
+ * A pc_weekly.actionable row: the gate-passed names the weekly screen ranks. The desk's composite
+ * rating orders them now, so the fields the median-target gap was rendered from (price, median_target,
+ * spread) are gone from the payload rather than merely unused here.
+ */
 type WeeklyTarget = {
   ticker: string;
   name: string;
   market: string;
-  price: number;
-  median_target: number;
-  median_gap_pct: number;
-  targets: number;
-  spread: number;
+  rating: number;
+  revisions_net: number;
+  px_vs_200d: number;
+  targets: number | null;
   fwd_pe: number | null;
-  rec: string;
 };
 
 type PlaybookHolding = {
@@ -87,8 +86,7 @@ type PlaybookHolding = {
   revisions: number | null;
   price: number | null;
   ma200: number | null;
-  gap: number | null;
-  target_mismatch: boolean;
+  rating: number | null;
   is_etf: boolean;
   flags: string[];
 };
@@ -101,7 +99,7 @@ type PlaybookEntry = {
   px_vs_200d: number;
   px_vs_50d: number | null;
   buy_to: number | null;
-  gap: number | null;
+  rating: number;
   fwd_pe: number | null;
   timing: string;
 };
@@ -484,6 +482,13 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
     [holdings, newsByTicker, storiesByTicker],
   );
 
+  // The weekly table is the desk's ranking now: highest composite rating first. Sorting a copy here
+  // means the payload's own row order never has to be trusted.
+  const weeklyRanking = useMemo(
+    () => (weekly?.actionable ?? []).slice().sort((a, b) => b.rating - a.rating),
+    [weekly],
+  );
+
   // The brief and the book are two tables; the cards are where they meet.
 
   const onSignOut = async () => {
@@ -592,11 +597,10 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
               </div>
 
               <p className="own-note">
-                The cards lead with the rating the desk ranks on: the six-pillar composite, a 0–100
+                The cards lead with the rating the desk ranks on: the five-pillar composite, a 0–100
                 percentile weighted growth 25 · revisions 20 · momentum 20 · valuation 15 · quality
-                12 · upside 8. Percentiles sit inside the book, so they compare between holdings;
-                the detailed view adds each name&apos;s percentile in the 1,100-name universe and
-                keeps the gap to the median target.
+                12. Percentiles sit inside the book, so they compare between holdings; the detailed
+                view adds each name&apos;s percentile in the 1,100-name universe.
               </p>
 
               {newsLatest?.summary && <p className="own-brief-summary">{newsLatest.summary}</p>}
@@ -651,7 +655,7 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
                       {holding.pillars && holding.rating !== null ? (
                         <ul className="own-pillars" aria-label="Model pillar percentiles">
                           {PILLAR_META.map(({ key, label, weight }) => (
-                            <li key={key} title={`${weight}% of the composite`}>
+                            <li key={key} title={`${weight}% pillar weight`}>
                               <span>{label}</span>
                               <b>{pillarScore(holding.pillars?.[key])}</b>
                             </li>
@@ -796,10 +800,6 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
                               <em className="own-quiet"> · universe {holding.rating_universe.toFixed(1)}</em>
                             )}
                           </span>
-                          <span>
-                            <em>Gap to median</em>{' '}
-                            <b className={tone(holding.gap_pct)}>{pct(holding.gap_pct, 1)}</b>
-                          </span>
                         </span>
                         <span className="own-card-tags">
                           {entry && <span className={`own-sent own-sent-${entry.sentiment}`}>{entry.sentiment}</span>}
@@ -816,7 +816,7 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
                       {holding.pillars && holding.rating !== null && (
                         <ul className="own-pillars" aria-label="Model pillar percentiles">
                           {PILLAR_META.map(({ key, label, weight }) => (
-                            <li key={key} title={`${weight}% of the composite`}>
+                            <li key={key} title={`${weight}% pillar weight`}>
                               <span>{label}</span>
                               <b>{pillarScore(holding.pillars?.[key])}</b>
                             </li>
@@ -892,9 +892,9 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
                     No stop-losses. Twenty-one mechanical exit rules were backtested on 487 names over 2.4
                     years and every one lost to buy-and-hold — a trailing −20% stop cut MU 16 points on the
                     way to +734%. A position leaves only when the situation is unambiguous: catastrophic
-                    (50%+ below cost <em>and</em> 50%+ behind SPY over six months) or the thesis broken (the
-                    median target below the price <em>and</em> two or more firms cutting the rating within
-                    90 days). A drawdown is not a reason to sell: MU fell 58% on its way to +734%.
+                    (50%+ below cost <em>and</em> 50%+ behind SPY over six months) or the thesis broken
+                    (two or more firms cutting the rating within 90 days). A drawdown is not a reason to
+                    sell: MU fell 58% on its way to +734%.
                   </p>
 
                   <div className="own-rank-wrap">
@@ -902,7 +902,7 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
                       <thead>
                         <tr>
                           <th>ticker</th><th>action</th><th>weight</th><th>P/L</th>
-                          <th>revisions</th><th>vs 200d</th><th>target gap</th>
+                          <th>revisions</th><th>vs 200d</th><th>rating</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -914,7 +914,7 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
                             <td className={tone(h.pl)}>{h.pl !== null ? pct(h.pl * 100, 1) : '--'}</td>
                             <td className={tone(h.revisions)}>{h.revisions !== null ? h.revisions.toFixed(2) : '--'}</td>
                             <td>{h.ma200 && h.price ? pct((h.price / h.ma200 - 1) * 100, 1) : '--'}</td>
-                            <td>{h.gap !== null ? pct(h.gap * 100, 1) : h.target_mismatch ? 'underlying' : '--'}</td>
+                            <td className="own-rating">{h.rating !== null ? h.rating.toFixed(1) : '--'}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -928,7 +928,7 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
                         <thead>
                           <tr>
                             <th>#</th><th>ticker</th><th>mkt</th><th>score</th><th>rev</th>
-                            <th>vs 200d</th><th>gap</th><th>P/E</th><th>when</th>
+                            <th>vs 200d</th><th>rating</th><th>P/E</th><th>when</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -940,7 +940,7 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
                               <td>{e.score.toFixed(1)}</td>
                               <td className={tone(e.revisions)}>{e.revisions.toFixed(2)}</td>
                               <td>{pct(e.px_vs_200d * 100, 1)}</td>
-                              <td>{e.gap !== null ? pct(e.gap * 100, 1) : '--'}</td>
+                              <td className="own-rating">{e.rating.toFixed(1)}</td>
                               <td>{e.fwd_pe ? `${e.fwd_pe.toFixed(1)}x` : '--'}</td>
                               <td className="own-rank-name">{e.timing}</td>
                             </tr>
@@ -950,9 +950,9 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
                     </div>
                     <p className="own-card-why">
                       Entry is ranked on net estimate revisions and price momentum — the two pillars with
-                      evidence behind them — rather than on the gap to a target. It refuses to chase a name
-                      more than 15% above its 50-day average, and it sizes a new position to match the
-                      smallest existing holding. If these cluster in one industry, treat them as one bet.
+                      evidence behind them. It refuses to chase a name more than 15% above its 50-day
+                      average, and it sizes a new position to match the smallest existing holding. If these
+                      cluster in one industry, treat them as one bet.
                     </p>
                   </details>
                 </section>
@@ -961,20 +961,19 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
               {weekly && (
                 <section className="own-panel">
                   <div className="own-panel-head">
-                    <h2>Highest median analyst target</h2>
+                    <h2>Best gate-passed names by composite rating</h2>
                     <span className="own-quiet">
-                      US + CAD combined · {weekly.actionable.length} shown · as of {weekly.as_of} · gate{' '}
+                      US + CAD combined · {weeklyRanking.length} shown · as of {weekly.as_of} · gate{' '}
                       {weekly.gate ?? 'unknown'}
                     </span>
                   </div>
 
                   <p className="own-brief-summary">
-                    Ranked on the gap between the price and the <strong>median</strong> analyst target — the median,
-                    not the mean, because one $515 target among sixty barely moves the median and moves the average a
-                    lot. Every name here cleared the buy list&apos;s gates: a US or Canadian listing, ten or more price
-                    targets, a low-to-high spread under 1.8×, and a median target above the price. That is what makes
-                    the number something you can act on, and it is also why the composite ranking below reaches names
-                    that are not on this list at all.
+                    Ranked on the desk&apos;s composite rating — a 0–100 percentile blend of five pillars:
+                    growth, revisions, momentum, valuation, quality — and no longer on the gap between the price
+                    and a median analyst target. Every name here cleared the buy list&apos;s gates; net estimate
+                    revisions and the move against the 200-day average sit beside the rating so the order can be
+                    read rather than taken on faith.
                   </p>
 
                   <div className="own-rank-wrap">
@@ -984,15 +983,14 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
                           <th>#</th>
                           <th>Name</th>
                           <th>Mkt</th>
-                          <th>Median target</th>
-                          <th>Price</th>
-                          <th>Gap</th>
-                          <th>Targets</th>
+                          <th>Rating</th>
+                          <th>Revisions</th>
+                          <th>vs 200d</th>
                           <th>P/E</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {weekly.actionable.map((row, index) => (
+                        {weeklyRanking.map((row, index) => (
                           <tr key={row.ticker}>
                             <td className="own-rank-rank">{index + 1}</td>
                             <td>
@@ -1002,12 +1000,9 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
                             <td>
                               <span className="own-mkt">{row.market}</span>
                             </td>
-                            {/* CAD and US rows are side by side, so the currency has to be on the
-                                number rather than implied by the market chip */}
-                            <td>{money(row.median_target, 2).replace('$', row.market === 'CAD' ? 'C$' : '$')}</td>
-                            <td>{money(row.price, 2).replace('$', row.market === 'CAD' ? 'C$' : '$')}</td>
-                            <td className="own-rank-gap">+{row.median_gap_pct.toFixed(1)}%</td>
-                            <td>{row.targets}</td>
+                            <td className="own-rating">{row.rating.toFixed(1)}</td>
+                            <td className={tone(row.revisions_net)}>{row.revisions_net.toFixed(2)}</td>
+                            <td>{pct(row.px_vs_200d * 100, 1)}</td>
                             <td>{row.fwd_pe ? `${row.fwd_pe.toFixed(1)}x` : '--'}</td>
                           </tr>
                         ))}
@@ -1018,9 +1013,9 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
                   <details className="own-report">
                     <summary>The screen&apos;s own composite ranking — 5 names we do not own</summary>
                     <p className="own-brief-summary">
-                      The composite is a six-pillar blend, each pillar a 0–100 cross-sectional percentile:{' '}
+                      The composite is a five-pillar blend, each pillar a 0–100 cross-sectional percentile:{' '}
                       <strong>25% growth</strong>, <strong>20% net estimate revisions</strong>,{' '}
-                      <strong>20% momentum</strong>, 15% valuation, 12% quality, 8% analyst upside — then
+                      <strong>20% momentum</strong>, 15% valuation, 12% quality — then
                       damped toward 50 by how thin the analyst coverage is (
                       <code>composite = 50 + (base − 50) × (0.55 + 0.45 × coverage)</code>). Momentum is built
                       on the 12-1 return (the most recent month measures as noise) and no longer counts the
@@ -1031,12 +1026,12 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
                       universe is already the largest companies, so ranking inside it is not the size
                       premium. The weights were revised on 25 Sep 2026 from the audit in{' '}
                       <code>QUANT_REVIEW.md</code> — momentum held 15% despite being the only pillar with a
-                      real forward test behind it, while the untestable target-upside pillar held 25%; net
-                      revisions were fetched every week and never used. It ranks a 1,100-name universe - the global
+                      real forward test behind it; net revisions were fetched every week and never used. The
+                      target-derived sixth pillar has since been retired. It ranks a 1,100-name
+                      universe - the global
                       top 500 plus the next tranche of US and TSX names by market cap, added 25 Sep 2026 -
-                      so it will happily lead with a Korean listing you cannot buy. The expected
-                      return beside each name is a simpler blend: 55% consensus target upside and 45%
-                      forward EPS growth. This is the ranking the weekly write-up refers to.
+                      so it will happily lead with a Korean listing you cannot buy. This is the ranking the
+                      weekly write-up refers to.
                     </p>
                     <div className="own-cards">
                       {weekly.picks.map((pick) => (
@@ -1059,14 +1054,6 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
                             <div>
                               <dt>Score</dt>
                               <dd>{pick.score.toFixed(1)}</dd>
-                            </div>
-                            <div>
-                              <dt>E[r]</dt>
-                              <dd className={tone(pick.expected_return_pct)}>{pick.expected_return_pct.toFixed(1)}%</dd>
-                            </div>
-                            <div>
-                              <dt>Target</dt>
-                              <dd className={tone(pick.target_upside_pct)}>{pick.target_upside_pct.toFixed(1)}%</dd>
                             </div>
                             <div>
                               <dt>P/E</dt>

@@ -3426,7 +3426,7 @@ html, body { background-color: var(--bg); }
 
 .own-md-quote-lead { font-weight: 700; color: var(--text); }
 
-/* ---- the ranked median-target table -------------------------------- */
+/* ---- the ranked model tables: weekly screen, playbook, quant ------- */
 .own-rank-wrap { overflow-x: auto; margin-top: 0.2rem; }
 .own-call { display: inline-block; padding: 0.06rem 0.42rem; border-radius: 5px; font-size: 0.68rem; font-weight: 600; letter-spacing: 0.02em; }
 .own-call-hold { color: var(--ink-3); border: 1px solid var(--line); }
@@ -3448,7 +3448,6 @@ html, body { background-color: var(--bg); }
 .own-rank-rank { color: var(--ink-3); }
 .own-rank-sym { color: var(--text); font-weight: 600; }
 .own-rank-name { color: var(--ink-3); }
-.own-rank-gap { color: var(--accent); font-weight: 600; }
 
 .own-mkt {
   display: inline-block;
@@ -3553,9 +3552,9 @@ html, body { background-color: var(--bg); }
 .own-head-right { min-width: 0; }
 
 /* ---- owner console: the model rating on the cards ---------------------
-   The book's cards lead with the composite the desk ranks on, so they carry the rating and the six
-   pillar percentiles where the gap to a target used to sit. Quiet chips: the number is the point,
-   the layout only has to keep six of them scannable on a narrow card. */
+   The book's cards lead with the composite the desk ranks on, so they carry the rating and the five
+   pillar percentiles. Quiet chips: the number is the point, the layout only has to keep five of them
+   scannable on a narrow card. */
 .own-rating { color: var(--text); font-weight: 700; font-variant-numeric: tabular-nums; }
 
 .own-pillars {

@@ -13,6 +13,12 @@ import { ownerFetch, useNoIndex, useOwnerSession } from './ownerAuth';
 type Holding = {
   ticker: string;
   is_etf: boolean;
+  /**
+   * the currency the row trades in (ISO). The desk still ships the retired `usd` boolean beside it
+   * for rows published before the book went multi-market, so read `currency` first and fall back.
+   */
+  currency?: string | null;
+  usd?: boolean | null;
   weight_pct: number;
   day_pct: number | null;
   call: string;
@@ -50,7 +56,8 @@ type WeeklyPick = {
   name: string;
   country: string;
   exchange: string;
-  us_listed: boolean;
+  /** what the listing trades in: the country and the exchange no longer say it for you */
+  currency?: string | null;
   gate_passed: boolean;
   targets: number | null;
   rank_in_screen: number;
@@ -70,7 +77,12 @@ type WeeklyMove = { ticker: string; name: string; was: number; now: number; chan
 type WeeklyTarget = {
   ticker: string;
   name: string;
-  market: string;
+  /** the desk's short region label (US, CA, JP, TW, KR, CN, HK, EU, UK, AU ...) */
+  region?: string | null;
+  /** the US/CAD-only label `region` replaced; still read as the fallback for an older publish */
+  market?: string | null;
+  /** the ISO code the row is quoted in - never assumed from the region */
+  currency?: string | null;
   rating: number;
   revisions_net: number;
   px_vs_200d: number;
@@ -80,6 +92,8 @@ type WeeklyTarget = {
 
 type PlaybookHolding = {
   ticker: string;
+  /** what the row trades in; the table itself shows only per-share-derived percentages */
+  currency?: string | null;
   action: 'HOLD' | 'ADD' | 'TRIM' | 'EXIT';
   weight: number | null;
   pl: number | null;
@@ -93,7 +107,13 @@ type PlaybookHolding = {
 
 type PlaybookEntry = {
   ticker: string;
-  market: string;
+  /** region label, with the US/CAD-only `market` kept as the fallback */
+  region?: string | null;
+  market?: string | null;
+  /** the local price, its currency, and the CAD equivalent the desk sends beside them */
+  price?: number | null;
+  price_cad?: number | null;
+  currency?: string | null;
   score: number;
   revisions: number;
   px_vs_200d: number;
@@ -226,6 +246,8 @@ type BookRow = {
   entry: NewsTicker | undefined;
   cited: NewsStory | undefined;
   more: NewsStory[];
+  /** resolved once here so the cards, the list and the full view cannot disagree about it */
+  currency: string | null;
 };
 
 /**
@@ -366,6 +388,48 @@ const money = (value: number | null | undefined, digits = 2) =>
     ? '--'
     : value.toLocaleString('en-CA', { style: 'currency', currency: 'CAD', maximumFractionDigits: digits });
 
+/**
+ * The desk stopped being a US-and-Canada screen, so a row now names its own region and its own
+ * currency. These reads are tolerant on purpose: a publish written before the widening (or half-way
+ * through it) still carries `market` and the retired `usd` boolean, and neither shape may blank a row
+ * or mislabel a price.
+ */
+const rowRegion = (region: string | null | undefined, market: string | null | undefined) =>
+  region ?? market ?? '--';
+
+/** the row's currency: the ISO code when the desk sends one, else the retired `usd` boolean */
+const rowCurrency = (currency: string | null | undefined, usd?: boolean | null) =>
+  currency ? currency.toUpperCase() : usd === true ? 'USD' : usd === false ? 'CAD' : null;
+
+/** USD and CAD are the two the console used to assume; anything else has to say so on its own row */
+const isHouseCurrency = (code: string | null) => code === 'USD' || code === 'CAD';
+
+/**
+ * A price in the row's own currency. Intl throws a RangeError on a code it does not know and these
+ * codes come from the desk's data source, so an unrecognised one degrades to "CODE 1,234" rather than
+ * taking the whole panel down with it.
+ */
+const priceIn = (value: number | null | undefined, currency: string | null | undefined) => {
+  if (value === null || value === undefined) return '--';
+  const code = currency?.toUpperCase();
+  if (!code) return value.toLocaleString('en-CA', { maximumFractionDigits: 2 });
+  try {
+    return value.toLocaleString('en-CA', { style: 'currency', currency: code });
+  } catch {
+    return `${code} ${value.toLocaleString('en-CA', { maximumFractionDigits: 2 })}`;
+  }
+};
+
+/**
+ * The CAD equivalent the desk sends beside a foreign price. Spelled C$ rather than formatted, because
+ * the CAD formatter in this locale prints a bare "$" and the point of the column is that this is the
+ * CAD side of a row that is not priced in CAD.
+ */
+const cadEquivalent = (value: number | null | undefined) =>
+  value === null || value === undefined
+    ? null
+    : `≈ C$${value.toLocaleString('en-CA', { maximumFractionDigits: 2 })}`;
+
 const pct = (value: number | null | undefined, digits = 1) =>
   value === null || value === undefined ? '--' : `${value >= 0 ? '+' : ''}${value.toFixed(digits)}%`;
 
@@ -475,6 +539,7 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
           holding,
           entry,
           cited,
+          currency: rowCurrency(holding.currency, holding.usd),
           // the cited headline is already quoted on the card; only the rest are "more"
           more: stories.filter((story) => story.url !== entry?.story_url),
         };
@@ -483,10 +548,48 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
   );
 
   // The weekly table is the desk's ranking now: highest composite rating first. Sorting a copy here
-  // means the payload's own row order never has to be trusted.
+  // means the payload's own row order never has to be trusted. Region and currency are resolved on the
+  // same pass: the screen spans every market the desk trades, so neither can be assumed from the other.
   const weeklyRanking = useMemo(
-    () => (weekly?.actionable ?? []).slice().sort((a, b) => b.rating - a.rating),
+    () =>
+      (weekly?.actionable ?? [])
+        .slice()
+        .sort((a, b) => b.rating - a.rating)
+        .map((row) => ({
+          ...row,
+          region: rowRegion(row.region, row.market),
+          currency: rowCurrency(row.currency, undefined),
+        })),
     [weekly],
+  );
+
+  // The screen's own ranking. The country and exchange were always the row's own; the currency now is
+  // too, where the card used to badge a listing as US or not and leave everything else implied.
+  const weeklyPicks = useMemo(
+    () =>
+      (weekly?.picks ?? []).map((pick) => ({
+        ...pick,
+        where: pick.exchange || pick.country || '--',
+        currency: rowCurrency(pick.currency, undefined),
+      })),
+    [weekly],
+  );
+
+  // Buy candidates quote a local price now, so each row carries its own currency and the CAD
+  // equivalent the desk sends beside it. Both are resolved here rather than in the table markup.
+  const playbookEntries = useMemo(
+    () =>
+      (playbook?.entries ?? []).map((entry) => {
+        const currency = rowCurrency(entry.currency, undefined);
+        return {
+          ...entry,
+          region: rowRegion(entry.region, entry.market),
+          currency,
+          // a CAD row's local price is already the CAD price: a second number would say nothing
+          cad: currency && currency !== 'CAD' ? cadEquivalent(entry.price_cad) : null,
+        };
+      }),
+    [playbook],
   );
 
   // The brief and the book are two tables; the cards are where they meet.
@@ -615,11 +718,14 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
 
               {view === 'grid' && (
                 <div className="own-cards">
-                  {book.map(({ holding, entry, more }) => (
+                  {book.map(({ holding, entry, more, currency }) => (
                     <article key={holding.ticker} className="own-card">
                       <div className="own-card-head">
                         <span className="own-ticker">{holding.ticker}</span>
                         <span className="own-card-tags">
+                          {/* the row's own currency, not the book's: a KRW or TWD position used to
+                              render as if every listing were US or Canadian */}
+                          {currency && <span className="own-cur">{currency}</span>}
                           {entry && <span className={`own-sent own-sent-${entry.sentiment}`}>{entry.sentiment}</span>}
                           <span
                             className={`own-call ${
@@ -739,10 +845,11 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
                     <span className="own-list-read">Today</span>
                     <span className="own-num-last" />
                   </div>
-                  {book.map(({ holding, entry }) => (
+                  {book.map(({ holding, entry, currency }) => (
                     <div key={holding.ticker} className="own-row">
                       <span className="own-row-ticker">
                         <span className="own-ticker">{holding.ticker}</span>
+                        {currency && <span className="own-cur">{currency}</span>}
                         {entry && <span className={`own-dot own-sent-${entry.sentiment}`} aria-hidden="true" />}
                       </span>
                       <span className="own-num">{money(value(holding.weight_pct), 0)}</span>
@@ -777,10 +884,11 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
 
               {view === 'full' && (
                 <div className="own-full">
-                  {book.map(({ holding, entry, cited, more }) => (
+                  {book.map(({ holding, entry, cited, more, currency }) => (
                     <article key={holding.ticker} className="own-full-card">
                       <div className="own-full-head">
                         <span className="own-ticker">{holding.ticker}</span>
+                        {currency && <span className="own-cur">{currency}</span>}
                         <span className="own-full-figs">
                           <span>
                             <em>Value</em> {money(value(holding.weight_pct), 0)}
@@ -927,16 +1035,20 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
                       <table className="own-rank">
                         <thead>
                           <tr>
-                            <th>#</th><th>ticker</th><th>mkt</th><th>score</th><th>rev</th>
+                            <th>#</th><th>ticker</th><th>mkt</th><th>price</th><th>score</th><th>rev</th>
                             <th>vs 200d</th><th>rating</th><th>P/E</th><th>when</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {playbook.entries.map((e, i) => (
+                          {playbookEntries.map((e, i) => (
                             <tr key={e.ticker}>
                               <td>{i + 1}</td>
                               <td className="own-rank-sym">{e.ticker}</td>
-                              <td><span className="own-mkt">{e.market}</span></td>
+                              <td><span className="own-mkt">{e.region}</span></td>
+                              <td>
+                                {priceIn(e.price, e.currency)}
+                                {e.cad && <em className="own-quiet"> {e.cad}</em>}
+                              </td>
                               <td>{e.score.toFixed(1)}</td>
                               <td className={tone(e.revisions)}>{e.revisions.toFixed(2)}</td>
                               <td>{pct(e.px_vs_200d * 100, 1)}</td>
@@ -963,7 +1075,7 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
                   <div className="own-panel-head">
                     <h2>Best gate-passed names by composite rating</h2>
                     <span className="own-quiet">
-                      US + CAD combined · {weeklyRanking.length} shown · as of {weekly.as_of} · gate{' '}
+                      every market the desk can trade · {weeklyRanking.length} shown · as of {weekly.as_of} · gate{' '}
                       {weekly.gate ?? 'unknown'}
                     </span>
                   </div>
@@ -998,7 +1110,12 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
                               <span className="own-rank-name">{row.name}</span>
                             </td>
                             <td>
-                              <span className="own-mkt">{row.market}</span>
+                              <span className="own-mkt">{row.region}</span>{' '}
+                              {/* the currency only when it is not one the console used to assume: a US
+                                  or CAD row needs no second chip, a KRW or TWD row cannot go without */}
+                              {row.currency && !isHouseCurrency(row.currency) && (
+                                <span className="own-cur">{row.currency}</span>
+                              )}
                             </td>
                             <td className="own-rating">{row.rating.toFixed(1)}</td>
                             <td className={tone(row.revisions_net)}>{row.revisions_net.toFixed(2)}</td>
@@ -1027,24 +1144,23 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
                       premium. The weights were revised on 25 Sep 2026 from the audit in{' '}
                       <code>QUANT_REVIEW.md</code> — momentum held 15% despite being the only pillar with a
                       real forward test behind it; net revisions were fetched every week and never used. The
-                      target-derived sixth pillar has since been retired. It ranks a 1,100-name
-                      universe - the global
-                      top 500 plus the next tranche of US and TSX names by market cap, added 25 Sep 2026 -
-                      so it will happily lead with a Korean listing you cannot buy. This is the ranking the
-                      weekly write-up refers to.
+                      The target-derived sixth pillar has since been retired. It ranks a 1,100-name
+                      universe - the global top 500 plus the next tranche of listings by market cap
+                      across every market the desk trades, US and Canada included - so it will happily
+                      lead with a Korean or Taiwanese name. This is the ranking the weekly write-up
+                      refers to.
                     </p>
                     <div className="own-cards">
-                      {weekly.picks.map((pick) => (
+                      {weeklyPicks.map((pick) => (
                         <article key={pick.ticker} className="own-card">
                           <div className="own-card-head">
                             <span className="own-ticker">{pick.ticker}</span>
                             <span className="own-card-tags">
                               <span className="own-quiet">#{pick.rank_in_screen} in the screen</span>
-                              {pick.us_listed ? (
-                                <span className="own-sent own-sent-positive">US-listed</span>
-                              ) : (
-                                <span className="own-sent own-sent-neutral">{pick.exchange || pick.country}</span>
-                              )}
+                              {/* where it lists and what it trades in: the old badge claimed a US
+                                  listing and left the exchange and currency implied */}
+                              <span className="own-sent own-sent-neutral">{pick.where}</span>
+                              {pick.currency && <span className="own-cur">{pick.currency}</span>}
                             </span>
                           </div>
 

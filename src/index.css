@@ -3449,7 +3449,8 @@ html, body { background-color: var(--bg); }
 .own-rank-sym { color: var(--text); font-weight: 600; }
 .own-rank-name { color: var(--ink-3); }
 
-.own-mkt {
+/* the row's own currency, a sibling of the market chip: a mixed-currency book has to say which */
+.own-mkt, .own-cur {
   display: inline-block;
   min-width: 2.5rem;
   padding: 0.05rem 0.3rem;

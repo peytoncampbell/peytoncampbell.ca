@@ -46,6 +46,34 @@ type PublicRow = {
   automations_total: number | null;
 };
 
+type NewsStory = {
+  ticker: string;
+  title: string;
+  url: string;
+  source: string;
+  published: string | null;
+  image: string | null;
+};
+
+type NewsTicker = {
+  ticker: string;
+  read: string;
+  sentiment: string;
+  story_url?: string;
+  story_source?: string;
+  story_image?: string | null;
+};
+
+type NewsRow = {
+  as_of: string;
+  generated_at: string;
+  summary: string | null;
+  watch: string[];
+  tickers: NewsTicker[];
+  stories: NewsStory[];
+  model: { model?: string; seconds?: number; prompt_tokens?: number; completion_tokens?: number } | null;
+};
+
 const money = (value: number | null | undefined, digits = 2) =>
   value === null || value === undefined
     ? '--'
@@ -56,6 +84,9 @@ const pct = (value: number | null | undefined, digits = 1) =>
 
 const tone = (value: number | null | undefined) => (value === null || value === undefined ? 'flat' : value > 0 ? 'up' : value < 0 ? 'down' : 'flat');
 
+const clock = (iso: string) =>
+  new Date(iso).toLocaleTimeString('en-CA', { hour: 'numeric', minute: '2-digit' });
+
 const dayName = (iso: string) =>
   new Date(`${iso}T12:00:00`).toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric' });
 
@@ -63,6 +94,7 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
   const { session, ready, error, setError, signOut, ensureFresh } = useOwnerSession();
   const [priv, setPriv] = useState<PrivateRow[] | null>(null);
   const [pub, setPub] = useState<PublicRow[]>([]);
+  const [news, setNews] = useState<NewsRow[]>([]);
   useNoIndex();
 
   useEffect(() => {
@@ -75,9 +107,10 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
   }, [ready, session, onSignedOut]);
 
   const load = useCallback(async () => {
-    const [privateRes, publicRes] = await Promise.all([
+    const [privateRes, publicRes, newsRes] = await Promise.all([
       ownerFetch('pc_digest_private?select=*&order=as_of.desc&limit=30', ensureFresh),
       ownerFetch('pc_digest_public?select=*&order=as_of.desc&limit=30', ensureFresh),
+      ownerFetch('pc_news?select=*&order=as_of.desc&limit=5', ensureFresh),
     ]);
     if (!privateRes.ok && privateRes.status === 401) {
       setError('Your session is no longer valid. Sign in again.');
@@ -90,6 +123,9 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
     }
     setPriv(privateRes.rows as PrivateRow[]);
     setPub((publicRes.rows ?? []) as PublicRow[]);
+    // The brief is a separate table and may not exist yet (first run of the day); an empty list
+    // simply means the panel is not rendered.
+    setNews(((newsRes.ok ? newsRes.rows : []) ?? []) as NewsRow[]);
   }, [ensureFresh, onSignedOut, setError]);
 
   useEffect(() => {
@@ -103,6 +139,8 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
     if (!latest?.book_value_cad || !latest?.true_cost_cad) return null;
     return (latest.book_value_cad / latest.true_cost_cad - 1) * 100;
   }, [latest]);
+
+  const newsLatest = news[0] ?? null;
 
   const holdings = useMemo(
     () => (latest?.holdings ?? []).slice().sort((a, b) => b.weight_pct - a.weight_pct),
@@ -186,6 +224,90 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
                 <b className="sm">{latest.etf_weight_pct?.toFixed(1) ?? '--'}%</b>
               </div>
             </section>
+
+            {newsLatest && (
+              <section className="own-panel own-brief">
+                <div className="own-panel-head">
+                  <h2>Morning brief</h2>
+                  <span className="own-quiet">
+                    {dayName(newsLatest.as_of)} · {newsLatest.tickers.length} names with news
+                    {newsLatest.model?.seconds ? ` · read in ${newsLatest.model.seconds}s` : ''}
+                  </span>
+                </div>
+
+                {newsLatest.summary && <p className="own-brief-summary">{newsLatest.summary}</p>}
+
+                {newsLatest.watch.length > 0 && (
+                  <ul className="own-brief-watch">
+                    {newsLatest.watch.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                )}
+
+                <div className="own-brief-grid">
+                  {newsLatest.tickers.map((entry) => (
+                    <article key={entry.ticker} className="own-brief-card">
+                      <div className="own-brief-cardhead">
+                        <span className="own-ticker">{entry.ticker}</span>
+                        <span className={`own-sent own-sent-${entry.sentiment}`}>{entry.sentiment}</span>
+                      </div>
+                      <p>{entry.read}</p>
+                      {entry.story_url && (
+                        <a className="own-brief-story" href={entry.story_url} target="_blank" rel="noopener noreferrer">
+                          {entry.story_image ? (
+                            <img
+                              src={entry.story_image}
+                              alt=""
+                              loading="lazy"
+                              onError={(event) => {
+                                const image = event.currentTarget;
+                                image.style.display = 'none';
+                              }}
+                            />
+                          ) : (
+                            <span className="own-brief-tile">{entry.ticker}</span>
+                          )}
+                          <span>
+                            <b>{entry.story_source ?? 'the story'}</b>
+                            <em>Open</em>
+                          </span>
+                        </a>
+                      )}
+                    </article>
+                  ))}
+                </div>
+
+                {newsLatest.stories.length > 0 && (
+                  <details className="own-brief-all">
+                    <summary>All {newsLatest.stories.length} headlines</summary>
+                    {Object.entries(
+                      newsLatest.stories.reduce<Record<string, NewsStory[]>>((groups, story) => {
+                        (groups[story.ticker] ||= []).push(story);
+                        return groups;
+                      }, {}),
+                    ).map(([ticker, items]) => (
+                      <div key={ticker} className="own-brief-group">
+                        <span className="own-ticker">{ticker}</span>
+                        <ul>
+                          {items.map((story) => (
+                            <li key={story.url}>
+                              <a href={story.url} target="_blank" rel="noopener noreferrer">
+                                {story.title}
+                              </a>
+                              <em>
+                                {story.source}
+                                {story.published ? ` · ${clock(story.published)}` : ''}
+                              </em>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
+                  </details>
+                )}
+              </section>
+            )}
 
             <section className="own-panel">
               <div className="own-panel-head">

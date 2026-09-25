@@ -603,7 +603,13 @@ const ticketHead = (today: PlaybookToday | null | undefined, groups: OrderGroup[
     ticketCounts(groups),
     today?.as_of ? `as of ${today.as_of}` : '',
     // only when the rates behind the C$ figures are actually stale: "fx 0d old" is noise
-    typeof today?.fx_age_days === 'number' && today.fx_age_days > 0 ? `fx ${today.fx_age_days}d old` : '',
+    // Under a day, hours read honestly; past that, one decimal. A raw float ("fx 0.12946353106862968d
+    // old") is noise the owner should never see on a panel.
+    typeof today?.fx_age_days === 'number' && today.fx_age_days > 0
+      ? (today.fx_age_days < 1
+        ? `fx ${Math.max(1, Math.round(today.fx_age_days * 24))}h old`
+        : `fx ${today.fx_age_days.toFixed(1)}d old`)
+      : '',
   ]
     .filter(Boolean)
     .join(' \u00b7 ');
@@ -754,7 +760,10 @@ function TodayTicket({ today }: { today: PlaybookToday | null | undefined }) {
                           {line.action || group.label}
                         </span>
                         <span className="own-ticker">{line.ticker}</span>
-                        {line.name && <span className="own-ticket-name">{line.name}</span>}
+                        {/* a name identical to its ticker (TSM, MTSI, ROKU) reads as a stutter - say it once */}
+                        {line.name && line.name.replace(/[^A-Za-z0-9]/g, '').toLowerCase()
+                          !== line.ticker.replace(/[^A-Za-z0-9]/g, '').toLowerCase()
+                          && <span className="own-ticket-name">{line.name}</span>}
                         {kind && <span className="own-ticket-kind">{kind}</span>}
                         {/* the name has no affordable single share, so the desk sends a market order
                             instead of a limit: same name, different instrument, said on the line */}

@@ -10,6 +10,8 @@
     "verify:compact": "node scripts/verifyCompactLayout.js",
     "verify:ticker": "node scripts/verifyTicker.js",
     "verify:ticket": "node scripts/verifyTicket.js",
+    "verify:dashboard": "node scripts/verifyStockDashboard.js",
+    "verify:dashboard:browser": "node scripts/verifyStockDashboardBrowser.mjs",
     "verify:site": "node scripts/verifySiteConsistency.js",
     "optimize:images": "node scripts/optimizeImages.js",
     "build": "vite build",

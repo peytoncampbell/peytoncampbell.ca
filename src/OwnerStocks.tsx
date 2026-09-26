@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { ownerFetch, useNoIndex, useOwnerSession } from './ownerAuth';
+import StockDashboard from './StockDashboard';
 
 /**
  * The owner console: a different page from the portfolio site, for one signed-in account.
@@ -249,6 +250,8 @@ type PlaybookToday = {
   trims?: TodayLine[] | null;
   buys?: TodayLine[] | null;
   unfunded?: TodayUnfunded[] | null;
+  /** Published availability restrictions, distinct from the cash queue. */
+  not_fillable?: TodayUnfunded[] | null;
   watch?: TodayWatch[] | null;
   /** the plan that pays for the buys: what they need, what the sales raise, and any gap */
   funding?: TodayFunding | null;
@@ -803,7 +806,7 @@ const fundingSales = (groups: OrderGroup[]): TodayLine[] =>
 const fundingSummary = (
   today: PlaybookToday | null | undefined,
   groups: OrderGroup[],
-): { sentence: string | null; shortfall: string | null } | null => {
+): { sentence: string | null; shortfall: string | null; raised: number | null; needed: number | null; gap: number | null } | null => {
   const plan = fundingPlan(today);
   if (!plan) return null;
   // the summary is the link between the two ends of the ticket, so it is only rendered where both
@@ -853,7 +856,7 @@ const fundingSummary = (
       ? `${gapText} still short \u2014 the rest needs a deposit or a smaller plan.`
       : null;
 
-  return sentence || shortfallLine ? { sentence, shortfall: shortfallLine } : null;
+  return { sentence, shortfall: shortfallLine, raised, needed, gap: shortfall };
 };
 
 /** How many weekly readings the exit rule has seen - the desk sends a count, a list would count too. */
@@ -880,6 +883,7 @@ function TodayTicket({ today }: { today: PlaybookToday | null | undefined }) {
   const groups = orderGroups(today);
   const watch = Array.isArray(today.watch) ? today.watch.filter((row) => row && row.ticker) : [];
   const unfunded = Array.isArray(today.unfunded) ? today.unfunded.filter((row) => row && row.ticker) : [];
+  const notFillable = Array.isArray(today.not_fillable) ? today.not_fillable.filter((row) => row && row.ticker) : [];
   const funding = fundingSummary(today, groups);
 
   return (
@@ -897,7 +901,7 @@ function TodayTicket({ today }: { today: PlaybookToday | null | undefined }) {
           being sold to pay for them, and - when the sales do not cover them - the gap, said out loud
           instead of hidden behind the list. Not rendered when nothing is being bought: with no buys
           there is no funding story, and a ticket of sells alone stays a ticket of sells. */}
-      {funding && (
+      {(funding?.sentence || funding?.shortfall) && (
         <p className="own-note own-ticket-funding">
           {funding.sentence}
           {funding.shortfall && <span className="own-note-warn"> {funding.shortfall}</span>}
@@ -1008,6 +1012,7 @@ function TodayTicket({ today }: { today: PlaybookToday | null | undefined }) {
         </div>
       )}
 
+      {notFillable.length > 0 && <section><h3>Not fillable ({notFillable.length})</h3><p>Published availability restrictions — not executable orders.</p><ul>{notFillable.map((row, i) => <li key={`${row.ticker}-${i}`}><strong>{row.ticker}</strong> {row.name} · {cadAmount(row.est_cad) ?? 'Amount unavailable'}<p>{row.why ?? 'Restriction details unavailable'}</p></li>)}</ul></section>}
       {(watch.length > 0 || unfunded.length > 0) && (
         <div className="own-split">
           {watch.length > 0 && (
@@ -1054,6 +1059,22 @@ function TodayTicket({ today }: { today: PlaybookToday | null | undefined }) {
   );
 }
 
+/** A compact display of the existing selected ticket line; no sizing or funding logic lives here. */
+function DashboardOrderRow({ line, action }: { line: TodayLine; action: string }) {
+  const market = orderMarket(line);
+  const reason = saleReason(line);
+  const currency = rowCurrency(line.currency);
+  return <>
+    <span className="sd-order-top"><strong>{line.ticker}</strong><b>{cadAmount(line.est_cad) ? `${market ? '' : 'Est. '}${cadAmount(line.est_cad)}` : 'Amount unavailable'}</b><span>{market ? 'Market' : 'Limit'}</span></span>
+    <span className="sd-order-bottom">
+      <span>{market ? 'no price protection' : `${orderQty(line) ?? 'Quantity unavailable'} ${currency ?? 'currency unknown'}`}</span>
+      {action !== 'BUY' && <span>{action} · {reason ? SALE_REASON_LABEL[reason] : 'reason unknown'}</span>}
+      {line.funded === false && <em>Waiting on cash</em>}
+      {action === 'BUY' && line.funded == null && <em>Funding unknown</em>}
+    </span>
+  </>;
+}
+
 export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () => void; onHome: () => void }) {
   const { session, ready, error, setError, signOut, ensureFresh } = useOwnerSession();
   const [priv, setPriv] = useState<PrivateRow[] | null>(null);
@@ -1062,6 +1083,12 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
   const [weekly, setWeekly] = useState<WeeklyRow | null>(null);
   const [playbook, setPlaybook] = useState<PlaybookRow | null>(null);
   const [quant, setQuant] = useState<QuantRow | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [sourceWarnings, setSourceWarnings] = useState<string[]>([]);
+  const [historyPage, setHistoryPage] = useState(0);
+  const lastHistoryPage = Math.max(0, Math.ceil((priv?.length ?? 0) / 12) - 1);
+  const currentHistoryPage = Math.min(historyPage, lastHistoryPage);
+  useEffect(() => setHistoryPage(currentHistoryPage), [currentHistoryPage]);
   // Three ways to read the same book. The choice is remembered: the grid is the default, the list
   // fits everything on one screen, the comprehensive view keeps nothing behind a disclosure.
   const [view, setView] = useState<View>(() => readView());
@@ -1077,6 +1104,8 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
   }, [ready, session, onSignedOut]);
 
   const load = useCallback(async () => {
+    setRefreshing(true);
+    try {
     const [privateRes, publicRes, newsRes, weeklyRes, playbookRes, quantRes] = await Promise.all([
       ownerFetch('pc_digest_private?select=*&order=as_of.desc&limit=30', ensureFresh),
       ownerFetch('pc_digest_public?select=*&order=as_of.desc&limit=30', ensureFresh),
@@ -1094,15 +1123,21 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
       setError(`Could not load the private desk (HTTP ${privateRes.status}).`);
       return;
     }
+    setError('');
     setPriv(privateRes.rows as PrivateRow[]);
-    setPub((publicRes.rows ?? []) as PublicRow[]);
-    // The brief is a separate table and may not exist yet (first run of the day); an empty list
-    // simply means the panel is not rendered.
-    setNews(((newsRes.ok ? newsRes.rows : []) ?? []) as NewsRow[]);
-    // The weekly screen is published every Sunday; an empty result just means the panel is absent.
-    setWeekly((((weeklyRes.ok ? weeklyRes.rows : []) ?? []) as WeeklyRow[])[0] ?? null);
-    setPlaybook((((playbookRes.ok ? playbookRes.rows : []) ?? []) as PlaybookRow[])[0] ?? null);
-    setQuant((((quantRes.ok ? quantRes.rows : []) ?? []) as QuantRow[])[0] ?? null);
+    // Retain the last successful snapshot on a failed refresh, with an explicit warning.
+    const sources = [['Public metrics', publicRes], ['Brief', newsRes], ['Weekly', weeklyRes], ['Playbook', playbookRes], ['Model', quantRes]] as const;
+    setSourceWarnings(sources.flatMap(([label, result]) => !result.ok ? [`${label} fetch failed (HTTP ${result.status}); last successful data retained`] : !result.rows?.length ? [`${label} source missing`] : []));
+    if (publicRes.ok) setPub((publicRes.rows ?? []) as PublicRow[]);
+    if (newsRes.ok) setNews((newsRes.rows ?? []) as NewsRow[]);
+    if (weeklyRes.ok) setWeekly(((weeklyRes.rows ?? []) as WeeklyRow[])[0] ?? null);
+    if (playbookRes.ok) setPlaybook(((playbookRes.rows ?? []) as PlaybookRow[])[0] ?? null);
+    if (quantRes.ok) setQuant(((quantRes.rows ?? []) as QuantRow[])[0] ?? null);
+    } catch {
+      setError('Could not refresh the desk. Last successful data retained; freshness is not confirmed.');
+    } finally {
+      setRefreshing(false);
+    }
   }, [ensureFresh, onSignedOut, setError]);
 
   useEffect(() => {
@@ -1138,7 +1173,7 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
   );
 
   const value = useCallback(
-    (weight: number) => ((latest?.book_value_cad ?? 0) * weight) / 100,
+    (weight: number) => latest?.book_value_cad == null ? null : (latest.book_value_cad * weight) / 100,
     [latest],
   );
 
@@ -1212,85 +1247,75 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
     onSignedOut();
   };
 
-  return (
-    <div className="own-shell">
-      <header className="own-bar">
-        <div className="own-bar-left">
-          <span className="own-mark">PC</span>
-          <div className="own-bar-title">
-            <strong>Owner console</strong>
-            <span>Published weekdays by the 07:45 automation</span>
-          </div>
-        </div>
-        <div className="own-bar-right">
-          <a
-            href="/"
-            onClick={(e) => {
-              e.preventDefault();
-              onHome();
-            }}
-          >
-            Site
-          </a>
-          <span className="own-quiet">{session?.email}</span>
-          <button type="button" className="own-btn ghost small" onClick={onSignOut}>
-            Sign out
-          </button>
-        </div>
-      </header>
+  // Secondary publishes never authorize the private financial workspace.
+  if (!latest) return <div className="stock-dashboard sd-unavailable">
+    <header className="sd-header"><strong className="sd-brand">PC <span>Stock desk</span></strong>
+      <button className="sd-refresh" onClick={() => void load()} disabled={refreshing}>{refreshing ? 'Refreshing…' : 'Refresh'}</button>
+      <details className="sd-account"><summary>Account</summary><div><span>{session?.email}</span><button onClick={onHome}>Site</button><button onClick={onSignOut}>Sign out</button></div></details>
+    </header>
+    <main role="status"><h1>Private book unavailable</h1><p>{error || (priv ? 'No private book rows returned. Access or publication unavailable.' : 'Loading private book; access and publication are not yet confirmed.')}</p></main>
+  </div>;
 
-      <main className="own-main">
-        {error && <p className="own-note own-note-warn">{error}</p>}
-
-        {!priv && !error && <p className="own-note">Loading the book...</p>}
-
-        {priv && !latest && (
-          <p className="own-note own-note-warn">
-            Signed in, but this account is not on the desk allowlist — the database returned no rows
-            on purpose.
-          </p>
-        )}
-
-        {latest && (
-          <>
-            {/* the ticket leads: it is the day's action list, and every panel below it explains or
-                supports a line in it. Hidden outright when the desk has not published a block. */}
-            <TodayTicket today={playbook?.today} />
-
-            <section className="own-stats">
-              <div className="own-stat">
-                <span>Book value</span>
-                <b>{money(latest.book_value_cad)}</b>
-              </div>
-              <div className="own-stat">
-                <span>Cost basis</span>
-                <b className="sm">{money(latest.true_cost_cad)}</b>
-              </div>
-              <div className="own-stat">
-                <span>Account</span>
-                <b className={tone(accountReturn)}>{pct(accountReturn, 2)}</b>
-              </div>
-              <div className="own-stat">
-                <span>Today</span>
-                <b className={tone(latest.day_change_cad)}>{money(latest.day_change_cad)}</b>
-              </div>
-              <div className="own-stat">
-                <span>Today %</span>
-                <b className={tone(today?.day_change_pct ?? null)}>{pct(today?.day_change_pct ?? null, 2)}</b>
-              </div>
-              <div className="own-stat">
-                <span>ETF weight</span>
-                <b className="sm">{latest.etf_weight_pct?.toFixed(1) ?? '--'}%</b>
-              </div>
-            </section>
-
-            <section className="own-panel">
+  const groups = orderGroups(playbook?.today);
+  const orderRows = groups.flatMap(group => group.lines.map(line => ({ line, action: group.label, key: group.key })));
+  const funding = fundingSummary(playbook?.today, groups);
+  const blocked = weeklyRanking.filter(brokerBlocked);
+  const attention = [...sourceWarnings];
+  if (error) attention.unshift(error);
+  if (weekly && weekly.gate !== 'PASSED') attention.push(`Weekly gate ${weekly.gate ?? 'unknown'} — ranking validation not passed`);
+  if (funding?.shortfall) attention.push(funding.shortfall);
+  if (playbook?.today?.watch?.length) attention.push(`${playbook.today.watch.length} on exit watch — not orders`);
+  if (blocked.length) attention.push(`${blocked.length} candidate${blocked.length === 1 ? '' : 's'} unavailable at broker`);
+  const notFillableCount = orderLines(playbook?.today?.not_fillable).length;
+  if (notFillableCount) attention.push(`${notFillableCount} not fillable — published availability restrictions`);
+  if (playbook?.today?.unfunded?.length) attention.push(`${playbook.today.unfunded.length} unfunded — waiting on cash`);
+  if (today?.automations_ok == null || today?.automations_total == null) attention.push('Automation status unavailable');
+  else if (today.automations_ok < today.automations_total) attention.push(`${today.automations_total - today.automations_ok} automation failures`);
+  if (playbook?.today?.fx_age_days != null && playbook.today.fx_age_days > 1) attention.push(`FX rates ${playbook.today.fx_age_days.toFixed(1)} days old`);
+  for (const [label, date, maxDays] of [['Book', latest?.as_of, 4], ['Plan', playbook?.today?.as_of, 4], ['Brief', newsLatest?.as_of, 4], ['Weekly', weekly?.as_of, 10], ['Model', quant?.as_of, 10]] as const) {
+    const stamp = date ? Date.parse(`${date}T12:00:00`) : NaN;
+    if (!Number.isFinite(stamp)) attention.push(`${label} date missing or invalid`);
+    else if (Date.now() - stamp > maxDays * 86400000) attention.push(`${label} source stale — as of ${date}`);
+  }
+  if (!playbook?.today) attention.push('Order ticket unavailable');
+  if (playbook?.today && !fundingPlan(playbook.today)) attention.push('Funding plan unavailable');
+  const sessions = [...new Set(orderRows.map(({ line }) => [line.region ?? 'Venue unspecified', orderSession(line) || 'session unavailable'].join(': ')))];
+  const details: Record<string, ReactNode> = {};
+  const detailTickers = new Set([...book.map(row => row.holding.ticker), ...orderRows.map(row => row.line.ticker), ...weeklyRanking.map(row => row.ticker)]);
+  for (const ticker of detailTickers) {
+    const row = book.find(row => row.holding.ticker === ticker);
+    const play = playbook?.holdings.find(row => row.ticker === ticker);
+    const candidate = weeklyRanking.find(row => row.ticker === ticker);
+    details[ticker] = <>
+      {row && <section><h3>Holding</h3><p>{row.holding.reason ?? 'Holding rationale unavailable'}</p>
+        <dl><dt>CAD value / allocation</dt><dd>{latest?.book_value_cad == null ? '--' : money(value(row.holding.weight_pct))} / {row.holding.weight_pct.toFixed(2)}%</dd>
+          <dt>Book call</dt><dd>{row.holding.call}</dd><dt>Book / universe rating</dt><dd>{row.holding.rating?.toFixed(1) ?? '--'} / {row.holding.rating_universe?.toFixed(1) ?? '--'}</dd>
+          <dt>Currency / day</dt><dd>{row.currency ?? 'Unknown'} / {pct(row.holding.day_pct, 2)}</dd>
+          <dt>Analyst buys / ratings</dt><dd>{row.holding.buys ?? '--'} / {row.holding.ratings ?? '--'}</dd>
+          <dt>Model version</dt><dd>{row.holding.model_version ?? '--'}</dd></dl>
+        {row.holding.pillars && <ul>{PILLAR_META.map(p => <li key={p.key}>{p.label} {p.weight}%: {pillarScore(row.holding.pillars?.[p.key])}</li>)}</ul>}
+        {play && <><h3>Playbook action: {play.action}</h3><p>Independent from the book call and discretionary funding sales.</p><p>Revisions {play.revisions?.toFixed(2) ?? '--'} · P/L {play.pl == null ? '--' : pct(play.pl * 100, 1)}</p><p>{play.flags.join(' · ')}</p></>}
+        <p>{row.entry?.read ?? 'No fresh ticker read in this publish.'}</p>
+        {(storiesByTicker.get(ticker) ?? []).map(story => <p key={story.url}><a href={story.url} target="_blank" rel="noopener noreferrer">{story.title}</a><small>{story.source} · {story.published ?? 'Publication time unavailable'}</small></p>)}
+      </section>}
+      {orderRows.filter(row => row.line.ticker === ticker).map(({ line, action }, i) => <section key={i}><h3>{action} proposal · {line.name ?? ticker}</h3>
+        <p><DashboardOrderRow line={line} action={action} /></p>
+        <dl><dt>Currency / venue</dt><dd>{rowCurrency(line.currency) ?? 'Unknown'} / {line.region ?? 'Unknown'}</dd>
+          <dt>Local limit / CAD per share</dt><dd>{orderMarket(line) ? 'Market — no limit or price protection' : `${priceIn(line.limit_local, rowCurrency(line.currency))} / ${cadAmount(line.limit_cad) ?? '--'}`}</dd>
+          <dt>Session</dt><dd>{orderSession(line) || 'Unavailable'}</dd><dt>Reason</dt><dd>{line.why ?? 'Unavailable'}</dd>
+          <dt>Funding</dt><dd>{line.funded === false ? 'Waiting on cash' : line.funded === true ? 'Published as funded; planned proceeds are not settled cash' : 'Not specified'}</dd>
+          <dt>Kind / rating</dt><dd>{orderKind(line) ?? line.kind ?? '--'} / {line.rating ?? '--'}</dd></dl>
+      </section>)}
+      {candidate && <section><h3>Universe candidate</h3><p>{candidate.name}</p><p>Composite {candidate.rating.toFixed(1)} · Revisions {candidate.revisions_net.toFixed(2)} · vs 200d {pct(candidate.px_vs_200d * 100, 1)}</p><p>{candidate.region} · {candidate.currency ?? 'Currency unknown'} · P/E {candidate.fwd_pe ?? '--'}</p><p>{brokerNote(candidate) ?? (candidate.broker_ok === true ? 'Broker availability confirmed in publish' : 'Broker availability not confirmed')}</p></section>}
+    </>;
+  }
+  const fullBook = (<section className="own-panel">
               <div className="own-panel-head">
                 <h2>The book</h2>
                 <div className="own-head-right">
                   <span className="own-quiet">
                     {today?.positions_held ?? holdings.length} positions ·{' '}
-                    {today?.positions_stocks ?? holdings.filter((h) => !h.is_etf).length} names + ETF · as of {latest.as_of}
+                    {today?.positions_stocks ?? holdings.filter((h) => !h.is_etf).length} names + ETF · as of {latest?.as_of ?? 'unavailable'}
                     {newsLatest?.model?.seconds ? ` · brief read in ${newsLatest.model.seconds}s` : ''}
                   </span>
                   <div className="own-views" role="group" aria-label="How to show the book">
@@ -1599,9 +1624,8 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
                   ))}
                 </div>
               )}
-            </section>
-
-              {playbook && (
+            </section>);
+  const playbookPanel = (playbook && (
                 <section className="own-panel">
                   <div className="own-panel-head">
                     <h2>Playbook — what to do today</h2>
@@ -1693,9 +1717,8 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
                     </p>
                   </details>
                 </section>
-              )}
-
-              {weekly && (
+              ));
+  const weeklyPanel = (weekly && (
                 <section className="own-panel">
                   <div className="own-panel-head">
                     <h2>Best gate-passed names by composite rating</h2>
@@ -1848,9 +1871,8 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
                     </details>
                   )}
                 </section>
-              )}
-
-            {quant && (
+              ));
+  const modelPanel = (quant && (
               <section className="own-panel">
                 <div className="own-panel-head">
                   <h2>Quant research — what is measured, what is argued</h2>
@@ -1992,9 +2014,8 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
                   </p>
                 )}
               </section>
-            )}
-
-            <div className="own-split">
+            ));
+  const historyPanel = (<div className="own-split">
               <section className="own-panel">
                 <div className="own-panel-head">
                   <h2>Today's read</h2>
@@ -2019,8 +2040,8 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
                   <div>
                     <dt>Automations</dt>
                     <dd>
-                      <span className={today && today.automations_ok === today.automations_total ? 'own-ok' : 'own-warn'}>
-                        {today?.automations_ok ?? '--'}/{today?.automations_total ?? '--'} clean
+                      <span className={today?.automations_ok != null && today?.automations_total != null && today.automations_ok === today.automations_total ? 'own-ok' : 'own-warn'}>
+                        {today?.automations_ok == null || today?.automations_total == null ? 'Status unavailable' : `${today.automations_ok}/${today.automations_total} clean`}
                       </span>
                     </dd>
                   </div>
@@ -2030,7 +2051,8 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
               <section className="own-panel">
                 <div className="own-panel-head">
                   <h2>History</h2>
-                  <span className="own-quiet">newest first</span>
+                  <span className="own-quiet">{priv?.length ?? 0} observations · newest first</span>
+                  {lastHistoryPage > 0 && <div className="sd-pagination"><button aria-label="Previous history page" disabled={currentHistoryPage === 0} onClick={() => setHistoryPage(currentHistoryPage - 1)}>Previous</button><span>{currentHistoryPage * 12 + 1}–{Math.min((currentHistoryPage + 1) * 12, priv?.length ?? 0)} of {priv?.length}</span><button aria-label="Next history page" disabled={currentHistoryPage === lastHistoryPage} onClick={() => setHistoryPage(currentHistoryPage + 1)}>Next</button></div>}
                 </div>
                 <div className="own-table-wrap">
                   <table className="own-table compact">
@@ -2044,7 +2066,7 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
                       </tr>
                     </thead>
                     <tbody>
-                      {(priv ?? []).map((row) => {
+                      {(priv ?? []).slice(currentHistoryPage * 12, (currentHistoryPage + 1) * 12).map((row) => {
                         const metrics = pub.find((p) => p.as_of === row.as_of);
                         const ret = row.book_value_cad && row.true_cost_cad ? (row.book_value_cad / row.true_cost_cad - 1) * 100 : null;
                         return (
@@ -2063,15 +2085,32 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
                   </table>
                 </div>
               </section>
-            </div>
-
-            <p className="own-note">
-              Private figures are readable only by an allowlisted account. The rest of the site shows
-              the public numbers only.
-            </p>
-          </>
-        )}
-      </main>
-    </div>
-  );
+            </div>);
+  const briefPanel = <section className="own-panel"><h2>Morning brief</h2><p>As of {newsLatest?.as_of ?? 'unavailable'} · Generated {newsLatest?.generated_at ?? 'unavailable'}</p>
+    {newsLatest?.summary ? renderMarkdown(newsLatest.summary) : <p>Brief unavailable.</p>}
+    <ul>{newsLatest?.watch.map((item, i) => <li key={i}>{item}</li>)}</ul>
+    {newsLatest?.tickers.map(entry => <article key={entry.ticker}><h3>{entry.ticker} · {entry.sentiment}</h3><p>{entry.read}</p></article>)}
+    <h3>Headlines ({newsLatest?.stories.length ?? 0})</h3>{newsLatest?.stories.map(story => <p key={story.url}><a href={story.url} target="_blank" rel="noopener noreferrer">{story.ticker}: {story.title}</a> · {story.source} · {story.published ?? 'Time unavailable'}</p>)}
+  </section>;
+  return <StockDashboard
+    email={session?.email} onHome={onHome} onSignOut={onSignOut} onRefresh={() => void load()} refreshing={refreshing}
+    portfolio={book.map(({ holding: h }) => ({ ticker: h.ticker, summary: <><strong>{h.ticker}</strong><span>{latest?.book_value_cad == null ? '--' : money(value(h.weight_pct), 0)}</span><span>{h.weight_pct.toFixed(1)}%</span><span className={tone(h.day_pct)}>{pct(h.day_pct, 1)}</span><span>{h.rating?.toFixed(0) ?? '--'}</span><span className={h.call === 'SELL' ? 'down' : ''}>{h.call}</span></> }))}
+    buys={orderRows.filter(row => row.key === 'buys').map(({ line, action }) => ({ ticker: line.ticker, summary: <DashboardOrderRow line={line} action={action} /> }))}
+    sells={orderRows.filter(row => row.key !== 'buys').map(({ line, action }) => ({ ticker: line.ticker, summary: <DashboardOrderRow line={line} action={action} /> }))}
+    details={details}
+    kpis={[
+      { label: 'Book value', value: money(latest?.book_value_cad), note: `Cost basis ${money(latest?.true_cost_cad)}` },
+      { label: 'Account return', value: pct(accountReturn, 2), note: 'Broker cost basis · not time-weighted' },
+      { label: 'Day change', value: money(latest?.day_change_cad), note: pct(today?.day_change_pct, 2) },
+      { label: 'ETF allocation', value: latest?.etf_weight_pct == null ? '--' : `${latest.etf_weight_pct.toFixed(1)}%`, note: `${book.length} holdings · CAD reporting` },
+    ]}
+    funding={<><span>Buy need <b>{cadAmount(funding?.needed) ?? 'unavailable'}</b> · Planned sale proceeds <b>{cadAmount(funding?.raised) ?? 'unavailable'}</b></span><small>Not settled cash · Shortfall {cadAmount(funding?.gap) ?? 'unavailable'}</small></>}
+    sessions={orderRows.length ? `Sessions: ${[...new Set(orderRows.map(({ line }) => `${line.region ?? 'Venue unknown'} ${line.session_state ?? 'state unknown'}`))].join(' · ')}` : 'Venue sessions unavailable'}
+    attention={attention} candidates={weeklyRanking.map(row => ({ ticker: row.ticker, rating: row.rating.toFixed(1), availability: brokerBlocked(row) ? 'Unavailable' : row.broker_ok === true ? null : 'Unknown', note: brokerNote(row) ?? 'Broker availability not confirmed' }))} brief={newsLatest?.summary ?? null}
+    status={<>Book {latest?.as_of ?? 'unavailable'} · Plan {playbook?.today?.as_of ?? 'unavailable'} · FX {playbook?.today?.fx_age_days == null ? 'unknown' : `${playbook.today.fx_age_days.toFixed(1)}d`}</>}
+    sections={{ book: fullBook, opportunities: <>{weeklyPanel}{playbookPanel}</>, reports: weeklyPanel, model: modelPanel, history: historyPanel, brief: briefPanel,
+      ticket: <><p>Proposed orders only. No orders are executed by this page. Sale proceeds are planned, not settled cash.</p><TodayTicket today={playbook?.today} />{!playbook?.today && <p>Ticket unavailable.</p>}</>,
+      status: <section className="own-panel"><h2>Status and attention</h2><ul>{attention.map((item, i) => <li key={i}>{item}</li>)}</ul><h3>Venue sessions</h3><ul>{sessions.map(item => <li key={item}>{item}</li>)}</ul><p>{playbook?.today?.market_note}</p><p>Automations {today?.automations_ok ?? '--'} / {today?.automations_total ?? '--'}</p><p>{funding?.sentence} {funding?.shortfall}</p><TodayTicket today={playbook?.today} /></section>,
+    }}
+  />;
 }

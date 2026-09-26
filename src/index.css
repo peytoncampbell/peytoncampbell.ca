@@ -3675,6 +3675,25 @@ html, body { background-color: var(--bg); }
 }
 
 .own-ticket-name { color: var(--ink-2); font-size: 0.84rem; }
+
+/* One stock, one amount, one order type. Secondary context stays available on demand. */
+.own-ticket-buy-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: baseline;
+  gap: 0.35rem 0.8rem;
+  min-width: 0;
+}
+.own-ticket-buy-head .own-ticker { overflow-wrap: anywhere; }
+.own-ticket-amount { font-size: 0.86rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.own-ticket-type { color: var(--ink-2); font-size: 0.76rem; }
+.own-ticket-amount, .own-ticket-type { white-space: nowrap; }
+.own-ticket-details { color: var(--ink-3); font-size: 0.76rem; }
+.own-ticket-details summary { cursor: pointer; width: fit-content; }
+.own-ticket-details[open] summary { margin-bottom: 0.35rem; }
+.own-ticket-details > span { display: block; }
+.own-ticket-details summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
 .own-ticket-kind { color: var(--ink-3); font-size: 0.74rem; }
 
 .own-ticket-fig { font-size: 0.86rem; font-variant-numeric: tabular-nums; }

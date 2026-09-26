@@ -605,6 +605,20 @@ type OrderGroup = { key: 'sells' | 'trims' | 'buys'; label: string; lines: Today
 const orderLines = (lines: TodayLine[] | null | undefined): TodayLine[] =>
   Array.isArray(lines) ? lines.filter((line) => line && line.ticker) : [];
 
+/** Market and limit lines are alternative routes into one stock, never additive buys. */
+const buyLines = (lines: TodayLine[] | null | undefined): TodayLine[] => {
+  const selected = new Map<string, TodayLine>();
+  for (const line of orderLines(lines)) {
+    const previous = selected.get(line.ticker);
+    if (!previous
+      || (previous.funded !== true && line.funded === true)
+      || (previous.funded === line.funded && orderMarket(line))) {
+      selected.set(line.ticker, line);
+    }
+  }
+  return [...selected.values()];
+};
+
 /**
  * SELL, then TRIM, then BUY, in that order. A group with nothing in it is not rendered: an empty
  * table and its heading cost a screenful to say "nothing".
@@ -613,7 +627,7 @@ const orderGroups = (today: PlaybookToday | null | undefined): OrderGroup[] => {
   const groups: OrderGroup[] = [
     { key: 'sells', label: 'SELL', lines: orderLines(today?.sells) },
     { key: 'trims', label: 'TRIM', lines: orderLines(today?.trims) },
-    { key: 'buys', label: 'BUY', lines: orderLines(today?.buys) },
+    { key: 'buys', label: 'BUY', lines: buyLines(today?.buys) },
   ];
   return groups.filter((group) => group.lines.length > 0);
 };
@@ -660,7 +674,7 @@ const orderMarket = (line: TodayLine): boolean =>
 const cadAmount = (value: number | null | undefined): string | null =>
   value === null || value === undefined
     ? null
-    : `C$${value.toLocaleString('en-CA', { maximumFractionDigits: 2 })}`;
+    : `C$${value.toLocaleString('en-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 /**
  * The size of a market order, which the desk sends in C$ rather than as a share count. `est_cad` is
@@ -915,6 +929,35 @@ function TodayTicket({ today }: { today: PlaybookToday | null | undefined }) {
                   const cad = reason ? cadEquivalent(line.est_cad) : orderCad(line, currency);
                   const session = orderSession(line);
                   const kind = orderKind(line);
+                  if (group.key === 'buys') {
+                    const amount = cadAmount(line.est_cad);
+                    return (
+                      <li
+                        key={`buys-${line.ticker}`}
+                        className={`own-ticket-line own-ticket-buy${line.funded === false ? ' is-waiting' : ''}`}
+                      >
+                        <div className="own-ticket-buy-head">
+                          <span className="own-ticker">{line.ticker}</span>
+                          <b className="own-ticket-amount">{amount ? `${market ? '' : 'Est. '}${amount}` : 'Amount unavailable'}</b>
+                          <span className="own-ticket-type">{market ? 'Market order' : 'Limit order'}</span>
+                        </div>
+                        <div className="own-ticket-fig">
+                          {market
+                            ? <span className="own-ticket-note">Fractional · no price protection</span>
+                            : <span>{qty ?? 'Quantity unavailable'}{currency ? ` ${currency}` : ''}</span>}
+                          {line.funded === false && <span className="own-ticket-wait">Waiting on cash</span>}
+                        </div>
+                        <details className="own-ticket-details">
+                          <summary>Order details</summary>
+                          {line.name && line.name !== line.ticker && <span className="own-ticket-name">{line.name}</span>}
+                          <span className="own-ticket-note">
+                            {[line.action === 'NEW' ? 'New position' : 'Top up', currency, line.region, session].filter(Boolean).join(' · ')}
+                          </span>
+                          {line.why && <p className="own-card-why">{line.why}</p>}
+                        </details>
+                      </li>
+                    );
+                  }
                   return (
                     <li
                       key={`${group.key}-${line.ticker}-${index}`}

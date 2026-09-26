@@ -23,6 +23,8 @@ const built = buildSync({
   platform: 'node',
   format: 'cjs',
   jsx: 'automatic',
+  // SSR checks markup/finance; real styles are exercised by the built-browser verifier.
+  loader: { '.css': 'empty' },
   define: { 'import.meta.env': '{}' },
   write: false,
   logLevel: 'silent',

@@ -1,0 +1,21 @@
+/* Secondary reading surface only; the dashboard shell owns scrolling. */
+.stock-changes { color: var(--sd-text, #e2e8f0); font: 14px/1.5 'IBM Plex Sans', 'Segoe UI', sans-serif; min-width: 0; max-width: 960px; overflow-wrap: anywhere; }
+.stock-changes * { box-sizing: border-box; }
+.stock-changes h3 { font-size: 18px; font-weight: 600; margin: 0 0 8px; }
+.stock-changes h4 { font-size: 14px; font-weight: 600; margin: 0; }
+.stock-changes p { margin: 6px 0; }
+.stock-changes > section { margin-top: 24px; }
+.stock-changes article { border-top: 1px solid var(--sd-line, #304052); padding: 16px 0; }
+.stock-changes article h4 { margin-bottom: 10px; }
+.stock-changes .sc-meta { color: var(--sd-muted, #a7b5c6); font-size: 12px; }
+.stock-changes dl { display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 6px 12px; margin: 10px 0; }
+.stock-changes dl dl { grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); }
+.stock-changes dt { color: var(--sd-muted, #a7b5c6); }
+.stock-changes dd { margin: 0; min-width: 0; }
+.stock-changes .sc-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 16px 0; }
+.stock-changes button, .stock-changes select { font: inherit; font-size: 14px; color: inherit; background: var(--sd-panel, #18212d); border: 1px solid var(--sd-line, #304052); border-radius: 4px; padding: 7px 10px; max-width: 100%; cursor: pointer; }
+.stock-changes article button { margin: 6px 8px 0 0; }
+.stock-changes button[aria-pressed=true], .stock-changes button:hover { background: var(--sd-raised, #202c3a); color: var(--sd-select, #8fafe6); }
+.stock-changes button:disabled { opacity: .6; cursor: default; }
+.stock-changes :focus-visible { outline: 2px solid var(--sd-select, #8fafe6); outline-offset: 2px; }
+.stock-changes .sc-category { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }

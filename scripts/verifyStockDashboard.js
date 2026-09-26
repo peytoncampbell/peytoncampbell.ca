@@ -9,7 +9,8 @@ import { stockDashboardFixture } from './fixtures/stockDashboard.js';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const source = readFileSync(resolve(root, 'src/OwnerStocks.tsx'), 'utf8');
 assert(source.includes('function DashboardOrderRow'), 'Missing real compact order row component');
-const built = buildSync({ stdin: { contents: `${source}\nimport { renderToStaticMarkup } from 'react-dom/server';\nexport const renderOrder = (line, action) => renderToStaticMarkup(<DashboardOrderRow line={line} action={action} />);\nexport const renderTicket = today => renderToStaticMarkup(<TodayTicket today={today} />);\nexport { orderGroups, fundingSummary };`, resolveDir: resolve(root, 'src'), sourcefile: 'OwnerStocks.tsx', loader: 'tsx' }, bundle: true, platform: 'node', format: 'cjs', jsx: 'automatic', define: { 'import.meta.env': '{}' }, write: false, logLevel: 'silent' });
+// Component CSS belongs to the built-browser checks, not this markup-only SSR bundle.
+const built = buildSync({ stdin: { contents: `${source}\nimport { renderToStaticMarkup } from 'react-dom/server';\nexport const renderOrder = (line, action) => renderToStaticMarkup(<DashboardOrderRow line={line} action={action} />);\nexport const renderTicket = today => renderToStaticMarkup(<TodayTicket today={today} />);\nexport { orderGroups, fundingSummary };`, resolveDir: resolve(root, 'src'), sourcefile: 'OwnerStocks.tsx', loader: 'tsx' }, bundle: true, platform: 'node', format: 'cjs', jsx: 'automatic', loader: { '.css': 'empty' }, define: { 'import.meta.env': '{}' }, write: false, logLevel: 'silent' });
 const compiled = new Module(resolve(root, 'scripts/dashboard-test.cjs'));
 compiled._compile(built.outputFiles[0].text, compiled.id);
 const { renderOrder, orderGroups } = compiled.exports;

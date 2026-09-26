@@ -1,7 +1,17 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { ownerFetch, useNoIndex, useOwnerSession } from './ownerAuth';
 import StockDashboard from './StockDashboard';
+import type { AnalysisView, StockSelection } from './StockDashboard';
+import { FactorBars, PILLAR_META } from './StockAnalysis';
+import { PublishedCallEvaluation, StockNewsEvidence } from './StockEvidence';
+import { StockHistoryData } from './StockHistoryData';
+import { StockChanges, useChangeReview } from './StockChanges';
+import type { ChangeGroup, ChangeItem } from './StockChanges';
+import { changePair, ratingsFor } from './stockChangeData';
+import type { ChangePair, PlanAuthority } from './stockChangeData';
+import { compareSnapshots, normalizeDate } from './stockInsights';
+import type { ChangeEvent, ChangeSnapshot, ScoreMeta } from './stockInsights';
 
 /**
  * The owner console: a different page from the portfolio site, for one signed-in account.
@@ -24,30 +34,19 @@ type Holding = {
   day_pct: number | null;
   call: string;
   reason: string | null;
+  /** Published conditions explain the saved call; the browser does not decide it again. */
+  call_evaluation?: unknown;
   buys: number | null;
   ratings: number | null;
-  /** the five-pillar composite, as a percentile inside the book (null for the ETF / unscored) */
+  /** Relative five-pillar book score, not a final-score percentile (null for ETF / unscored). */
   rating: number | null;
   rating_scope: 'book' | 'universe' | null;
-  /** the same name's percentile in the ~1,100-name universe the weekly screen ranks */
+  /** The same name's relative score in the universe the weekly screen ranks. */
   rating_universe: number | null;
   pillars: Record<string, number | null> | null;
   model_version: string | null;
+  score_meta?: ScoreMeta | null;
 };
-
-/**
- * The pillars the composite is built from, in weight order, with the weights the desk's quant review
- * settled on (QUANT_REVIEW.md, 2026-09-25). Five of them, and the cards show these because they are
- * what the desk rates on - the target-derived sixth pillar was retired, so the list is five long and
- * no chip slot is reserved for a pillar that is gone.
- */
-const PILLAR_META: { key: string; label: string; weight: number }[] = [
-  { key: 'growth', label: 'Growth', weight: 27.2 },
-  { key: 'revisions', label: 'Revisions', weight: 21.7 },
-  { key: 'momentum', label: 'Momentum', weight: 21.7 },
-  { key: 'valuation', label: 'Valuation', weight: 16.3 },
-  { key: 'quality', label: 'Quality', weight: 13.0 },
-];
 
 const pillarScore = (value: number | null | undefined) =>
   value === null || value === undefined ? '--' : value.toFixed(0);
@@ -99,6 +98,10 @@ type WeeklyTarget = Brokered & {
   px_vs_200d: number;
   targets: number | null;
   fwd_pe: number | null;
+  pillars?: Record<string, number | null> | null;
+  model_version?: string | null;
+  rating_scope?: 'book' | 'universe' | null;
+  score_meta?: ScoreMeta | null;
 };
 
 type PlaybookHolding = {
@@ -137,6 +140,7 @@ type PlaybookEntry = Brokered & {
 
 type PlaybookRow = {
   as_of: string;
+  generated_at?: string | null;
   holdings: PlaybookHolding[];
   entries: PlaybookEntry[];
   /**
@@ -859,6 +863,23 @@ const fundingSummary = (
   return { sentence, shortfall: shortfallLine, raised, needed, gap: shortfall };
 };
 
+// Called only by changePair after both publications pass shape/date/completeness preflight.
+const planAuthority: PlanAuthority = row => {
+  const today = row.today as PlaybookToday;
+  const groups = orderGroups(today);
+  const funding = fundingSummary(today, groups);
+  return {
+    selectedOrders: groups.flatMap(group => group.lines.map(line => ({
+      id: `${group.label}:${line.ticker}`, subjectId: line.ticker, action: group.label,
+      route: orderMarket(line) ? 'Market — no price protection' : 'Limit',
+      amountCad: line.est_cad ?? null, qty: line.qty ?? null,
+      localLimit: line.limit_local ?? null, currency: line.currency ?? null,
+      reason: [line.reason_kind === 'funding' ? 'Funding sale' : line.reason_kind === 'exit_rule' ? 'Exit rule' : line.reason_kind, line.why].filter(value => value != null).join(' · ') || null,
+    }))),
+    normalizedFunding: funding ? { raised: funding.raised, needed: funding.needed, gap: funding.gap } : null,
+  };
+};
+
 /** How many weekly readings the exit rule has seen - the desk sends a count, a list would count too. */
 const readingCount = (value: number | number[] | null | undefined): number | null =>
   typeof value === 'number' ? value : Array.isArray(value) ? value.length : null;
@@ -1075,16 +1096,95 @@ function DashboardOrderRow({ line, action }: { line: TodayLine; action: string }
   </>;
 }
 
+type ComparisonRead = Record<'book' | 'plan' | 'weekly', 'ok' | 'loading' | 'failed'>;
+const changeLabels: Record<string, string> = {
+  call: 'Published call', reason: 'Reason', availability: 'Broker availability', watch: 'Exit watch',
+  rating: 'Compatible rating', scoreBoundary: 'Model / cohort boundary — not a numeric change',
+  proposalAdded: 'Proposal added — not executed', proposalRemoved: 'Proposal removed — not execution evidence',
+  added: 'Added to published source', removed: 'Removed from published source — not execution evidence',
+  route: 'Order route', amountCad: 'CAD amount', qty: 'Quantity', localLimit: 'Local limit', currency: 'Quote currency',
+  'funding:gap': 'Funding gap', 'funding:raised': 'Funding proceeds', 'funding:needed': 'Funding needed',
+  subjectId: 'Ticker', action: 'Proposed action', scoreStamp: 'Score provenance', readings: 'Published readings',
+  modelVersion: 'Model', cohortId: 'Cohort', cohortSize: 'Cohort size', scope: 'Scope', broker: 'Broker confirmed', note: 'Note', status: 'Status', why: 'Reason',
+};
+const changeLabel = (field: string) => changeLabels[field] ?? field.replace(/^reading:/, 'Reading · ');
+function changeFact(value: unknown, field: string, currency?: string | null): ReactNode {
+  if (value == null) return 'Unavailable';
+  if ((field === 'availability' || field === 'watch') && typeof value === 'string') {
+    try { return changeFact(JSON.parse(value), 'facts', currency); } catch { return value; }
+  }
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value)) return 'Unavailable';
+    if (field === 'amountCad' || field.startsWith('funding:')) return `C$${value.toLocaleString('en-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    return `${String(value)}${field === 'localLimit' ? ` ${currency ?? '(quote currency unavailable)'}` : ''}`;
+  }
+  if (typeof value === 'boolean') return value ? 'True' : 'False';
+  if (typeof value === 'string') return value || 'Unavailable';
+  if (typeof value === 'object' && !Array.isArray(value)) {
+    const facts = value as Record<string, unknown>;
+    return <dl>{Object.entries(facts).flatMap(([key, fact]) => [<dt key={`${key}-label`}>{changeLabel(key)}</dt>, <dd key={`${key}-value`}>{changeFact(fact, key, typeof facts.currency === 'string' ? facts.currency : currency)}</dd>])}</dl>;
+  }
+  return 'Unavailable';
+}
+function changeEntity(snapshot: ChangeSnapshot | null, entity: string) {
+  if (!snapshot) return null;
+  // Match full opaque identities: tickers and proposal IDs may themselves contain colons.
+  return snapshot.selectedOrders.find(row => `proposal:${row.id}` === entity)
+    ?? snapshot.holdings.find(row => `holdings:${row.subjectId}` === entity)
+    ?? snapshot.candidates.find(row => `candidates:${row.subjectId}` === entity) ?? null;
+}
+function changeItem(event: ChangeEvent, pair: ChangePair): ChangeItem {
+  const before = changeEntity(pair.previous, event.entity), after = changeEntity(pair.current, event.entity);
+  const currency = (row: typeof before) => row && 'currency' in row ? row.currency : null;
+  return { id: event.id, ticker: after?.subjectId ?? before?.subjectId ?? null,
+    category: event.entity === 'funding' ? 'Funding' : event.entity.startsWith('proposal:') ? 'Orders' : event.field === 'scoreBoundary' || event.field === 'rating' || event.field.startsWith('reading:') ? 'Ratings' : 'Calls / watch / availability',
+    label: changeLabel(event.field), source: pair.source, beforeDate: pair.previousDate ?? 'Unavailable', afterDate: pair.currentDate ?? 'Unavailable',
+    before: changeFact(event.before, event.field, currency(before)), after: changeFact(event.after, event.field, currency(after)),
+    reason: event.field === 'scoreBoundary' ? 'Model, scope, subject or cohort changed; these ratings are not numerically comparable.' : null };
+}
+type ComparedChanges = { groups: ChangeGroup[]; details: Map<string, { item: ChangeItem; before: ReactNode; after: ReactNode }> };
+async function compareChangePairs(pairs: ChangePair[]): Promise<ComparedChanges> {
+  const details: ComparedChanges['details'] = new Map();
+  const groups = await Promise.all(pairs.map(async pair => {
+    const base: ChangeGroup = { source: pair.source, beforeDate: pair.previousDate, afterDate: pair.currentDate, status: pair.state === 'ready' ? 'loading' : pair.state, notices: pair.notices, items: [] };
+    if (!pair.current || pair.state !== 'ready') return base;
+    try {
+      const result = await compareSnapshots(pair.previous, pair.current);
+      const items = result.events.map(event => {
+        const item = changeItem(event, pair);
+        details.set(event.id, { item, before: changeFact(changeEntity(pair.previous, event.entity), 'facts'), after: changeFact(changeEntity(pair.current, event.entity), 'facts') });
+        return item;
+      });
+      return { ...base, status: result.status, notices: [...base.notices, ...result.notices], items };
+    } catch { return { ...base, status: 'unavailable' as const, notices: [...base.notices, 'Comparison could not be verified; event identity unavailable.'] }; }
+  }));
+  return { groups, details };
+}
+
 export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () => void; onHome: () => void }) {
-  const { session, ready, error, setError, signOut, ensureFresh } = useOwnerSession();
+  const { session, ready, error, setError, signOut, ensureFresh, invalidateSession } = useOwnerSession();
+  const ownerIdentity = session?.user_id ?? session?.access_token ?? null;
+  // Parent scroll/layout renders must not restart a fetch and collapse the reading workspace.
+  const signedOutCallback = useRef(onSignedOut);
+  signedOutCallback.current = onSignedOut;
+  // An opaque, mounted-session namespace; never pass a credential as a history cache key.
+  const ownerGeneration = useRef({ identity: ownerIdentity, value: 0 });
+  if (ownerGeneration.current.identity !== ownerIdentity) {
+    ownerGeneration.current = { identity: ownerIdentity, value: ownerGeneration.current.value + 1 };
+  }
+  const [dataOwner, setDataOwner] = useState<string | null>(null);
+  const loadSequence = useRef(0);
   const [priv, setPriv] = useState<PrivateRow[] | null>(null);
   const [pub, setPub] = useState<PublicRow[]>([]);
   const [news, setNews] = useState<NewsRow[]>([]);
-  const [weekly, setWeekly] = useState<WeeklyRow | null>(null);
-  const [playbook, setPlaybook] = useState<PlaybookRow | null>(null);
+  const [weeklyRows, setWeeklyRows] = useState<WeeklyRow[]>([]);
+  const [playbookRows, setPlaybookRows] = useState<PlaybookRow[]>([]);
+  const weekly = weeklyRows[0] ?? null;
+  const playbook = playbookRows[0] ?? null;
   const [quant, setQuant] = useState<QuantRow | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [sourceWarnings, setSourceWarnings] = useState<string[]>([]);
+  const [comparisonRead, setComparisonRead] = useState<ComparisonRead>({ book: 'failed', plan: 'failed', weekly: 'failed' });
   const [historyPage, setHistoryPage] = useState(0);
   const lastHistoryPage = Math.max(0, Math.ceil((priv?.length ?? 0) / 12) - 1);
   const currentHistoryPage = Math.min(historyPage, lastHistoryPage);
@@ -1093,6 +1193,24 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
   // fits everything on one screen, the comprehensive view keeps nothing behind a disclosure.
   const [view, setView] = useState<View>(() => readView());
   useNoIndex();
+
+  const clearPrivate = useCallback(() => {
+    loadSequence.current++;
+    setDataOwner(null);
+    setCompared(null);
+    setComparisonRead({ book: 'failed', plan: 'failed', weekly: 'failed' });
+    setPriv(null);
+    setPub([]);
+    setNews([]);
+    setWeeklyRows([]);
+    setPlaybookRows([]);
+    setQuant(null);
+    setSourceWarnings([]);
+    setHistoryPage(0);
+    setRefreshing(false);
+  }, []);
+  // Neither a new identity nor revoked access can inherit the previous owner's private cache.
+  useEffect(() => { clearPrivate(); }, [ownerIdentity, clearPrivate]);
 
   useEffect(() => {
     document.title = 'Desk | Peyton Campbell';
@@ -1104,48 +1222,100 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
   }, [ready, session, onSignedOut]);
 
   const load = useCallback(async () => {
+    if (!ownerIdentity) return;
+    const sequence = ++loadSequence.current;
     setRefreshing(true);
+    setComparisonRead({ book: 'loading', plan: 'loading', weekly: 'loading' });
     try {
-    const [privateRes, publicRes, newsRes, weeklyRes, playbookRes, quantRes] = await Promise.all([
-      ownerFetch('pc_digest_private?select=*&order=as_of.desc&limit=30', ensureFresh),
+    const privateRequest = ownerFetch('pc_digest_private?select=*&order=as_of.desc&limit=30', ensureFresh);
+    // Observe secondary rejections immediately, including after an early gate return.
+    // Neither failed nor hung secondary reads may delay authoritative access loss.
+    const secondaryRequest = Promise.all([
       ownerFetch('pc_digest_public?select=*&order=as_of.desc&limit=30', ensureFresh),
       ownerFetch('pc_news?select=*&order=as_of.desc&limit=5', ensureFresh),
-      ownerFetch('pc_weekly?select=*&order=as_of.desc&limit=1', ensureFresh),
-      ownerFetch('pc_playbook?select=*&order=as_of.desc&limit=1', ensureFresh),
+      ownerFetch('pc_weekly?select=*&order=as_of.desc&limit=2', ensureFresh),
+      // Price histories are deliberately excluded until the History section is opened.
+      ownerFetch('pc_playbook?select=as_of,generated_at,holdings,entries,today&order=as_of.desc&limit=2', ensureFresh),
       ownerFetch('pc_quant?select=*&order=as_of.desc&limit=1', ensureFresh),
-    ]);
+    ]).catch(() => null);
+    const privateRes = await privateRequest;
+    if (sequence !== loadSequence.current) return;
     if (!privateRes.ok && privateRes.status === 401) {
+      clearPrivate();
+      invalidateSession();
       setError('Your session is no longer valid. Sign in again.');
-      onSignedOut();
+      signedOutCallback.current();
       return;
     }
     if (!privateRes.ok) {
+      setComparisonRead({ book: 'failed', plan: 'failed', weekly: 'failed' });
+      if (privateRes.status === 403) clearPrivate();
       setError(`Could not load the private desk (HTTP ${privateRes.status}).`);
       return;
     }
+    if (!Array.isArray(privateRes.rows) || !privateRes.rows.length) {
+      clearPrivate();
+      setPriv([]);
+      setError('No private book rows returned. Access or publication unavailable.');
+      return;
+    }
+    const secondaryResults = await secondaryRequest;
+    if (sequence !== loadSequence.current) return;
+    if (!secondaryResults) throw new Error('Secondary desk refresh failed');
+    const [publicRes, newsRes, weeklyRes, playbookRes, quantRes] = secondaryResults;
     setError('');
+    setDataOwner(ownerIdentity);
     setPriv(privateRes.rows as PrivateRow[]);
+    setComparisonRead({ book: 'ok', plan: playbookRes.ok ? 'ok' : 'failed', weekly: weeklyRes.ok ? 'ok' : 'failed' });
     // Retain the last successful snapshot on a failed refresh, with an explicit warning.
     const sources = [['Public metrics', publicRes], ['Brief', newsRes], ['Weekly', weeklyRes], ['Playbook', playbookRes], ['Model', quantRes]] as const;
     setSourceWarnings(sources.flatMap(([label, result]) => !result.ok ? [`${label} fetch failed (HTTP ${result.status}); last successful data retained`] : !result.rows?.length ? [`${label} source missing`] : []));
     if (publicRes.ok) setPub((publicRes.rows ?? []) as PublicRow[]);
     if (newsRes.ok) setNews((newsRes.rows ?? []) as NewsRow[]);
-    if (weeklyRes.ok) setWeekly(((weeklyRes.rows ?? []) as WeeklyRow[])[0] ?? null);
-    if (playbookRes.ok) setPlaybook(((playbookRes.rows ?? []) as PlaybookRow[])[0] ?? null);
+    if (weeklyRes.ok) setWeeklyRows((weeklyRes.rows ?? []) as WeeklyRow[]);
+    if (playbookRes.ok) setPlaybookRows((playbookRes.rows ?? []) as PlaybookRow[]);
     if (quantRes.ok) setQuant(((quantRes.rows ?? []) as QuantRow[])[0] ?? null);
     } catch {
-      setError('Could not refresh the desk. Last successful data retained; freshness is not confirmed.');
+      if (sequence === loadSequence.current) {
+        setComparisonRead({ book: 'failed', plan: 'failed', weekly: 'failed' });
+        setError('Could not refresh the desk. Last successful data retained; freshness is not confirmed.');
+      }
     } finally {
-      setRefreshing(false);
+      if (sequence === loadSequence.current) setRefreshing(false);
     }
-  }, [ensureFresh, onSignedOut, setError]);
+  }, [ensureFresh, setError, ownerIdentity, clearPrivate, invalidateSession]);
 
   useEffect(() => {
     if (session) void load();
   }, [session, load]);
 
-  const latest = priv && priv.length > 0 ? priv[0] : null;
+  const latest = dataOwner === ownerIdentity && session && priv && priv.length > 0 ? priv[0] : null;
   const today = pub[0] ?? null;
+  const changeReview = useChangeReview(session?.user_id ?? null, latest ? String(ownerGeneration.current.value) : null);
+  const cutoffDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Toronto', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+  const comparisonInput = useMemo(() => ({
+    owner: latest ? ownerIdentity : null, sequence: loadSequence.current,
+    pairs: latest ? ([['book', priv], ['plan', playbookRows], ['weekly', weeklyRows]] as const).map(([source, rows]) => {
+      const pair = changePair(source, rows, comparisonRead[source], cutoffDate, planAuthority);
+      return { ...pair, currentDate: pair.currentDate ?? normalizeDate(rows?.[0]?.as_of), previousDate: pair.previousDate ?? normalizeDate(rows?.[1]?.as_of) };
+    }) : [],
+  }), [latest, ownerIdentity, priv, playbookRows, weeklyRows, comparisonRead, cutoffDate]);
+  const [compared, setCompared] = useState<{ input: typeof comparisonInput; result: ComparedChanges } | null>(null);
+  useEffect(() => {
+    let active = true;
+    if (comparisonInput.owner) void compareChangePairs(comparisonInput.pairs).then(result => {
+      if (active && comparisonInput.sequence === loadSequence.current) setCompared({ input: comparisonInput, result });
+    });
+    return () => { active = false; };
+  }, [comparisonInput]);
+  const currentComparison = latest && compared?.input === comparisonInput && comparisonInput.sequence === loadSequence.current ? compared.result : null;
+  const changeGroups: ChangeGroup[] = currentComparison?.groups ?? comparisonInput.pairs.map(pair => ({ source: pair.source, beforeDate: pair.previousDate, afterDate: pair.currentDate, status: pair.state === 'ready' ? 'loading' : pair.state, notices: pair.notices, items: [] }));
+  const validChangeIds = new Set(changeGroups.flatMap(group => group.items.map(item => item.id)));
+  const reviewableChanges = useRef({ input: comparisonInput, ids: validChangeIds });
+  reviewableChanges.current = { input: comparisonInput, ids: validChangeIds };
+  const unreviewedChanges = [...validChangeIds].filter(id => !changeReview.reviewed[id]).length;
+  const changeStatus = changeGroups.some(group => group.status === 'loading') ? 'loading' : changeGroups.every(group => group.status === 'unavailable') ? 'comparison unavailable' : changeGroups.some(group => group.status === 'unavailable') ? `${unreviewedChanges} new · partial coverage` : `${unreviewedChanges} new`;
+
 
   const accountReturn = useMemo(() => {
     if (!latest?.book_value_cad || !latest?.true_cost_cad) return null;
@@ -1243,6 +1413,7 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
   // The brief and the book are two tables; the cards are where they meet.
 
   const onSignOut = async () => {
+    clearPrivate();
     await signOut();
     onSignedOut();
   };
@@ -1280,35 +1451,87 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
   if (!playbook?.today) attention.push('Order ticket unavailable');
   if (playbook?.today && !fundingPlan(playbook.today)) attention.push('Funding plan unavailable');
   const sessions = [...new Set(orderRows.map(({ line }) => [line.region ?? 'Venue unspecified', orderSession(line) || 'session unavailable'].join(': ')))];
-  const details: Record<string, ReactNode> = {};
-  const detailTickers = new Set([...book.map(row => row.holding.ticker), ...orderRows.map(row => row.line.ticker), ...weeklyRanking.map(row => row.ticker)]);
-  for (const ticker of detailTickers) {
+  const renderDetail = (selection: StockSelection, detailView: AnalysisView) => {
+    const { ticker, origin } = selection;
+    if (origin === 'change') {
+      const historical = selection.changeId ? currentComparison?.details.get(selection.changeId) : null;
+      if (!historical) return <section data-detail-origin="change"><h3>Change no longer in the comparison window</h3><p>The source may be loading, unavailable or revised. No current ticker facts have been substituted for this event.</p></section>;
+      const item = historical.item;
+      return <section data-detail-origin="change"><h3>Historical change · {item.label}</h3>
+        <p>{item.source} · {item.beforeDate} → {item.afterDate} · Published proposals and readings, not execution evidence.</p>
+        <dl><dt>Before</dt><dd>{item.before}</dd><dt>After</dt><dd>{item.after}</dd></dl>
+        {item.reason && <p>{item.reason}</p>}
+        <h4>Historical source facts · before</h4>{historical.before}
+        <h4>Historical source facts · after</h4>{historical.after}
+        <p>Only facts retained by the compared publication are shown. Extended historical evidence and execution status are unavailable.</p>
+        {detailView === 'history' && <p>Price history unavailable for this historical selection: source-specific listing identity and quote currency have not been verified. Current ticker context is not substituted.</p>}
+      </section>;
+    }
+    if (detailView === 'evidence') return <StockNewsEvidence ticker={ticker} rows={news.filter(item => item && typeof item === 'object').map(item => ({
+      ...item,
+      tickers: Array.isArray(item.tickers) ? item.tickers.filter(value => value && typeof value === 'object') : [],
+      stories: Array.isArray(item.stories) ? item.stories.filter(value => value && typeof value === 'object') : [],
+    }))} />;
     const row = book.find(row => row.holding.ticker === ticker);
     const play = playbook?.holdings.find(row => row.ticker === ticker);
     const candidate = weeklyRanking.find(row => row.ticker === ticker);
-    details[ticker] = <>
-      {row && <section><h3>Holding</h3><p>{row.holding.reason ?? 'Holding rationale unavailable'}</p>
+    if (detailView === 'history') {
+      const fromBook = origin !== 'candidate' && Boolean(row);
+      const scope = fromBook ? 'book' : 'universe';
+      const proposal = orderRows.find(order => order.line.ticker === ticker
+        && (origin === 'buy' ? order.key === 'buys' : origin === 'sell' ? order.key !== 'buys' : false)
+        && (!selection.action || selection.action === order.action));
+      const currency = origin === 'buy' || origin === 'sell' ? rowCurrency(proposal?.line.currency)
+        : origin === 'candidate' ? candidate?.currency ?? null : row?.currency ?? candidate?.currency ?? null;
+      const cutoff = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Toronto', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+      return <StockHistoryData ticker={ticker} scope={scope} currency={currency} snapshot={playbook}
+        ownerKey={String(ownerGeneration.current.value)} isEtf={fromBook && row?.holding.is_etf}
+        ratings={ratingsFor(fromBook ? 'book' : 'weekly', fromBook ? priv : weeklyRows, ticker, scope, cutoff)}
+        fetchRows={path => ownerFetch(path, ensureFresh)} onAccessCheck={() => { void load(); }} />;
+    }
+    const holdingFactors = row && <FactorBars pillars={row.holding.pillars} scope={row.holding.rating_scope} modelVersion={row.holding.model_version} isEtf={row.holding.is_etf} coverage={row.holding.score_meta} />;
+    const holdingDetail = row && <section data-detail-origin="portfolio"><h3>Book call: {row.holding.call}</h3>
+        <p className="sd-analysis-note">{row.currency ?? 'Currency unavailable'} · Book {latest.as_of}</p>
         <dl><dt>CAD value / allocation</dt><dd>{latest?.book_value_cad == null ? '--' : money(value(row.holding.weight_pct))} / {row.holding.weight_pct.toFixed(2)}%</dd>
-          <dt>Book call</dt><dd>{row.holding.call}</dd><dt>Book / universe rating</dt><dd>{row.holding.rating?.toFixed(1) ?? '--'} / {row.holding.rating_universe?.toFixed(1) ?? '--'}</dd>
-          <dt>Currency / day</dt><dd>{row.currency ?? 'Unknown'} / {pct(row.holding.day_pct, 2)}</dd>
+          <dt>Book / universe rating</dt><dd>{row.holding.rating?.toFixed(1) ?? '--'} / {row.holding.rating_universe?.toFixed(1) ?? '--'}</dd></dl>
+        {holdingFactors}
+        <h3>Why this call?</h3><p>{row.holding.reason ?? 'Holding rationale unavailable'}</p>
+        {detailView !== 'quick' && <PublishedCallEvaluation evaluation={row.holding.call_evaluation} expectedAsOf={latest.as_of} expectedCall={row.holding.call} />}
+        {detailView !== 'quick' && <><dl><dt>Currency / day</dt><dd>{row.currency ?? 'Unknown'} / {pct(row.holding.day_pct, 2)}</dd>
           <dt>Analyst buys / ratings</dt><dd>{row.holding.buys ?? '--'} / {row.holding.ratings ?? '--'}</dd>
           <dt>Model version</dt><dd>{row.holding.model_version ?? '--'}</dd></dl>
-        {row.holding.pillars && <ul>{PILLAR_META.map(p => <li key={p.key}>{p.label} {p.weight}%: {pillarScore(row.holding.pillars?.[p.key])}</li>)}</ul>}
         {play && <><h3>Playbook action: {play.action}</h3><p>Independent from the book call and discretionary funding sales.</p><p>Revisions {play.revisions?.toFixed(2) ?? '--'} · P/L {play.pl == null ? '--' : pct(play.pl * 100, 1)}</p><p>{play.flags.join(' · ')}</p></>}
         <p>{row.entry?.read ?? 'No fresh ticker read in this publish.'}</p>
-        {(storiesByTicker.get(ticker) ?? []).map(story => <p key={story.url}><a href={story.url} target="_blank" rel="noopener noreferrer">{story.title}</a><small>{story.source} · {story.published ?? 'Publication time unavailable'}</small></p>)}
-      </section>}
-      {orderRows.filter(row => row.line.ticker === ticker).map(({ line, action }, i) => <section key={i}><h3>{action} proposal · {line.name ?? ticker}</h3>
+        </>}
+      </section>;
+    const orders = orderRows.filter(order => order.line.ticker === ticker && (origin !== 'buy' && origin !== 'sell' || (origin === 'buy' ? order.key === 'buys' : order.key !== 'buys') && (!selection.action || selection.action === order.action)));
+    const orderDetail = orders.map(({ line, action }, i) => <section key={i} data-detail-origin="proposal"><h3>{action} proposal · {line.name ?? ticker}</h3>
+        <p className="sd-analysis-note">Plan {playbook?.as_of ?? 'date unavailable'} · Proposed, not executed</p>
         <p><DashboardOrderRow line={line} action={action} /></p>
         <dl><dt>Currency / venue</dt><dd>{rowCurrency(line.currency) ?? 'Unknown'} / {line.region ?? 'Unknown'}</dd>
           <dt>Local limit / CAD per share</dt><dd>{orderMarket(line) ? 'Market — no limit or price protection' : `${priceIn(line.limit_local, rowCurrency(line.currency))} / ${cadAmount(line.limit_cad) ?? '--'}`}</dd>
           <dt>Session</dt><dd>{orderSession(line) || 'Unavailable'}</dd><dt>Reason</dt><dd>{line.why ?? 'Unavailable'}</dd>
           <dt>Funding</dt><dd>{line.funded === false ? 'Waiting on cash' : line.funded === true ? 'Published as funded; planned proceeds are not settled cash' : 'Not specified'}</dd>
           <dt>Kind / rating</dt><dd>{orderKind(line) ?? line.kind ?? '--'} / {line.rating ?? '--'}</dd></dl>
-      </section>)}
-      {candidate && <section><h3>Universe candidate</h3><p>{candidate.name}</p><p>Composite {candidate.rating.toFixed(1)} · Revisions {candidate.revisions_net.toFixed(2)} · vs 200d {pct(candidate.px_vs_200d * 100, 1)}</p><p>{candidate.region} · {candidate.currency ?? 'Currency unknown'} · P/E {candidate.fwd_pe ?? '--'}</p><p>{brokerNote(candidate) ?? (candidate.broker_ok === true ? 'Broker availability confirmed in publish' : 'Broker availability not confirmed')}</p></section>}
-    </>;
-  }
+      </section>);
+    const candidateDetail = candidate && <section data-detail-origin="candidate"><h3>Universe candidate</h3><p>{candidate.name}</p>
+      <p className="sd-analysis-note">Weekly {weekly?.as_of ?? 'date unavailable'} · {candidate.currency ?? 'Currency unavailable'}</p>
+      <p>Composite {candidate.rating.toFixed(1)} · Revisions {candidate.revisions_net.toFixed(2)} · vs 200d {pct(candidate.px_vs_200d * 100, 1)}</p>
+      <p>{brokerNote(candidate) ?? (candidate.broker_ok === true ? 'Broker availability confirmed in publish' : 'Broker availability not confirmed')}</p>
+      <FactorBars pillars={candidate.pillars} scope={candidate.rating_scope ?? 'universe'} modelVersion={candidate.model_version} coverage={candidate.score_meta} />
+      {detailView !== 'quick' && <p>{candidate.region} · {candidate.currency ?? 'Currency unknown'} · P/E {candidate.fwd_pe ?? '--'}</p>}
+    </section>;
+    const fromOrder = origin === 'buy' || origin === 'sell';
+    const leading = origin === 'candidate' ? candidateDetail : fromOrder ? orderDetail : holdingDetail;
+    return <div className="sd-stock-detail">
+      {leading}
+      {detailView === 'quick' ? fromOrder && holdingFactors : <>
+        {origin !== 'portfolio' && holdingDetail}
+        {!fromOrder && orderDetail}
+        {origin !== 'candidate' && candidateDetail}
+      </>}
+    </div>;
+  };
   const fullBook = (<section className="own-panel">
               <div className="own-panel-head">
                 <h2>The book</h2>
@@ -1342,10 +1565,10 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
               </div>
 
               <p className="own-note">
-                The cards lead with the rating the desk ranks on: the five-pillar composite, a 0–100
-                percentile weighted growth 27.2 · revisions 21.7 · momentum 21.7 · valuation 16.3 ·
-                quality 13.0. Percentiles sit inside the book, so they compare between holdings; the
-                detailed view adds each name&apos;s percentile in the 1,100-name universe.
+                The five-pillar composite is a relative 0–100 model score, not an exact final-score
+                percentile or expected return. Current model weights: growth 27.2% · revisions 21.7% ·
+                momentum 21.7% · valuation 16.3% · quality 13.0%. Analyst coverage also adjusts the
+                composite. Book scores compare holdings; universe scores use a separate comparison group.
               </p>
 
               {newsLatest?.summary && <p className="own-brief-summary">{newsLatest.summary}</p>}
@@ -2093,11 +2316,12 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
     <h3>Headlines ({newsLatest?.stories.length ?? 0})</h3>{newsLatest?.stories.map(story => <p key={story.url}><a href={story.url} target="_blank" rel="noopener noreferrer">{story.ticker}: {story.title}</a> · {story.source} · {story.published ?? 'Time unavailable'}</p>)}
   </section>;
   return <StockDashboard
+    changes={{ label: `Changes · ${changeStatus}`, render: open => <StockChanges groups={changeGroups} reviewed={changeReview.reviewed} onReview={id => { if (reviewableChanges.current.input === comparisonInput && comparisonInput.sequence === loadSequence.current && reviewableChanges.current.ids.has(id)) changeReview.markReviewed(id); }} onOpen={open} /> }}
     email={session?.email} onHome={onHome} onSignOut={onSignOut} onRefresh={() => void load()} refreshing={refreshing}
     portfolio={book.map(({ holding: h }) => ({ ticker: h.ticker, summary: <><strong>{h.ticker}</strong><span>{latest?.book_value_cad == null ? '--' : money(value(h.weight_pct), 0)}</span><span>{h.weight_pct.toFixed(1)}%</span><span className={tone(h.day_pct)}>{pct(h.day_pct, 1)}</span><span>{h.rating?.toFixed(0) ?? '--'}</span><span className={h.call === 'SELL' ? 'down' : ''}>{h.call}</span></> }))}
-    buys={orderRows.filter(row => row.key === 'buys').map(({ line, action }) => ({ ticker: line.ticker, summary: <DashboardOrderRow line={line} action={action} /> }))}
-    sells={orderRows.filter(row => row.key !== 'buys').map(({ line, action }) => ({ ticker: line.ticker, summary: <DashboardOrderRow line={line} action={action} /> }))}
-    details={details}
+    buys={orderRows.filter(row => row.key === 'buys').map(({ line, action }) => ({ ticker: line.ticker, action, summary: <DashboardOrderRow line={line} action={action} /> }))}
+    sells={orderRows.filter(row => row.key !== 'buys').map(({ line, action }) => ({ ticker: line.ticker, action, summary: <DashboardOrderRow line={line} action={action} /> }))}
+    details={{}} renderDetail={renderDetail}
     kpis={[
       { label: 'Book value', value: money(latest?.book_value_cad), note: `Cost basis ${money(latest?.true_cost_cad)}` },
       { label: 'Account return', value: pct(accountReturn, 2), note: 'Broker cost basis · not time-weighted' },

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 /**
  * Owner session plumbing, shared by the login page and the console.
@@ -19,6 +19,8 @@ export type Session = {
   refresh_token: string;
   expires_at: number;
   email: string;
+  /** Provider identity namespaces device-only preferences; it never grants access. */
+  user_id?: string;
 };
 
 export function readSession(): Session | null {
@@ -59,6 +61,7 @@ function sessionFrom(payload: any, email: string): Session {
     refresh_token: payload.refresh_token,
     expires_at: Date.now() + (payload.expires_in ?? 3600) * 1000,
     email,
+    user_id: typeof payload.user?.id === 'string' && payload.user.id.trim() ? payload.user.id : undefined,
   };
 }
 
@@ -89,6 +92,15 @@ export function useOwnerSession() {
   const [session, setSession] = useState<Session | null>(null);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const invalidated = useRef(false);
+  const sessionVersion = useRef(0);
+  /** Revoke locally before navigation; never wait for a remote logout. */
+  const invalidateSession = useCallback(() => {
+    sessionVersion.current++;
+    invalidated.current = true;
+    writeSession(null);
+    setSession(null);
+  }, []);
 
   useEffect(() => {
     if (!AUTH_CONFIGURED) {
@@ -109,15 +121,19 @@ export function useOwnerSession() {
     setReady(true);
   }, []);
 
+  // Bind captured callbacks to their render's lifecycle, not the generation at invocation.
+  const version = sessionVersion.current;
   /** A token that is valid now - renewing it once if it has expired - or null if it is dead. */
   const ensureFresh = useCallback(async (): Promise<Session | null> => {
+    if (invalidated.current || version !== sessionVersion.current) return null;
     const current = session ?? readSession();
     if (!current || !AUTH_CONFIGURED) return null;
     if (current.expires_at - 30_000 > Date.now()) return current;
     const refreshed = await authPost('token?grant_type=refresh_token', { refresh_token: current.refresh_token });
+    // A renewal started before revocation/new sign-in cannot restore or revoke that session.
+    if (version !== sessionVersion.current) return null;
     if (!refreshed.ok) {
-      writeSession(null);
-      setSession(null);
+      invalidateSession();
       setError('Your session expired. Sign in again.');
       return null;
     }
@@ -125,7 +141,7 @@ export function useOwnerSession() {
     writeSession(next);
     setSession(next);
     return next;
-  }, [session]);
+  }, [session, invalidateSession, version]);
 
   const signIn = useCallback(async (email: string, password: string): Promise<boolean> => {
     if (!AUTH_CONFIGURED) {
@@ -139,6 +155,8 @@ export function useOwnerSession() {
       return false;
     }
     const next = sessionFrom(res.data, res.data.user?.email ?? email);
+    sessionVersion.current++;
+    invalidated.current = false;
     writeSession(next);
     setSession(next);
     return true;
@@ -165,17 +183,16 @@ export function useOwnerSession() {
 
   const signOut = useCallback(async () => {
     const active = session;
-    writeSession(null);
-    setSession(null);
+    invalidateSession();
     if (active && AUTH_CONFIGURED) {
       await fetch(`${SUPABASE_URL}/auth/v1/logout`, {
         method: 'POST',
         headers: { apikey: SUPABASE_ANON_KEY as string, Authorization: `Bearer ${active.access_token}` },
       }).catch(() => undefined);
     }
-  }, [session]);
+  }, [session, invalidateSession]);
 
-  return { session, ready, error, setError, signIn, requestLink, signOut, ensureFresh };
+  return { session, ready, error, setError, signIn, requestLink, signOut, ensureFresh, invalidateSession };
 }
 
 /** GETs a PostgREST path with the owner's token, renewing once on a 401. */

@@ -1,0 +1,16 @@
+.se-evidence {
+  min-width: 0;
+  color: var(--sd-text, #e2e8f0);
+  font: 14px/1.5 'IBM Plex Sans', 'Segoe UI', sans-serif;
+  overflow-wrap: anywhere;
+}
+.se-evidence > h3, .se-evidence h4 { margin: 16px 0 8px; font-size: 14px; font-weight: 600; }
+.se-evidence > h3:first-child { margin-top: 0; }
+.se-evidence p { margin: 8px 0; }
+.se-evidence .se-meta { color: var(--sd-muted, #a7b5c6); font-size: 12px; }
+.se-articles, .se-conditions { list-style: none; padding: 0; margin: 8px 0 16px; }
+.se-articles > li, .se-conditions > li { padding: 10px 0; border-bottom: 1px solid var(--sd-line, #304052); }
+.se-articles a { color: var(--sd-select, #8fafe6); text-underline-offset: 3px; }
+.se-method { margin-top: 12px; }
+.se-method > summary { cursor: pointer; }
+.se-evidence a:focus-visible, .se-method > summary:focus-visible { outline: 2px solid var(--sd-select, #8fafe6); outline-offset: 3px; }

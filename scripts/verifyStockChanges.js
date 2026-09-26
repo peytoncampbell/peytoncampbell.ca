@@ -1,0 +1,104 @@
+import assert from 'node:assert/strict';
+import { existsSync, readFileSync } from 'node:fs';
+import { createServer } from 'node:http';
+import { pathToFileURL } from 'node:url';
+import { Module } from 'node:module';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { buildSync } from 'esbuild';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const source = resolve(root, 'src/StockChanges.tsx');
+assert(existsSync(source), 'StockChanges presentation must exist');
+const code = buildSync({ entryPoints:[source], bundle:true, write:false, platform:'node', format:'cjs', jsx:'automatic', external:['react'], loader:{'.css':'empty'} }).outputFiles[0].text;
+const compiled = new Module(source); compiled.filename=source; compiled.paths=Module._nodeModulePaths(root); compiled._compile(code,source);
+const { StockChanges } = compiled.exports;
+const id = n => n.toString(16).padStart(64,'0');
+const item = n => ({id:id(n),ticker:n===1?null:'OLD',category:'Funding',label:`Exact change ${n}`,source:'Book',beforeDate:'2026-09-23',afterDate:'2026-09-24',before:0,after:false,reason:'Caller reason'});
+const group = {source:'Book',beforeDate:'2026-09-23',afterDate:'2026-09-24',status:'ready',notices:[],items:[item(1),item(2)]};
+const props = {groups:[group],reviewed:{},onReview:()=>{},onOpen:()=>{}};
+const html = renderToStaticMarkup(createElement(StockChanges,props));
+assert.match(html,/Changes since the previous daily snapshot/);
+assert.match(html,/Exact change 1/); assert.match(html,/>0</); assert.match(html,/>false</);
+assert.match(html,/2026-09-23/); assert.match(html,/2026-09-24/);
+assert.equal((html.match(/Open stock analysis/g)||[]).length,1);
+assert.match(html,/Reviewed does not mean executed or risk resolved/);
+console.log('PASS presentation: exact caller facts, zero/false, dates, funding, review semantics');
+for (const [status, copy] of [['baseline','Baseline recorded'],['unavailable','Comparison unavailable'],['loading','Loading comparison']]) {
+ const result=renderToStaticMarkup(createElement(StockChanges,{...props,groups:[{...group,status,notices:['Source incomplete'],items:[]}]}));
+ assert(result.includes(copy),`${status} explicitly labelled`); assert(result.includes('Source incomplete')); assert(!result.includes('No changes'));
+}
+assert.match(renderToStaticMarkup(createElement(StockChanges,{...props,groups:[{...group,items:[]}]})),/No changes between these daily snapshots/);
+console.log('PASS baseline, unavailable, loading and valid unchanged are distinct');
+const coverage=renderToStaticMarkup(createElement(StockChanges,{...props,groups:[group,{...group,source:'Playbook',beforeDate:'2026-09-20',afterDate:'2026-09-22',items:[]}]}));
+assert.match(coverage,/Playbook/); assert.match(coverage,/2026-09-20/); assert.match(coverage,/2026-09-22/);
+assert(!html.includes('<select'),'one category does not add a redundant filter');
+
+const entry = `import React from 'react'; import {createRoot} from 'react-dom/client'; import {flushSync} from 'react-dom'; import * as changes from './src/StockChanges.tsx';
+const root=createRoot(document.getElementById('root')); window.changes=changes; window.opened=null;
+const id=n=>n.toString(16).padStart(64,'0');
+const items=Array.from({length:27},(_,i)=>({id:id(i+1),ticker:i===0?null:'REMOVED',category:i===0?'Funding':'Book',label:'Exact '+(i+1),source:'Book',beforeDate:'2026-09-23',afterDate:'2026-09-24',before:0,after:false}));
+function Demo(){const [reviewed,set]=React.useState({});return <changes.StockChanges groups={[{source:'Book',beforeDate:'2026-09-23',afterDate:'2026-09-24',status:'ready',notices:[],items}]} reviewed={reviewed} onReview={id=>set(r=>({...r,[id]:'2026-09-25T00:00:00.000Z'}))} onOpen={value=>window.opened=value}/>;}
+window.renderDemo=()=>flushSync(()=>root.render(<Demo/>)); window.renderDemo();
+function Hook({user,session}){const state=changes.useChangeReview(user,session);window.hook=state;window.renders.push({user,session,reviewed:{...state.reviewed}});return <output>{JSON.stringify(state.reviewed)}</output>}
+window.renders=[];window.mountHook=(user,session)=>flushSync(()=>root.render(<Hook user={user} session={session}/>));window.mark=id=>flushSync(()=>window.hook.markReviewed(id));`;
+const bundle=buildSync({stdin:{contents:entry,resolveDir:root,loader:'tsx'},bundle:true,write:false,platform:'browser',format:'iife',jsx:'automatic',loader:{'.css':'empty'}}).outputFiles[0].text;
+const stylesheet=resolve(root,'src/StockChanges.css');
+const server=createServer((req,res)=>{res.setHeader('Content-Type',req.url==='/bundle.js'?'text/javascript':'text/html');res.end(req.url==='/bundle.js'?bundle:`<meta name="viewport" content="width=device-width, initial-scale=1"><style>body{margin:0;background:#10161f;color:#e2e8f0} ${existsSync(stylesheet)?readFileSync(stylesheet,'utf8'):''}</style><div id="root"></div><script src="/bundle.js"></script>`);});
+await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+const {default:puppeteer}=await import(pathToFileURL(process.env.PUPPETEER_CORE_PATH || 'C:/Users/campb/AppData/Local/hermes/cache/scratch/site-audit-20260925/harness/node_modules/puppeteer-core/lib/puppeteer/puppeteer-core.js').href);
+const browser=await puppeteer.launch({executablePath:process.env.CHROME_PATH || 'C:/Program Files/Google/Chrome/Application/chrome.exe',headless:true,args:['--no-sandbox']});
+try {
+ const page=await browser.newPage(); const errors=[]; page.on('pageerror',e=>errors.push(e.message));
+ await page.goto(`http://127.0.0.1:${server.address().port}`); await page.waitForSelector('.stock-changes');
+ const click=async text=>{const found=await page.evaluate(text=>{const b=[...document.querySelectorAll('button')].find(b=>b.textContent===text);if(!b)return false;b.click();return true;},text);assert(found,`button ${text}`);};
+ assert(await page.evaluate(()=>[...document.querySelectorAll('button')].some(b=>b.textContent==='New (27)' && b.getAttribute('aria-pressed')==='true')),'New count and native pressed control');
+ assert.equal(await page.$$eval('[data-change-id]',rows=>rows.length),20);
+ await click('Next'); await page.waitForFunction(()=>document.querySelectorAll('[data-change-id]').length===7);
+ await click('Previous'); await page.waitForFunction(()=>document.querySelectorAll('[data-change-id]').length===20);
+ await page.evaluate(()=>document.querySelector('[data-change-id] button').focus()); await click('Mark reviewed');
+ await page.waitForFunction(()=>document.body.textContent.includes('New (26)'));
+ assert(await page.evaluate(()=>document.activeElement!==document.body && document.activeElement.isConnected),'focus survives row removal');
+ await click('Reviewed (1)'); await page.waitForFunction(()=>document.querySelectorAll('[data-change-id]').length===1);
+ assert.equal(await page.$$eval('[data-change-id] button',bs=>bs.filter(b=>b.textContent==='Open stock analysis').length),0);
+ await click('All (27)'); await page.waitForFunction(()=>document.querySelectorAll('[data-change-id]').length===20);
+ await click('Open stock analysis'); assert.deepEqual(await page.evaluate(()=>window.opened),{ticker:'REMOVED',origin:'change',changeId:id(2)});
+ await page.select('select','Funding'); await page.waitForFunction(()=>document.querySelectorAll('[data-change-id]').length===1);
+ assert.equal(errors.length,0,errors.join('\n'));
+ await page.setViewport({width:390,height:844});
+ assert.equal(await page.$eval('.stock-changes button',el=>getComputedStyle(el).fontSize),'14px','readable controls');
+ assert(await page.evaluate(()=>document.documentElement.scrollWidth<=390),'390px natural wrapping');
+ assert(await page.$eval('.stock-changes',el=>![...el.querySelectorAll('*'),el].some(node=>['auto','scroll'].includes(getComputedStyle(node).overflowY))),'no nested scrollbar');
+ if(process.env.STOCK_CHANGES_SCREENSHOT) await page.screenshot({path:process.env.STOCK_CHANGES_SCREENSHOT,fullPage:true});
+ console.log('PASS real React filtering, exact counts, pagination, callbacks, removed stock and focus');
+ assert.equal(await page.evaluate(()=>typeof window.changes.useChangeReview),'function','review hook exported');
+ const state=()=>page.evaluate(()=>({...window.hook.reviewed}));
+ await page.evaluate(()=>{localStorage.clear();window.mountHook('provider-user-A','session-A');});
+ await page.evaluate(value=>window.mark(value),id(1)); assert((await state())[id(1)]);
+ const stored=await page.evaluate(()=>Object.entries(localStorage)); assert.equal(stored.length,1);
+ const payload=JSON.parse(stored[0][1]); assert.deepEqual(Object.keys(payload).sort(),['reviewed','version']); assert.equal(payload.version,1); assert.deepEqual(Object.keys(payload.reviewed),[id(1)]); assert.equal(new Date(payload.reviewed[id(1)]).toISOString(),payload.reviewed[id(1)]);
+ assert(!stored[0][1].includes('session-A')); assert(!stored[0][1].includes('REMOVED'));
+ await page.evaluate(()=>{window.oldMark=window.hook.markReviewed;window.renders=[];window.mountHook('provider-user-B','session-B');});
+ assert.deepEqual(await state(),{}); assert(await page.evaluate(()=>window.renders.every(r=>Object.keys(r.reviewed).length===0)),'no old-owner render');
+ await page.evaluate(value=>window.oldMark(value),id(2)); assert.deepEqual(await state(),{});
+ await page.evaluate(value=>window.mark(value),id(3)); assert.deepEqual(Object.keys(await state()),[id(3)]);
+ await page.evaluate(()=>window.mountHook('provider-user-A','session-A2')); assert.deepEqual(Object.keys(await state()),[id(1)]); assert(!(await state())[id(2)],'revised ID remains new');
+ await page.evaluate(()=>window.mountHook('provider-user-A',null)); assert.deepEqual(await state(),{}); await page.evaluate(value=>window.mark(value),id(4)); assert.deepEqual(await state(),{});
+ console.log('PASS actual hook owner isolation, no stale render/closure writes, logout, reload, revised IDs and minimal payload');
+ await page.evaluate(()=>{localStorage.clear();window.mountHook(null,'legacy-one');}); await page.evaluate(value=>window.mark(value),id(5)); assert((await state())[id(5)]); assert.equal(await page.evaluate(()=>localStorage.length),0);
+ await page.evaluate(()=>window.mountHook(null,'legacy-one')); assert((await state())[id(5)],'same always-mounted owner preserves memory across rerenders');
+ await page.evaluate(()=>window.mountHook(null,'legacy-two')); assert.deepEqual(await state(),{});
+ await page.evaluate(()=>window.mountHook('', 'legacy-empty')); await page.evaluate(value=>window.mark(value),id(6)); assert.equal(await page.evaluate(()=>localStorage.length),0);
+ await page.evaluate(()=>{window.savedStorage=Object.getOwnPropertyDescriptor(window,'localStorage');Object.defineProperty(window,'localStorage',{configurable:true,get(){throw Error('blocked')}});window.mountHook('blocked-owner','blocked-session');}); await page.evaluate(value=>window.mark(value),id(7)); assert((await state())[id(7)]);
+ await page.evaluate(()=>{Object.defineProperty(window,'localStorage',window.savedStorage);window.mountHook('seed','seed');});
+ const key=user=>`stock-change-review:v1:${encodeURIComponent(user)}`;
+ for(const raw of ['{broken',JSON.stringify({version:2,reviewed:{[id(8)]:'2026-09-25T00:00:00.000Z'}}),JSON.stringify({version:1,reviewed:[],token:'synthetic'}),JSON.stringify({version:1,reviewed:{[id(8)]:'2026-09-25T00:00:00.000Z'},extra:'synthetic'})]){
+  await page.evaluate(({key,raw})=>{window.mountHook('seed','seed');localStorage.setItem(key,raw);window.mountHook('corrupt','corrupt');},{key:key('corrupt'),raw}); assert.deepEqual(await state(),{},'corrupt schema never trusted');
+ }
+ await page.evaluate(({key,good,bad})=>{localStorage.setItem(key,JSON.stringify({version:1,reviewed:{[good]:'2026-09-25T00:00:00.000Z',[bad]:'2026-02-30T00:00:00.000Z',INVALID:'2026-09-25T00:00:00.000Z'}}));window.mountHook('validation','validation');},{key:key('validation'),good:id(9),bad:id(10)});assert.deepEqual(Object.keys(await state()),[id(9)]);
+ await page.evaluate(()=>window.mark('INVALID')); assert.deepEqual(Object.keys(await state()),[id(9)]);
+ await page.evaluate(key=>{const reviewed={};for(let i=0;i<2005;i++)reviewed[i.toString(16).padStart(64,'0')]=new Date(1700000000000+i).toISOString();localStorage.setItem(key,JSON.stringify({version:1,reviewed}));window.mountHook('bounded','bounded');},key('bounded')); assert.equal(Object.keys(await state()).length,2000,'loaded history bounded');
+ assert.equal(errors.length,0,errors.join('\n'));
+ console.log('PASS no-ID session memory, blocked storage, corrupt schema, ID/time validation and bounded history');
+} finally {await browser.close();await new Promise(resolve=>server.close(resolve));}

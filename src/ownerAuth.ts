@@ -168,15 +168,16 @@ export function useOwnerSession() {
       return false;
     }
     setError(null);
-    const res = await authPost('otp', {
+    // The emailed link must come back to the page that asked. GoTrue reads redirect_to from the
+    // request HEADER or the FORM/QUERY string only - never the JSON body (v2.197.0 source:
+    // internal/utilities/request.go) - and otherwise falls back to the Referer header, which
+    // browsers trim to the site ORIGIN on cross-site posts; that is exactly how links landed on
+    // the site root. So the redirect rides the query string, the way supabase-js sends it.
+    const target = window.location.origin + redirectPath;
+    const res = await authPost(`otp?redirect_to=${encodeURIComponent(target)}`, {
       email,
-      // The emailed link must come back to the page that asked: this GoTrue instance honors a
-      // TOP-LEVEL redirect_to (the nested options form is silently ignored and the link falls back
-      // to the project default). create_user:false keeps a typo'd or unknown address from ever
-      // creating an account; the nested options are kept for forward compatibility.
-      redirect_to: window.location.origin + redirectPath,
+      // create_user:false keeps a typo'd or unknown address from ever creating an account.
       create_user: false,
-      options: { email_redirect_to: window.location.origin + redirectPath, should_create_user: false },
     });
     if (!res.ok) {
       setError(

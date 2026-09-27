@@ -23,6 +23,7 @@ import ArchitectureDiagram from './ArchitectureDiagram';
 import PortfolioDigest from './PortfolioDigest';
 import OwnerLogin from './OwnerLogin';
 import OwnerStocks from './OwnerStocks';
+import ReaderDesk from './ReaderDesk';
 import NotFound from './NotFound';
 import ProjectDetail from './ProjectDetail';
 import ProjectVisual from './ProjectVisual';
@@ -292,6 +293,9 @@ export default function App() {
   }
   if (route === '/stocks') {
     return <OwnerStocks onSignedOut={() => navigate('/login')} onHome={navigateHome} />;
+  }
+  if (route === '/mydesk') {
+    return <ReaderDesk onHome={navigateHome} />;
   }
 
   const projectSlug = route.match(/^\/projects\/([^/]+)\/?$/)?.[1];

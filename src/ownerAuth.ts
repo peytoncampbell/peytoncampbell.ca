@@ -162,7 +162,7 @@ export function useOwnerSession() {
     return true;
   }, []);
 
-  const requestLink = useCallback(async (email: string): Promise<boolean> => {
+  const requestLink = useCallback(async (email: string, redirectPath = '/stocks'): Promise<boolean> => {
     if (!AUTH_CONFIGURED || !email) {
       setError('Enter your email first, then ask for the link.');
       return false;
@@ -171,8 +171,8 @@ export function useOwnerSession() {
     const res = await authPost('otp', {
       email,
       // The public endpoint reads these under `options`; should_create_user keeps a typo'd or
-      // unknown address from creating an account.
-      options: { email_redirect_to: window.location.origin + '/stocks', should_create_user: false },
+      // unknown address from creating an account. The link must come back to the page that asked.
+      options: { email_redirect_to: window.location.origin + redirectPath, should_create_user: false },
     });
     if (!res.ok) {
       setError(`Could not send the link (HTTP ${res.status}).`);

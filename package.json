@@ -21,6 +21,7 @@
     "verify:history-data": "node scripts/verifyStockHistoryData.js",
     "verify:dashboard:shell": "node scripts/verifyStockDashboardShell.js",
     "verify:owner-session": "node scripts/verifyOwnerSession.js",
+    "verify:reader": "node scripts/verifyReaderDesk.mjs",
     "verify:owner-data": "node scripts/verifyOwnerDataLoad.js",
     "verify:owner-lifecycle": "node scripts/verifyOwnerSessionLifecycle.js",
     "verify:changes": "node scripts/verifyStockChanges.js",

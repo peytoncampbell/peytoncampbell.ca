@@ -26,7 +26,7 @@ copyEntrypoint(resolve('docs', '404.html'), 'docs/404.html for GitHub Pages rout
 
 // The owner routes are real paths too: GitHub Pages needs an index.html at each one or a
 // reload (or a link out of an inbox) would 404 before the SPA ever boots.
-for (const route of ['login', 'stocks']) {
+for (const route of ['login', 'stocks', 'mydesk']) {
   const dir = resolve('docs', route);
   mkdir(dir, { recursive: true }, (mkdirErr) => {
     if (mkdirErr) {

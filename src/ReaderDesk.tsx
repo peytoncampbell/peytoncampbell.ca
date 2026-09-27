@@ -180,6 +180,7 @@ const UNFUNDED_LABELS: Record<string, string> = {
   'no cash or sale proceeds left': 'Needs cash',
   'not fillable from this broker': 'Not fillable here',
   'extended - wait for a pullback': 'Waiting for a pullback',
+  'add flag only - below the universe median': 'Add flag only (below median)',
 };
 
 const groupUnfunded = (ticket: ReaderTicket): { label: string; tickers: string[] }[] => {

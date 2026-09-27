@@ -271,6 +271,117 @@
   min-width: 0;
 }
 
+/* The console's density control on the book panel: Cards / List / Detailed, the same labels and
+   the same `pc-desk-view` key, all rendered from the one positions array so they cannot drift. */
+
+.rd-head-right {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  min-width: 0;
+}
+
+.rd-views {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--sd-line);
+  border-radius: 8px;
+}
+
+.rd-view {
+  padding: 3px 9px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--sd-muted);
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.rd-view.is-on {
+  background: var(--sd-raised);
+  color: var(--sd-text);
+}
+
+.rd-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  grid-auto-rows: 1fr;
+  gap: 8px;
+  min-width: 0;
+  padding: 8px 10px 10px;
+}
+
+.rd-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--sd-line);
+  border-radius: 10px;
+  background: var(--sd-raised);
+}
+
+.rd-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.rd-card-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px 10px;
+  margin: 0;
+}
+
+.rd-card-metrics div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px;
+  min-width: 0;
+}
+
+.rd-card-metrics dt {
+  color: var(--sd-muted);
+  font-size: 11px;
+}
+
+.rd-card-metrics dd {
+  margin: 0;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.rd-card-name {
+  margin: auto 0 0;
+  color: var(--sd-muted);
+  font-size: 11.5px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.rd-detail-row {
+  padding: 8px 10px;
+  border-top: 1px solid #3a2940;
+}
+
+.rd-detail-row .rd-cell-name small {
+  display: block;
+  overflow: visible;
+  white-space: normal;
+  text-overflow: clip;
+}
+
 .rd-cell-name {
   display: grid;
   gap: 1px;
@@ -469,6 +580,10 @@
   /* Phone rows: the six-column table stacks into mini-cards so names and figures keep room. */
   .stock-dashboard.rd-desk .sd-portfolio-columns {
     display: none;
+  }
+
+  .rd-cards {
+    grid-template-columns: 1fr;
   }
 
   .rd-cell-name small {

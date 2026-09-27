@@ -12,7 +12,9 @@
  *   gate   - 'Your desk' heading, email/password fields, Sign in + Email me a link, noindex meta,
  *            the blush canvas token, and no horizontal overflow at 1280/390.
  *   render - the console shell (KPIs: book value, account return, day change, account mix), the
- *            portfolio table (a row per position with day %, book rating and the desk's call),
+ *            book's density control (Cards / List / Detailed on pc-desk-view, Cards the default -
+ *            the console's own), every density from one positions array (a card/row/detail per
+ *            position with day %, book rating and the desk's call),
  *            'Today's plan' (sell/trim row, add band, exit watch, note), the candidates panel,
  *            'Standing out' / 'Needs watching' lists, the attention flag, sign-out via the
  *            Account menu returning to the gate, and no horizontal overflow at 1280/390.
@@ -179,6 +181,24 @@ async function renderChecks(page, width, height) {
   check(`account return at ${width}`, kpis[1] === '+23.46%', kpis[1]);
   check(`day change at ${width}`, kpis[2] === '+C$15.80', kpis[2]);
   check(`account mix at ${width}`, kpis[3] === '100.0%', kpis[3]);
+  // The book's density control is the console's own: Cards / List / Detailed on pc-desk-view.
+  const viewLabels = await page.$$eval('.rd-view', (els) => els.map((e) => e.textContent.trim()));
+  check(`view switcher at ${width}`, viewLabels.join(',') === 'Cards,List,Detailed', viewLabels.join(','));
+  if (width === 1280) {
+    const pressed = await page.$$eval('.rd-view', (els) => els.filter((e) => e.getAttribute('aria-pressed') === 'true').map((e) => e.textContent.trim()));
+    check('default view is Cards', pressed.join(',') === 'Cards', pressed.join(','));
+  }
+  const cards = await page.$$eval('.rd-card', (els) => els.map((e) => e.innerText.replace(/\s+/g, ' ')));
+  check(`card count at ${width}`, cards.length === 2, `${cards.length} cards`);
+  check(`SYN01 card at ${width}`,
+    cards.some((c) => c.includes('SYN01') && c.includes('C$1,000.00') && c.includes('66.6') && c.includes('ADD')),
+    cards[0]?.slice(0, 90));
+  const cardsOverflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  check(`cards no overflow at ${width}`, cardsOverflow <= 1, `${cardsOverflow}px`);
+  await (await page.$$('.rd-view'))[1].click();
+  const stored = await page.evaluate(() => window.localStorage.getItem('pc-desk-view'));
+  check(`view persists at ${width}`, stored === 'list', String(stored));
+  await page.waitForSelector('.sd-portfolio-row');
   const rows = await page.$$eval('.sd-portfolio-row', (els) => els.map((r) => r.innerText.replace(/\s+/g, ' ')));
   check(`row count at ${width}`, rows.length === 2, `${rows.length} rows`);
   check(`SYN01 row at ${width}`,
@@ -189,6 +209,12 @@ async function renderChecks(page, width, height) {
     rows[1]?.slice(0, 100));
   const callCells = await page.$$eval('.rd-call', (els) => els.map((e) => e.textContent.trim()).filter(Boolean));
   check(`call column at ${width}`, ['ADD', 'SELL'].every((c) => callCells.includes(c)), callCells.join(','));
+  await (await page.$$('.rd-view'))[2].click();
+  const details = await page.$$eval('.rd-detail-row', (els) => els.map((e) => e.innerText.replace(/\s+/g, ' ')));
+  check(`detail rows at ${width}`,
+    details.length === 2 && details.some((d) => d.includes('SYN02') && d.includes('41.2') && d.includes('SELL')),
+    `${details.length} details`);
+  await (await page.$$('.rd-view'))[0].click(); // Cards again, persisted for the next pass
   const heads = await page.$$eval('.sd-order-side h3', (els) => els.map((e) => e.textContent.trim()));
   check(`read lists at ${width}`, heads.some((h) => h.startsWith('Standing out')) && heads.some((h) => h.startsWith('Needs watching')), heads.join(' | '));
   const panels = await page.$$eval('.sd-panel', (els) => els.map((e) => e.innerText.replace(/\s+/g, ' ')));

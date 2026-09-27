@@ -194,6 +194,21 @@ const groupUnfunded = (ticket: ReaderTicket): { label: string; tickers: string[]
   return [...groups.entries()].map(([label, tickers]) => ({ label, tickers }));
 };
 
+type RdView = 'grid' | 'list' | 'full';
+
+/** The console's density control, same labels and the same `pc-desk-view` key so both desks read
+ *  alike; Cards is the default, exactly like the owner console. */
+const RD_VIEW_LABELS: Record<RdView, string> = { grid: 'Cards', list: 'List', full: 'Detailed' };
+
+const readRdView = (): RdView => {
+  try {
+    const saved = localStorage.getItem('pc-desk-view');
+    return saved === 'grid' || saved === 'list' || saved === 'full' ? saved : 'grid';
+  } catch {
+    return 'grid';
+  }
+};
+
 export default function ReaderDesk({ onHome }: { onHome: () => void }) {
   const { session, ready, error, signIn, requestLink, signOut, ensureFresh } = useOwnerSession();
   useNoIndex();
@@ -207,6 +222,7 @@ export default function ReaderDesk({ onHome }: { onHome: () => void }) {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [bump, setBump] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
+  const [view, setView] = useState<RdView>(readRdView);
 
   useEffect(() => {
     document.title = 'Your desk';
@@ -440,43 +456,138 @@ export default function ReaderDesk({ onHome }: { onHome: () => void }) {
                 <h2>
                   Portfolio <span>{payload.positions.length}</span>
                 </h2>
-                <span className="rd-quiet">{read ? `${read.scored_count} scored` : ''}</span>
+                <div className="rd-head-right">
+                  <span className="rd-quiet">{read ? `${read.scored_count} scored` : ''}</span>
+                  <div className="rd-views" role="group" aria-label="How to show the book">
+                    {(Object.keys(RD_VIEW_LABELS) as RdView[]).map((option) => (
+                      <button
+                        key={option}
+                        type="button"
+                        className={`rd-view${view === option ? ' is-on' : ''}`}
+                        aria-pressed={view === option}
+                        onClick={() => {
+                          setView(option);
+                          try {
+                            localStorage.setItem('pc-desk-view', option);
+                          } catch {
+                            /* the choice just will not persist */
+                          }
+                        }}
+                      >
+                        {RD_VIEW_LABELS[option]}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
-              <div className="sd-portfolio-columns">
-                <span>Ticker</span>
-                <span>CAD value</span>
-                <span>Weight</span>
-                <span>Day</span>
-                <span>Rating</span>
-                <span>Call</span>
-              </div>
-              <div className="rd-table-body">
-                {ordered.map((position) => {
-                  const rating = ratingOf(position);
-                  return (
-                    <div
-                      className="sd-portfolio-row"
-                      key={`${position.account}-${position.ticker}`}
-                      title={ratingTitle(position)}
-                    >
-                      <span className="rd-cell-name">
-                        <span className="rd-cell-line">
-                          <strong>{position.ticker}</strong>
-                          <em className="rd-acct">{position.account}</em>
+              {view === 'grid' && (
+                <div className="rd-cards">
+                  {ordered.map((position) => {
+                    const rating = ratingOf(position);
+                    return (
+                      <article className="rd-card" key={`${position.account}-${position.ticker}`} title={ratingTitle(position)}>
+                        <div className="rd-card-head">
+                          <span className="rd-cell-line">
+                            <strong>{position.ticker}</strong>
+                            <em className="rd-acct">{position.account}</em>
+                          </span>
+                          <span className={position.call ? `rd-call rd-call-${position.call.toLowerCase()}` : 'rd-call rd-call-none'}>
+                            {position.call ?? ''}
+                          </span>
+                        </div>
+                        <dl className="rd-card-metrics">
+                          <div>
+                            <dt>Value</dt>
+                            <dd>{amount(position.value_cad, 'CAD')}</dd>
+                          </div>
+                          <div>
+                            <dt>Weight</dt>
+                            <dd>{position.weight_account_pct !== null && position.weight_account_pct !== undefined ? `${position.weight_account_pct.toFixed(1)}%` : '--'}</dd>
+                          </div>
+                          <div>
+                            <dt>Day</dt>
+                            <dd className={tone(position.day_pct)}>{signedPct(position.day_pct)}</dd>
+                          </div>
+                          <div>
+                            <dt>Rating</dt>
+                            <dd className="rd-rating">{rating !== null ? rating.toFixed(1) : '--'}</dd>
+                          </div>
+                        </dl>
+                        <p className="rd-card-name">{position.name}</p>
+                      </article>
+                    );
+                  })}
+                </div>
+              )}
+              {view === 'list' && (
+                <div className="sd-portfolio-columns">
+                  <span>Ticker</span>
+                  <span>CAD value</span>
+                  <span>Weight</span>
+                  <span>Day</span>
+                  <span>Rating</span>
+                  <span>Call</span>
+                </div>
+              )}
+              {view === 'list' && (
+                <div className="rd-table-body">
+                  {ordered.map((position) => {
+                    const rating = ratingOf(position);
+                    return (
+                      <div
+                        className="sd-portfolio-row"
+                        key={`${position.account}-${position.ticker}`}
+                        title={ratingTitle(position)}
+                      >
+                        <span className="rd-cell-name">
+                          <span className="rd-cell-line">
+                            <strong>{position.ticker}</strong>
+                            <em className="rd-acct">{position.account}</em>
+                          </span>
+                          <small>{position.name}</small>
                         </span>
-                        <small>{position.name}</small>
-                      </span>
-                      <span>{amount(position.value_cad, 'CAD')}</span>
-                      <span>{position.weight_account_pct !== null && position.weight_account_pct !== undefined ? `${position.weight_account_pct.toFixed(1)}%` : '--'}</span>
-                      <span className={tone(position.day_pct)}>{signedPct(position.day_pct)}</span>
-                      <span>{rating !== null ? rating.toFixed(1) : '--'}</span>
-                      <span className={position.call ? `rd-call rd-call-${position.call.toLowerCase()}` : 'rd-call rd-call-none'}>
-                        {position.call ?? ''}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
+                        <span>{amount(position.value_cad, 'CAD')}</span>
+                        <span>{position.weight_account_pct !== null && position.weight_account_pct !== undefined ? `${position.weight_account_pct.toFixed(1)}%` : '--'}</span>
+                        <span className={tone(position.day_pct)}>{signedPct(position.day_pct)}</span>
+                        <span>{rating !== null ? rating.toFixed(1) : '--'}</span>
+                        <span className={position.call ? `rd-call rd-call-${position.call.toLowerCase()}` : 'rd-call rd-call-none'}>
+                          {position.call ?? ''}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              {view === 'full' && (
+                <div className="rd-table-body">
+                  {ordered.map((position) => {
+                    const rating = ratingOf(position);
+                    return (
+                      <div className="rd-detail-row" key={`${position.account}-${position.ticker}`} title={ratingTitle(position)}>
+                        <div className="sd-order-top">
+                          <span className="rd-cell-name">
+                            <span className="rd-cell-line">
+                              <strong>{position.ticker}</strong>
+                              <em className="rd-acct">{position.account}</em>
+                            </span>
+                            <small>{position.name}</small>
+                          </span>
+                          <span className={position.call ? `rd-call rd-call-${position.call.toLowerCase()}` : 'rd-call rd-call-none'}>
+                            {position.call ?? ''}
+                          </span>
+                        </div>
+                        <small className="rd-row-why">
+                          {fmtQty(position.qty)} @ {position.price ?? '--'} {position.cur}
+                          {position.value_cad !== null && position.value_cad !== undefined ? ` \u00b7 ${amount(position.value_cad, 'CAD')}` : ''}
+                          {position.day_pct !== null && position.day_pct !== undefined ? ` \u00b7 day ${signedPct(position.day_pct)}` : ''}
+                          {` \u00b7 rating ${rating !== null ? rating.toFixed(1) : '--'}`}
+                        </small>
+                        {position.call_why && <small className="rd-row-why">{position.call_why}</small>}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
               <p className="sd-portfolio-foot">
                 Research view, not advice. Ratings are the desk&apos;s own for this book; &quot;--&quot; means the
                 equity model does not score it{payload.model?.universe_size ? ` (its universe has ${payload.model.universe_size} names)` : ''}.

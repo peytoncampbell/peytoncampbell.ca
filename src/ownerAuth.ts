@@ -170,8 +170,12 @@ export function useOwnerSession() {
     setError(null);
     const res = await authPost('otp', {
       email,
-      // The public endpoint reads these under `options`; should_create_user keeps a typo'd or
-      // unknown address from creating an account. The link must come back to the page that asked.
+      // The emailed link must come back to the page that asked: this GoTrue instance honors a
+      // TOP-LEVEL redirect_to (the nested options form is silently ignored and the link falls back
+      // to the project default). create_user:false keeps a typo'd or unknown address from ever
+      // creating an account; the nested options are kept for forward compatibility.
+      redirect_to: window.location.origin + redirectPath,
+      create_user: false,
       options: { email_redirect_to: window.location.origin + redirectPath, should_create_user: false },
     });
     if (!res.ok) {

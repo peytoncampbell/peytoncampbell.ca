@@ -499,7 +499,7 @@ export default function ReaderDesk({ onHome }: { onHome: () => void }) {
                         <div className="sd-order-row" key={`${line.ticker}-${line.kind_label}`}>
                           <div className="sd-order-top">
                             <strong>{line.ticker}</strong>
-                            <span className={`rd-call ${line.reason_kind === 'exit_rule' ? 'rd-call-sell' : 'rd-call-trim'}`}>
+                            <span className={`rd-call ${line.reason_kind === 'exit_rule' || line.reason_kind === 'etf-rule' ? 'rd-call-sell' : 'rd-call-trim'}`}>
                               {line.kind_label}
                             </span>
                           </div>

@@ -11,7 +11,9 @@ import './ReaderDesk.css';
  * session with no row is the normal "nothing published here yet" state, not an error.
  *
  * The signed-in view is the stock desk's console composition (StockDashboard.css) under a
- * reader-pink token set: KPI strip, the portfolio table, the desk's read, the attention rail.
+ * reader-pink token set: KPI strip, the portfolio table with the desk's call per name, today's
+ * plan (sell / trim, the add band, the exit watch), the attention rail, the gated candidates,
+ * and the desk's read of the book.
  */
 
 type ReaderModel = {
@@ -39,6 +41,9 @@ type ReaderPosition = {
   day_pct?: number | null;
   weight_account_pct?: number | null;
   model?: ReaderModel | null;
+  call?: string | null;
+  call_why?: string | null;
+  rating_book?: number | null;
 };
 
 type ReaderAccount = { name: string; value_cad: number; pl_cad: number; day_cad?: number; positions: number; scored: number };
@@ -52,6 +57,25 @@ type ReaderRead = {
   flags: { ticker: string; name: string }[];
 };
 
+type ReaderPlan = {
+  exits: { ticker: string; why: string }[];
+  trims: { ticker: string; weight_pct: number; rating: number | null }[];
+  adds: { ticker: string; rating: number | null }[];
+  watch: { ticker: string; weeks: number; rating: number }[];
+};
+
+type ReaderCandidate = {
+  ticker: string;
+  name?: string | null;
+  rating?: number | null;
+  timing?: string | null;
+  currency?: string | null;
+  region?: string | null;
+  price?: number | null;
+  targets?: number | null;
+  value_trap?: boolean | null;
+};
+
 type ReaderPayload = {
   schema: string;
   generated_at?: string;
@@ -61,6 +85,12 @@ type ReaderPayload = {
   accounts: ReaderAccount[];
   totals: { value_cad: number; pl_cad: number; cost_cad?: number; day_cad?: number; day_pct?: number | null; ret_pct: number | null };
   positions: ReaderPosition[];
+  plan?: ReaderPlan | null;
+  plan_counts?: { exits?: number; trims?: number; adds?: number; holds?: number; watch?: number } | null;
+  plan_as_of?: string | null;
+  plan_note?: string | null;
+  candidates?: ReaderCandidate[];
+  notes?: string[];
   read?: ReaderRead | null;
 };
 
@@ -81,6 +111,27 @@ const signedPct = (value: number | null | undefined): string =>
 
 const tone = (value: number | null | undefined): string =>
   value === null || value === undefined || value === 0 ? 'flat' : value > 0 ? 'up' : 'down';
+
+const ratingOf = (position: ReaderPosition): number | null => {
+  if (position.rating_book !== null && position.rating_book !== undefined) return position.rating_book;
+  if (position.model?.composite !== null && position.model?.composite !== undefined) return position.model.composite;
+  return null;
+};
+
+const ratingTitle = (position: ReaderPosition): string | undefined => {
+  const parts: string[] = [];
+  if (position.rating_book !== null && position.rating_book !== undefined) {
+    parts.push(`Book rating ${position.rating_book.toFixed(1)}`);
+  }
+  if (position.model?.composite !== null && position.model?.composite !== undefined) {
+    parts.push(
+      `Universe composite ${position.model.composite.toFixed(1)}` +
+        (position.model.rank_global ? ` (rank ${position.model.rank_global} of ${position.model.universe_size ?? '?'})` : ''),
+    );
+  }
+  parts.push(position.call_why ? `${position.call ?? 'Call'}: ${position.call_why}` : 'Research view, not advice');
+  return parts.join(' \u00b7 ');
+};
 
 export default function ReaderDesk({ onHome }: { onHome: () => void }) {
   const { session, ready, error, signIn, requestLink, signOut, ensureFresh } = useOwnerSession();
@@ -239,6 +290,8 @@ export default function ReaderDesk({ onHome }: { onHome: () => void }) {
   }
 
   const read = payload?.read ?? null;
+  const plan = payload?.plan ?? null;
+  const sellTrim = plan ? plan.exits.length + plan.trims.length : 0;
 
   return (
     <div className="stock-dashboard rd-desk">
@@ -331,38 +384,178 @@ export default function ReaderDesk({ onHome }: { onHome: () => void }) {
                 <span>Weight</span>
                 <span>Day</span>
                 <span>Rating</span>
-                <span>Flag</span>
+                <span>Call</span>
               </div>
               <div className="rd-table-body">
-                {ordered.map((position) => (
-                  <div
-                    className="sd-portfolio-row"
-                    key={`${position.account}-${position.ticker}`}
-                    title={position.pl !== null && position.pl !== undefined ? `P/L ${amount(position.pl, position.cur)}` : undefined}
-                  >
-                    <span className="rd-cell-name">
-                      <span className="rd-cell-line">
-                        <strong>{position.ticker}</strong>
-                        <em className="rd-acct">{position.account}</em>
+                {ordered.map((position) => {
+                  const rating = ratingOf(position);
+                  return (
+                    <div
+                      className="sd-portfolio-row"
+                      key={`${position.account}-${position.ticker}`}
+                      title={ratingTitle(position)}
+                    >
+                      <span className="rd-cell-name">
+                        <span className="rd-cell-line">
+                          <strong>{position.ticker}</strong>
+                          <em className="rd-acct">{position.account}</em>
+                        </span>
+                        <small>{position.name}</small>
                       </span>
-                      <small>{position.name}</small>
-                    </span>
-                    <span>{amount(position.value_cad, 'CAD')}</span>
-                    <span>{position.weight_account_pct !== null && position.weight_account_pct !== undefined ? `${position.weight_account_pct.toFixed(1)}%` : '--'}</span>
-                    <span className={tone(position.day_pct)}>{signedPct(position.day_pct)}</span>
-                    <span>{position.model?.in_universe && position.model.composite !== null && position.model.composite !== undefined ? position.model.composite.toFixed(1) : '--'}</span>
-                    <span className="rd-flag">{position.model?.peak_margin_flag ? 'Peak' : ''}</span>
-                  </div>
-                ))}
+                      <span>{amount(position.value_cad, 'CAD')}</span>
+                      <span>{position.weight_account_pct !== null && position.weight_account_pct !== undefined ? `${position.weight_account_pct.toFixed(1)}%` : '--'}</span>
+                      <span className={tone(position.day_pct)}>{signedPct(position.day_pct)}</span>
+                      <span>{rating !== null ? rating.toFixed(1) : '--'}</span>
+                      <span className={position.call ? `rd-call rd-call-${position.call.toLowerCase()}` : 'rd-call rd-call-none'}>
+                        {position.call ?? ''}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
               <p className="sd-portfolio-foot">
-                Research view, not advice. Ratings are the desk model&apos;s composite for names inside its
-                universe{payload.model?.universe_size ? ` (${payload.model.universe_size} scored)` : ''}; &quot;--&quot; means outside it.
+                Research view, not advice. Ratings are the desk&apos;s own for this book; &quot;--&quot; means the
+                equity model does not score it{payload.model?.universe_size ? ` (its universe has ${payload.model.universe_size} names)` : ''}.
               </p>
             </section>
 
-            {read && (
+            <section className="sd-panel">
+              <div className="sd-panel-head">
+                <h2>Today&apos;s plan</h2>
+                <span className="rd-quiet">proposals only &middot; no orders</span>
+              </div>
+              {payload.plan_note ? (
+                <p className="sd-empty rd-plan-body">{payload.plan_note}</p>
+              ) : plan ? (
+                <div className="rd-plan-body">
+                  <div className="sd-order-columns">
+                    <div className="sd-order-side">
+                      <h3>
+                        Sell / trim <span>{sellTrim}</span>
+                      </h3>
+                      {sellTrim === 0 && <p className="sd-empty">Nothing to sell or trim today.</p>}
+                      {plan.exits.map((entry) => (
+                        <div className="sd-order-row" key={entry.ticker}>
+                          <div className="sd-order-top">
+                            <strong>{entry.ticker}</strong>
+                            <span className="rd-call rd-call-sell">SELL</span>
+                          </div>
+                          <small className="rd-row-why">{entry.why}</small>
+                        </div>
+                      ))}
+                      {plan.trims.map((entry) => (
+                        <div className="sd-order-row" key={entry.ticker}>
+                          <div className="sd-order-top">
+                            <strong>{entry.ticker}</strong>
+                            <span className="rd-call rd-call-trim">TRIM</span>
+                          </div>
+                          <small className="rd-row-why">weight {entry.weight_pct.toFixed(1)}% is above the desk&apos;s cap</small>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="sd-order-side">
+                      <h3>
+                        Add <span>{plan.adds.length}</span>
+                      </h3>
+                      {plan.adds.length === 0 && <p className="sd-empty">No names in the add band today.</p>}
+                      {plan.adds.map((entry) => (
+                        <div className="sd-order-row" key={entry.ticker}>
+                          <div className="sd-order-top">
+                            <strong>{entry.ticker}</strong>
+                            <span>{entry.rating !== null ? entry.rating.toFixed(1) : ''}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="rd-watch">
+                    <h3>
+                      Exit watch <span>{plan.watch.length}</span>
+                    </h3>
+                    {plan.watch.length === 0 ? (
+                      <p className="sd-empty">Clear - no name is reading below the floor right now.</p>
+                    ) : (
+                      <ul className="sd-attention">
+                        {plan.watch.map((entry) => (
+                          <li key={entry.ticker}>
+                            <strong>{entry.ticker}</strong> - {entry.weeks} of 2 weekly readings below the floor
+                            (rating {entry.rating.toFixed(1)})
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                  {payload.notes?.map((note) => (
+                    <p className="rd-plan-note" key={note}>
+                      {note}
+                    </p>
+                  ))}
+                  <p className="sd-portfolio-foot">
+                    The desk&apos;s own calls for this book{payload.plan_as_of ? ` (as of ${payload.plan_as_of})` : ''}; sizes
+                    and funding need your cash balance, so nothing here is an order.
+                  </p>
+                </div>
+              ) : (
+                <p className="sd-empty rd-plan-body">The plan has not been computed for this desk yet.</p>
+              )}
+            </section>
+
+            <div className="rd-rail">
+              <section className="sd-panel sd-context">
+                <div className="sd-panel-head">
+                  <h2>
+                    Attention <span>{read ? read.flags.length : 0}</span>
+                  </h2>
+                </div>
+                {read && read.flags.length > 0 ? (
+                  <ul className="sd-attention">
+                    {read.flags.map((flag) => (
+                      <li key={flag.ticker}>
+                        <strong>{flag.ticker}</strong> - peak-margin flag on the desk model
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="sd-empty">No flags on the scored holdings.</p>
+                )}
+                {read?.note && <p className="sd-empty">{read.note}</p>}
+              </section>
+
               <section className="sd-panel">
+                <div className="sd-panel-head">
+                  <h2>
+                    Candidates <span>{payload.candidates?.length ?? 0}</span>
+                  </h2>
+                </div>
+                {payload.candidates && payload.candidates.length > 0 ? (
+                  <div className="rd-plan-body">
+                    {payload.candidates.map((candidate) => (
+                      <div className="sd-order-row" key={candidate.ticker}>
+                        <div className="sd-order-top">
+                          <span className="rd-cand-line">
+                            <strong>{candidate.ticker}</strong>
+                            {candidate.name && <small className="rd-cand-name">{candidate.name}</small>}
+                          </span>
+                          <span>{candidate.rating !== null && candidate.rating !== undefined ? candidate.rating.toFixed(1) : '--'}</span>
+                        </div>
+                        {candidate.timing && (
+                          <small className="rd-row-why">
+                            {candidate.timing}
+                            {candidate.currency ? ` \u00b7 ${candidate.currency}` : ''}
+                          </small>
+                        )}
+                      </div>
+                    ))}
+                    <p className="sd-portfolio-foot">The desk&apos;s gated buy list - names only, no sizes; research, not advice.</p>
+                  </div>
+                ) : (
+                  <p className="sd-empty">No gated names on the desk list right now.</p>
+                )}
+              </section>
+            </div>
+
+            {read && (
+              <section className="sd-panel rd-span">
                 <div className="sd-panel-head">
                   <h2>What the desk sees</h2>
                   <span className="rd-quiet">research view, not advice</span>
@@ -407,26 +600,6 @@ export default function ReaderDesk({ onHome }: { onHome: () => void }) {
                 </p>
               </section>
             )}
-
-            <section className="sd-panel sd-context">
-              <div className="sd-panel-head">
-                <h2>
-                  Attention <span>{read ? read.flags.length : 0}</span>
-                </h2>
-              </div>
-              {read && read.flags.length > 0 ? (
-                <ul className="sd-attention">
-                  {read.flags.map((flag) => (
-                    <li key={flag.ticker}>
-                      <strong>{flag.ticker}</strong> - peak-margin flag on the desk model
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="sd-empty">No flags on the scored holdings.</p>
-              )}
-              {read?.note && <p className="sd-empty">{read.note}</p>}
-            </section>
           </main>
 
           <footer className="sd-status">

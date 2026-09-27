@@ -12,9 +12,10 @@
  *   gate   - 'Your desk' heading, email/password fields, Sign in + Email me a link, noindex meta,
  *            the blush canvas token, and no horizontal overflow at 1280/390.
  *   render - the console shell (KPIs: book value, account return, day change, account mix), the
- *            portfolio table (a row per position with day % and model rating), 'Standing out' /
- *            'Needs watching' lists, the attention flag, sign-out via the Account menu returning
- *            to the gate, and no horizontal overflow at 1280/390.
+ *            portfolio table (a row per position with day %, book rating and the desk's call),
+ *            'Today's plan' (sell/trim row, add band, exit watch, note), the candidates panel,
+ *            'Standing out' / 'Needs watching' lists, the attention flag, sign-out via the
+ *            Account menu returning to the gate, and no horizontal overflow at 1280/390.
  */
 import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
@@ -63,9 +64,20 @@ const SYNTH = {
   accounts: [{ name: 'TSYN', value_cad: 1234.56, pl_cad: 234.56, day_cad: 15.8, positions: 2, scored: 1 }],
   totals: { value_cad: 1234.56, pl_cad: 234.56, cost_cad: 1000, day_cad: 15.8, day_pct: 1.33, ret_pct: 23.46 },
   positions: [
-    { ticker: 'SYN01', name: 'Synthetic One Corp', account: 'TSYN', cur: 'CAD', qty: 10, price: 100, value: 1000, pl: 123.4, ret_pct: 12.34, value_cad: 1000, day_cad: 20.5, day_pct: 2.1, weight_account_pct: 81.0, model: { in_universe: true, rank_global: 12, universe_size: 1073, composite: 61.4, peak_margin_flag: true } },
-    { ticker: 'SYN02', name: 'Synthetic Two Ltd', account: 'TSYN', cur: 'USD', qty: 2, price: 117.28, value: 234.56, pl: -12.34, ret_pct: -5.0, value_cad: 331.7, day_cad: -4.7, day_pct: -1.4, weight_account_pct: 19.0, model: { in_universe: false } },
+    { ticker: 'SYN01', name: 'Synthetic One Corp', account: 'TSYN', cur: 'CAD', qty: 10, price: 100, value: 1000, pl: 123.4, ret_pct: 12.34, value_cad: 1000, day_cad: 20.5, day_pct: 2.1, weight_account_pct: 81.0, call: 'ADD', call_why: "rising revisions, an uptrend, and a weight still small against the desk's target", rating_book: 66.6, model: { in_universe: true, rank_global: 12, universe_size: 1073, composite: 61.4, peak_margin_flag: true } },
+    { ticker: 'SYN02', name: 'Synthetic Two Ltd', account: 'TSYN', cur: 'USD', qty: 2, price: 117.28, value: 234.56, pl: -12.34, ret_pct: -5.0, value_cad: 331.7, day_cad: -4.7, day_pct: -1.4, weight_account_pct: 19.0, call: 'SELL', call_why: 'catastrophic: 97% below the 3-year entry and 75% behind SPY over 6 months', rating_book: 41.2, model: { in_universe: false } },
   ],
+  plan: {
+    exits: [{ ticker: 'SYN02', why: 'catastrophic: 97% below the 3-year entry and 75% behind SPY over 6 months' }],
+    trims: [],
+    adds: [{ ticker: 'SYN01', rating: 66.6 }],
+    watch: [{ ticker: 'SYN02', weeks: 1, rating: 41.2 }],
+  },
+  plan_counts: { exits: 1, trims: 0, adds: 1, holds: 0, watch: 1 },
+  plan_as_of: '2026-09-27',
+  plan_note: null,
+  candidates: [{ ticker: 'CPAY', name: 'Synthetic Candidate Inc', rating: 70.7, timing: 'buyable now (at or near its 50-day)', currency: 'USD', region: 'US' }],
+  notes: ['Synthetic note for the render test.'],
   read: {
     scored_count: 1,
     unscored_count: 1,
@@ -158,10 +170,24 @@ async function renderChecks(page, width, height) {
   check(`account mix at ${width}`, kpis[3] === '100.0%', kpis[3]);
   const rows = await page.$$eval('.sd-portfolio-row', (els) => els.map((r) => r.innerText.replace(/\s+/g, ' ')));
   check(`row count at ${width}`, rows.length === 2, `${rows.length} rows`);
-  check(`SYN01 row at ${width}`, rows.some((r) => r.includes('SYN01') && r.includes('+2.10%') && r.includes('61.4')), rows[0]?.slice(0, 90));
-  check(`SYN02 row at ${width}`, rows.some((r) => r.includes('SYN02') && r.includes('-1.40%') && r.includes('--')), rows[1]?.slice(0, 90));
+  check(`SYN01 row at ${width}`,
+    rows.some((r) => r.includes('SYN01') && r.includes('+2.10%') && r.includes('66.6') && r.includes('ADD')),
+    rows[0]?.slice(0, 100));
+  check(`SYN02 row at ${width}`,
+    rows.some((r) => r.includes('SYN02') && r.includes('-1.40%') && r.includes('41.2') && r.includes('SELL')),
+    rows[1]?.slice(0, 100));
+  const callCells = await page.$$eval('.rd-call', (els) => els.map((e) => e.textContent.trim()).filter(Boolean));
+  check(`call column at ${width}`, ['ADD', 'SELL'].every((c) => callCells.includes(c)), callCells.join(','));
   const heads = await page.$$eval('.sd-order-side h3', (els) => els.map((e) => e.textContent.trim()));
   check(`read lists at ${width}`, heads.some((h) => h.startsWith('Standing out')) && heads.some((h) => h.startsWith('Needs watching')), heads.join(' | '));
+  const panels = await page.$$eval('.sd-panel', (els) => els.map((e) => e.innerText.replace(/\s+/g, ' ')));
+  const planText = panels.find((t) => t.includes("Today's plan")) || '';
+  check(`plan panel at ${width}`, planText.includes('Sell / trim') && planText.includes('Add'), planText.slice(0, 110));
+  check(`plan exit row at ${width}`, planText.includes('SYN02') && /catastrophic/.test(planText), planText.slice(0, 140));
+  check(`plan watch at ${width}`, planText.includes('1 of 2 weekly readings'), '');
+  check(`plan note at ${width}`, planText.includes('Synthetic note'), '');
+  const candText = panels.find((t) => t.includes('Candidates')) || '';
+  check(`candidate row at ${width}`, candText.includes('CPAY') && candText.includes('70.7') && /buyable/.test(candText), candText.slice(0, 110));
   const flags = await page.$$eval('.sd-attention li', (els) => els.map((e) => e.textContent).join('\n'));
   check(`attention flag at ${width}`, /SYN01/.test(flags), flags.slice(0, 70));
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);

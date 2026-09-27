@@ -39,7 +39,7 @@
 .sd-panel-head { min-height: 42px; padding: 7px 10px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px; border-bottom: 1px solid var(--sd-line); }
 .sd-panel-head button, .sd-context-head button { font-size: 12px; white-space: nowrap; }
 .sd-panel-head h2 > span, .sd-context-head h3 > span, .sd-order-side h3 > span { color: var(--sd-muted); font-size: 12px; font-weight: 400; margin-left: 4px; }
-.sd-portfolio-columns, .stock-dashboard .sd-portfolio-row { display: grid; grid-template-columns: minmax(0,1.15fr) minmax(0,1.25fr) minmax(0,.85fr) minmax(0,.85fr) minmax(0,.55fr) minmax(0,.8fr); gap: 4px; align-items: center; width: 100%; padding: 0 8px; text-align: right; }
+.sd-portfolio-columns, .stock-dashboard .sd-portfolio-row { display: grid; grid-template-columns: minmax(0,1.15fr) minmax(0,1.25fr) minmax(0,.85fr) minmax(0,.85fr) minmax(0,.55fr) minmax(60px,.8fr); gap: 4px; align-items: center; width: 100%; padding: 0 8px; text-align: right; }
 .sd-portfolio-columns > :first-child, .sd-portfolio-row > :first-child { text-align: left; }
 .sd-portfolio-columns { height: 28px; font-size: 11px; line-height: 1.1; color: var(--sd-muted); }
 .stock-dashboard .sd-portfolio-row { min-height: 28px; font-size: 14px; border: 0; border-top: 1px solid #263344; border-radius: 0; }

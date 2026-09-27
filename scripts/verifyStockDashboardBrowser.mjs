@@ -587,6 +587,14 @@ try {
     for (const [width, height] of [[1280, 720], [1366, 768], [1440, 900], [1920, 1080]]) {
       await withFixture(`structure-${width}x${height}`, { width, height }, stockDashboardFixture(), structure);
     }
+    for (const [width, height] of [[1280, 720], [390, 844], [320, 640]]) {
+      const fixture = stockDashboardFixture();
+      fixture.holdings[0].call = 'NO DATA';
+      await withFixture(`portfolio-no-data-call-${width}`, { width, height }, fixture, async state => {
+        await structure(state, { reflow: width < 1280 });
+        assert.equal(await state.page.$eval('.sd-portfolio-row > :last-child', element => element.textContent), 'NO DATA');
+      });
+    }
   }
   if (options.mode === 'all' || options.mode === 'interactions') await withFixture('interactions', { width: 1440, height: 900 }, stockDashboardFixture(), interactions);
   if (options.mode === 'all' || options.mode === 'depth-shell') await withFixture('expanded-analysis-shell', { width: 1280, height: 720 }, stockDashboardFixture(), expandedShell);

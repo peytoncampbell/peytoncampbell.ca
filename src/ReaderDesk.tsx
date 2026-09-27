@@ -76,6 +76,43 @@ type ReaderCandidate = {
   value_trap?: boolean | null;
 };
 
+type ReaderTicketLine = {
+  action: string;
+  kind_label?: string | null;
+  kind?: string | null;
+  ticker: string;
+  name?: string | null;
+  account?: string | null;
+  qty?: number | null;
+  limit_local?: number | null;
+  currency?: string | null;
+  limit_cad?: number | null;
+  est_cad?: number | null;
+  rating?: number | null;
+  why?: string | null;
+  reason_kind?: string | null;
+  funded?: boolean | null;
+  funded_via?: string | null;
+  market_order?: boolean | null;
+  price_protection?: boolean | null;
+};
+
+type ReaderTicket = {
+  schema: string;
+  as_of?: string;
+  lines: ReaderTicketLine[];
+  counts: { sells?: number; buys?: number };
+  funding: {
+    needed_cad?: number | null;
+    raised_cad?: number | null;
+    cash_cad?: number | null;
+    cash_source?: string | null;
+    unfunded: { ticker: string; name?: string | null; reason: string; est_cad?: number | null }[];
+  };
+  notes?: string[];
+  unavailable?: string | null;
+};
+
 type ReaderPayload = {
   schema: string;
   generated_at?: string;
@@ -91,6 +128,7 @@ type ReaderPayload = {
   plan_note?: string | null;
   candidates?: ReaderCandidate[];
   notes?: string[];
+  ticket?: ReaderTicket | null;
   read?: ReaderRead | null;
 };
 
@@ -131,6 +169,28 @@ const ratingTitle = (position: ReaderPosition): string | undefined => {
   }
   parts.push(position.call_why ? `${position.call ?? 'Call'}: ${position.call_why}` : 'Research view, not advice');
   return parts.join(' \u00b7 ');
+};
+
+const fmtQty = (qty: number | null | undefined): string => {
+  if (qty === null || qty === undefined) return '--';
+  return Number.isInteger(qty) ? String(qty) : String(Number(qty.toFixed(4)));
+};
+
+const UNFUNDED_LABELS: Record<string, string> = {
+  'no cash or sale proceeds left': 'Needs cash',
+  'not fillable from this broker': 'Not fillable here',
+  'extended - wait for a pullback': 'Waiting for a pullback',
+};
+
+const groupUnfunded = (ticket: ReaderTicket): { label: string; tickers: string[] }[] => {
+  const groups = new Map<string, string[]>();
+  for (const item of ticket.funding.unfunded || []) {
+    const label = UNFUNDED_LABELS[item.reason] || item.reason;
+    const list = groups.get(label) || [];
+    list.push(item.ticker);
+    groups.set(label, list);
+  }
+  return [...groups.entries()].map(([label, tickers]) => ({ label, tickers }));
 };
 
 export default function ReaderDesk({ onHome }: { onHome: () => void }) {
@@ -292,6 +352,9 @@ export default function ReaderDesk({ onHome }: { onHome: () => void }) {
   const read = payload?.read ?? null;
   const plan = payload?.plan ?? null;
   const sellTrim = plan ? plan.exits.length + plan.trims.length : 0;
+  const ticket = payload?.ticket && payload.ticket.schema === 'reader-ticket/1' ? payload.ticket : null;
+  const ticketSells = ticket ? ticket.lines.filter((line) => line.action === 'SELL' || line.action === 'TRIM') : [];
+  const ticketBuys = ticket ? ticket.lines.filter((line) => line.action === 'BUY') : [];
 
   return (
     <div className="stock-dashboard rd-desk">
@@ -424,7 +487,91 @@ export default function ReaderDesk({ onHome }: { onHome: () => void }) {
                 <h2>Today&apos;s plan</h2>
                 <span className="rd-quiet">proposals only &middot; no orders</span>
               </div>
-              {payload.plan_note ? (
+              {ticket ? (
+                <div className="rd-plan-body">
+                  <div className="sd-order-columns">
+                    <div className="sd-order-side">
+                      <h3>
+                        Sell / trim <span>{ticketSells.length}</span>
+                      </h3>
+                      {ticketSells.length === 0 && <p className="sd-empty">Nothing to sell or trim today.</p>}
+                      {ticketSells.map((line) => (
+                        <div className="sd-order-row" key={`${line.ticker}-${line.kind_label}`}>
+                          <div className="sd-order-top">
+                            <strong>{line.ticker}</strong>
+                            <span className={`rd-call ${line.reason_kind === 'exit_rule' ? 'rd-call-sell' : 'rd-call-trim'}`}>
+                              {line.kind_label}
+                            </span>
+                          </div>
+                          <small className="rd-row-why">
+                            qty {fmtQty(line.qty)} @ {line.limit_local ?? '--'} {line.currency} &middot; est {amount(line.est_cad, 'CAD')}
+                          </small>
+                          {line.why && <small className="rd-row-why">{line.why}</small>}
+                        </div>
+                      ))}
+                    </div>
+                    <div className="sd-order-side">
+                      <h3>
+                        Buy <span>{ticketBuys.length}</span>
+                      </h3>
+                      {ticketBuys.length === 0 && <p className="sd-empty">No funded buys today.</p>}
+                      {ticketBuys.map((line) => (
+                        <div className="sd-order-row" key={`${line.ticker}-${line.kind_label}`}>
+                          <div className="sd-order-top">
+                            <strong>{line.ticker}</strong>
+                            <span className="rd-call rd-call-add">{line.kind_label}</span>
+                          </div>
+                          <small className="rd-row-why">
+                            qty {fmtQty(line.qty)} @ {line.limit_local ?? '--'} {line.currency} &middot; est {amount(line.est_cad, 'CAD')}
+                            {line.funded_via ? ` \u00b7 ${line.funded_via}` : ''}
+                          </small>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="rd-watch">
+                    <h3>
+                      Funding <span>{ticket.counts.buys}</span>
+                    </h3>
+                    <p className="rd-fund-line">
+                      needed {amount(ticket.funding.needed_cad, 'CAD')} &middot; raised from sales {amount(ticket.funding.raised_cad, 'CAD')} &middot; cash{' '}
+                      {amount(ticket.funding.cash_cad, 'CAD')}
+                      {ticket.funding.cash_source === 'none on file' ? ' (not on file)' : ticket.funding.cash_source ? ` (${ticket.funding.cash_source})` : ''}
+                    </p>
+                    {groupUnfunded(ticket).map((group) => (
+                      <p className="rd-row-why" key={group.label}>
+                        <strong>{group.label}</strong>: {group.tickers.join(', ')}
+                      </p>
+                    ))}
+                  </div>
+                  <div className="rd-watch">
+                    <h3>
+                      Exit watch <span>{plan ? plan.watch.length : 0}</span>
+                    </h3>
+                    {plan && plan.watch.length > 0 ? (
+                      <ul className="sd-attention">
+                        {plan.watch.map((entry) => (
+                          <li key={entry.ticker}>
+                            <strong>{entry.ticker}</strong> - {entry.weeks} of 2 weekly readings below the floor (rating{' '}
+                            {entry.rating.toFixed(1)})
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="sd-empty">Clear - no name is reading below the floor right now.</p>
+                    )}
+                  </div>
+                  {(ticket.notes ?? []).concat(payload.notes ?? []).map((note) => (
+                    <p className="rd-plan-note" key={note}>
+                      {note}
+                    </p>
+                  ))}
+                  <p className="sd-portfolio-foot">
+                    The desk&apos;s ticket{payload.plan_as_of ? ` (as of ${payload.plan_as_of})` : ''} - limits and sizes only; place orders
+                    in your broker, and nothing here is advice.
+                  </p>
+                </div>
+              ) : payload.plan_note ? (
                 <p className="sd-empty rd-plan-body">{payload.plan_note}</p>
               ) : plan ? (
                 <div className="rd-plan-body">

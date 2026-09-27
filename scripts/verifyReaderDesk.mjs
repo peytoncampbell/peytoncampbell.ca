@@ -78,6 +78,17 @@ const SYNTH = {
   plan_note: null,
   candidates: [{ ticker: 'CPAY', name: 'Synthetic Candidate Inc', rating: 70.7, timing: 'buyable now (at or near its 50-day)', currency: 'USD', region: 'US' }],
   notes: ['Synthetic note for the render test.'],
+  ticket: {
+    schema: 'reader-ticket/1',
+    as_of: '2026-09-27',
+    lines: [
+      { action: 'SELL', kind_label: 'LIMIT SELL', kind: 'exit_rule', ticker: 'SYN02', name: 'Synthetic Two Ltd', account: 'TSYN', qty: 2, limit_local: 116.7, currency: 'USD', limit_cad: 165.1, est_cad: 330.2, whole_shares: true, rating: 41.2, why: 'catastrophic: 97% below the 3-year entry and 75% behind SPY over 6 months', reason_kind: 'exit_rule', funded: true, market_order: false, price_protection: true },
+      { action: 'BUY', kind_label: 'LIMIT (market-like)', kind: 'new', ticker: 'CPAY', name: 'Synthetic Candidate Inc', account: null, qty: 4, limit_local: 100, currency: 'USD', limit_cad: 141.41, est_cad: 565.64, whole_shares: true, rating: 70.7, why: 'buyable now (at or near its 50-day)', reason_kind: 'entry', funded: true, funded_via: 'sale proceeds + cash', market_order: true, price_protection: false },
+    ],
+    counts: { sells: 1, buys: 1 },
+    funding: { needed_cad: 565.64, raised_cad: 330.2, cash_cad: 500, cash_source: 'target.json', unfunded: [{ ticker: 'SKHY', name: 'SK Hynix', reason: 'not fillable from this broker', est_cad: null }, { ticker: 'HBM.TO', reason: 'no cash or sale proceeds left', est_cad: null }] },
+    notes: ['Synthetic ticket note.'],
+  },
   read: {
     scored_count: 1,
     unscored_count: 1,
@@ -182,8 +193,15 @@ async function renderChecks(page, width, height) {
   check(`read lists at ${width}`, heads.some((h) => h.startsWith('Standing out')) && heads.some((h) => h.startsWith('Needs watching')), heads.join(' | '));
   const panels = await page.$$eval('.sd-panel', (els) => els.map((e) => e.innerText.replace(/\s+/g, ' ')));
   const planText = panels.find((t) => t.includes("Today's plan")) || '';
-  check(`plan panel at ${width}`, planText.includes('Sell / trim') && planText.includes('Add'), planText.slice(0, 110));
-  check(`plan exit row at ${width}`, planText.includes('SYN02') && /catastrophic/.test(planText), planText.slice(0, 140));
+  check(`plan panel at ${width}`, planText.includes('Sell / trim') && planText.includes('Buy'), planText.slice(0, 110));
+  check(`ticket sell line at ${width}`,
+    planText.includes('LIMIT SELL') && planText.includes('SYN02') && /catastrophic/.test(planText), planText.slice(0, 150));
+  check(`ticket buy line at ${width}`, planText.includes('LIMIT (market-like)') && planText.includes('CPAY'), '');
+  check(`funding summary at ${width}`,
+    planText.includes('needed C$565.64') && planText.includes('raised from sales C$330.20'), planText.slice(0, 220));
+  check(`unfunded groups at ${width}`,
+    planText.includes('Not fillable here') && planText.includes('SKHY')
+      && planText.includes('Needs cash') && planText.includes('HBM.TO'), '');
   check(`plan watch at ${width}`, planText.includes('1 of 2 weekly readings'), '');
   check(`plan note at ${width}`, planText.includes('Synthetic note'), '');
   const candText = panels.find((t) => t.includes('Candidates')) || '';

@@ -374,6 +374,12 @@
   color: var(--sd-text);
 }
 
+.rd-fund-line {
+  margin: 0 0 6px;
+  color: var(--sd-text);
+  font-size: 12px;
+}
+
 .rd-plan-note {
   margin: 8px 0 0;
   padding: 8px 10px;

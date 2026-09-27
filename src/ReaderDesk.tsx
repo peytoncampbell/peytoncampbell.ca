@@ -646,7 +646,7 @@ export default function ReaderDesk({ onHome }: { onHome: () => void }) {
                       Funding <span>{ticket.counts.buys}</span>
                     </h3>
                     <p className="rd-fund-line">
-                      needed {amount(ticket.funding.needed_cad, 'CAD')} &middot; raised from sales {amount(ticket.funding.raised_cad, 'CAD')} &middot; cash{' '}
+                      Buy queue {amount(ticket.funding.needed_cad, 'CAD')} &middot; raised from sales {amount(ticket.funding.raised_cad, 'CAD')} &middot; cash{' '}
                       {amount(ticket.funding.cash_cad, 'CAD')}
                       {ticket.funding.cash_source === 'none on file' ? ' (not on file)' : ticket.funding.cash_source ? ` (${ticket.funding.cash_source})` : ''}
                     </p>

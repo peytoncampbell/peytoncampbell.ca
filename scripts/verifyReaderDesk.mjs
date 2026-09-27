@@ -224,7 +224,7 @@ async function renderChecks(page, width, height) {
     planText.includes('LIMIT SELL') && planText.includes('SYN02') && /catastrophic/.test(planText), planText.slice(0, 150));
   check(`ticket buy line at ${width}`, planText.includes('LIMIT (market-like)') && planText.includes('CPAY'), '');
   check(`funding summary at ${width}`,
-    planText.includes('needed C$565.64') && planText.includes('raised from sales C$330.20'), planText.slice(0, 220));
+    planText.includes('Buy queue C$565.64') && planText.includes('raised from sales C$330.20'), planText.slice(0, 220));
   check(`unfunded groups at ${width}`,
     planText.includes('Not fillable here') && planText.includes('SKHY')
       && planText.includes('Needs cash') && planText.includes('HBM.TO'), '');

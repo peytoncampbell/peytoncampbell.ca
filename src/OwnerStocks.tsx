@@ -2329,7 +2329,7 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
       { label: 'Day change', value: money(latest?.day_change_cad), note: pct(today?.day_change_pct, 2) },
       { label: 'ETF allocation', value: latest?.etf_weight_pct == null ? '--' : `${latest.etf_weight_pct.toFixed(1)}%`, note: `${book.length} holdings · CAD reporting` },
     ]}
-    funding={<><span>Buy need <b>{cadAmount(funding?.needed) ?? 'unavailable'}</b> · Planned sale proceeds <b>{cadAmount(funding?.raised) ?? 'unavailable'}</b></span><small>Not settled cash · Shortfall {cadAmount(funding?.gap) ?? 'unavailable'}</small></>}
+    funding={<><span>Buy queue <b>{cadAmount(funding?.needed) ?? 'unavailable'}</b> · Planned sale proceeds <b>{cadAmount(funding?.raised) ?? 'unavailable'}</b></span><small>{funding?.gap != null && funding.gap > 0 ? `${cadAmount(funding.gap)} waiting on cash · proceeds not settled` : funding?.gap != null ? 'Fully funded · proceeds not settled' : 'Proceeds not settled'}</small></>}
     sessions={orderRows.length ? `Sessions: ${[...new Set(orderRows.map(({ line }) => `${line.region ?? 'Venue unknown'} ${line.session_state ?? 'state unknown'}`))].join(' · ')}` : 'Venue sessions unavailable'}
     attention={attention} candidates={weeklyRanking.map(row => ({ ticker: row.ticker, rating: row.rating.toFixed(1), availability: brokerBlocked(row) ? 'Unavailable' : row.broker_ok === true ? null : 'Unknown', note: brokerNote(row) ?? 'Broker availability not confirmed' }))} brief={newsLatest?.summary ?? null}
     status={<>Book {latest?.as_of ?? 'unavailable'} · Plan {playbook?.today?.as_of ?? 'unavailable'} · FX {playbook?.today?.fx_age_days == null ? 'unknown' : `${playbook.today.fx_age_days.toFixed(1)}d`}</>}

@@ -527,6 +527,27 @@
     margin-bottom: 0.9rem;
   }
 
+  .rd-btn {
+    min-height: 2.75rem;
+  }
+
+  .rd-btn.small {
+    min-height: 2.75rem;
+    padding-inline: 0.95rem;
+  }
+
+  .rd-field input {
+    min-height: 2.75rem;
+  }
+
+  /* Long fund names keep their distinguishing words: up to two lines on phones. */
+  .rd-sub {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    white-space: normal;
+  }
+
   .rd-row {
     grid-template-columns: minmax(0, 1fr) auto;
     grid-template-areas:

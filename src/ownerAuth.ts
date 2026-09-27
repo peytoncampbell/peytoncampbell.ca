@@ -179,7 +179,11 @@ export function useOwnerSession() {
       options: { email_redirect_to: window.location.origin + redirectPath, should_create_user: false },
     });
     if (!res.ok) {
-      setError(`Could not send the link (HTTP ${res.status}).`);
+      setError(
+        res.status === 429
+          ? 'Too many link requests right now - the email sender is rate-limited for a while. Try once more later (HTTP 429).'
+          : `Could not send the link (HTTP ${res.status}).`,
+      );
       return false;
     }
     return true;

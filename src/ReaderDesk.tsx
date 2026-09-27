@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AUTH_CONFIGURED, ownerFetch, useNoIndex, useOwnerSession } from './ownerAuth';
+import './StockDashboard.css';
 import './ReaderDesk.css';
 
 /**
@@ -8,6 +9,9 @@ import './ReaderDesk.css';
  * Everything it renders comes from pc_reader_view, whose WHERE clause keeps only the row keyed to
  * the signed-in account - the database withholds everyone else's data, not this page. A valid
  * session with no row is the normal "nothing published here yet" state, not an error.
+ *
+ * The signed-in view is the stock desk's console composition (StockDashboard.css) under a
+ * reader-pink token set: KPI strip, the portfolio table, the desk's read, the attention rail.
  */
 
 type ReaderModel = {
@@ -31,11 +35,13 @@ type ReaderPosition = {
   pl: number | null;
   ret_pct: number | null;
   value_cad: number | null;
+  day_cad?: number | null;
+  day_pct?: number | null;
   weight_account_pct?: number | null;
   model?: ReaderModel | null;
 };
 
-type ReaderAccount = { name: string; value_cad: number; pl_cad: number; positions: number; scored: number };
+type ReaderAccount = { name: string; value_cad: number; pl_cad: number; day_cad?: number; positions: number; scored: number };
 
 type ReaderRead = {
   scored_count: number;
@@ -53,7 +59,7 @@ type ReaderPayload = {
   fx_usd_cad?: number;
   model?: { universe_size?: number | null } | null;
   accounts: ReaderAccount[];
-  totals: { value_cad: number; pl_cad: number; ret_pct: number | null };
+  totals: { value_cad: number; pl_cad: number; cost_cad?: number; day_cad?: number; day_pct?: number | null; ret_pct: number | null };
   positions: ReaderPosition[];
   read?: ReaderRead | null;
 };
@@ -65,40 +71,16 @@ const amount = (value: number | null | undefined, currency: string): string => {
   return prefix + value.toLocaleString('en-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 
+const signedAmount = (value: number | null | undefined, currency: string): string => {
+  if (value === null || value === undefined) return '--';
+  return `${value > 0 ? '+' : value < 0 ? '\u2212' : ''}${amount(Math.abs(value), currency)}`;
+};
+
 const signedPct = (value: number | null | undefined): string =>
   value === null || value === undefined ? '--' : `${value > 0 ? '+' : ''}${value.toFixed(2)}%`;
 
 const tone = (value: number | null | undefined): string =>
   value === null || value === undefined || value === 0 ? 'flat' : value > 0 ? 'up' : 'down';
-
-function PositionRow({ position }: { position: ReaderPosition }) {
-  const model = position.model && position.model.in_universe ? position.model : null;
-  return (
-    <li className="rd-row" title={position.pl !== null ? `P/L ${amount(position.pl, position.cur)}` : undefined}>
-      <div className="rd-row-name">
-        <span className="rd-row-line">
-          <span className="rd-ticker">{position.ticker}</span>
-          {model && model.composite !== null && model.composite !== undefined && (
-            <span
-              className="rd-badge"
-              title={model.rank_global ? `desk model: rank ${model.rank_global} of ${model.universe_size ?? '--'}` : 'desk model score'}
-            >
-              {Math.round(model.composite)}
-            </span>
-          )}
-        </span>
-        <span className="rd-sub">{position.name}</span>
-      </div>
-      <div className="rd-row-value">{amount(position.value, position.cur)}</div>
-      <div className={`rd-row-gain ${tone(position.ret_pct)}`}>{signedPct(position.ret_pct)}</div>
-      <div className="rd-row-weight">
-        {position.weight_account_pct !== null && position.weight_account_pct !== undefined
-          ? `${position.weight_account_pct.toFixed(1)}%`
-          : ''}
-      </div>
-    </li>
-  );
-}
 
 export default function ReaderDesk({ onHome }: { onHome: () => void }) {
   const { session, ready, error, signIn, requestLink, signOut, ensureFresh } = useOwnerSession();
@@ -111,6 +93,8 @@ export default function ReaderDesk({ onHome }: { onHome: () => void }) {
   const [payload, setPayload] = useState<ReaderPayload | null>(null);
   const [status, setStatus] = useState<'idle' | 'loading' | 'ready' | 'empty' | 'error'>('idle');
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [bump, setBump] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     document.title = 'Your desk';
@@ -124,11 +108,12 @@ export default function ReaderDesk({ onHome }: { onHome: () => void }) {
       return;
     }
     let cancelled = false;
-    setStatus('loading');
+    setStatus((prev) => (prev === 'ready' ? prev : 'loading'));
     setLoadError(null);
     (async () => {
       const res = await ownerFetch('pc_reader_view?select=payload,updated_at&limit=1', ensureFresh);
       if (cancelled) return;
+      setRefreshing(false);
       if (!res.ok) {
         setStatus('error');
         setLoadError(res.status === 401 ? 'Your session ended. Sign in again.' : `Could not load the desk (HTTP ${res.status}).`);
@@ -142,7 +127,7 @@ export default function ReaderDesk({ onHome }: { onHome: () => void }) {
     return () => {
       cancelled = true;
     };
-  }, [ready, session, ensureFresh]);
+  }, [ready, session, ensureFresh, bump]);
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -163,14 +148,16 @@ export default function ReaderDesk({ onHome }: { onHome: () => void }) {
     if (ok) setNotice('Check that inbox for a sign-in link - it comes back to this page.');
   };
 
-  const grouped = useMemo(() => {
+  const ordered = useMemo(() => {
     if (!payload) return [];
-    return payload.accounts.map((account) => ({
-      account,
-      rows: payload.positions
-        .filter((position) => position.account === account.name)
-        .sort((a, b) => (b.value_cad ?? 0) - (a.value_cad ?? 0)),
-    }));
+    return payload.positions.slice().sort((a, b) => (b.value_cad ?? 0) - (a.value_cad ?? 0));
+  }, [payload]);
+
+  const accountMix = useMemo(() => {
+    if (!payload || payload.accounts.length === 0) return null;
+    const top = payload.accounts.slice().sort((a, b) => b.value_cad - a.value_cad)[0];
+    const total = payload.totals.value_cad || 1;
+    return { top, sharePct: (top.value_cad / total) * 100, rest: payload.accounts.filter((a) => a.name !== top.name) };
   }, [payload]);
 
   if (!ready) {
@@ -254,134 +241,203 @@ export default function ReaderDesk({ onHome }: { onHome: () => void }) {
   const read = payload?.read ?? null;
 
   return (
-    <div className="rd-root">
-      <header className="rd-bar">
-        <div className="rd-bar-left">
-          <span className="rd-mark small" aria-hidden="true" />
-          <div className="rd-bar-title">
-            <strong>Your desk</strong>
-            <span>Private to your account</span>
+    <div className="stock-dashboard rd-desk">
+      <header className="sd-header">
+        <strong className="sd-brand">PC <span>Stock desk</span></strong>
+        <button
+          type="button"
+          className="sd-refresh"
+          onClick={() => {
+            setRefreshing(true);
+            setBump((value) => value + 1);
+          }}
+          disabled={refreshing}
+        >
+          {refreshing ? 'Refreshing...' : 'Refresh'}
+        </button>
+        <details className="sd-account">
+          <summary>Account</summary>
+          <div>
+            <span className="rd-account-email">{session.email}</span>
+            {payload?.as_of && <span className="rd-quiet">Prices {payload.as_of}</span>}
+            <button type="button" onClick={onHome}>
+              Site
+            </button>
+            <button type="button" className="rd-signout" onClick={signOut}>
+              Sign out
+            </button>
           </div>
-        </div>
-        <div className="rd-bar-right">
-          {payload?.as_of && <span className="rd-quiet">Prices {payload.as_of}</span>}
-          <button type="button" className="rd-btn ghost small" onClick={signOut}>
-            Sign out
-          </button>
-        </div>
+        </details>
       </header>
 
-      <main className="rd-main">
-        {status === 'loading' && <p className="rd-quiet">Loading...</p>}
+      {status === 'loading' && (
+        <section className="sd-panel rd-pad">
+          <p className="rd-note">Loading...</p>
+        </section>
+      )}
 
-        {status === 'error' && (
-          <section className="rd-panel">
-            <p className="rd-note warn">{loadError}</p>
+      {status === 'error' && (
+        <section className="sd-panel rd-pad">
+          <p className="rd-note warn">{loadError}</p>
+        </section>
+      )}
+
+      {status === 'empty' && (
+        <section className="sd-panel rd-pad rd-empty">
+          <p className="rd-note">Nothing is published to this account yet.</p>
+        </section>
+      )}
+
+      {status === 'ready' && payload && (
+        <>
+          <section className="sd-kpis">
+            <div>
+              <span>Book value</span>
+              <strong>{amount(payload.totals.value_cad, 'CAD')}</strong>
+              <small>Cost basis {amount(payload.totals.cost_cad ?? payload.totals.value_cad - payload.totals.pl_cad, 'CAD')}</small>
+            </div>
+            <div>
+              <span>Account return</span>
+              <strong className={tone(payload.totals.ret_pct)}>{signedPct(payload.totals.ret_pct)}</strong>
+              <small>Broker cost basis &middot; not time-weighted</small>
+            </div>
+            <div>
+              <span>Day change</span>
+              <strong className={tone(payload.totals.day_cad)}>{signedAmount(payload.totals.day_cad, 'CAD')}</strong>
+              <small>{signedPct(payload.totals.day_pct)}</small>
+            </div>
+            <div>
+              <span>{accountMix ? `${accountMix.top.name} share` : 'Accounts'}</span>
+              <strong>{accountMix ? `${accountMix.sharePct.toFixed(1)}%` : '--'}</strong>
+              <small>
+                {accountMix
+                  ? [...accountMix.rest.map((a) => `${a.name} ${amount(a.value_cad, 'CAD')}`), `${payload.positions.length} holdings`].join(' \u00b7 ')
+                  : `${payload.positions.length} holdings`}
+              </small>
+            </div>
           </section>
-        )}
 
-        {status === 'empty' && (
-          <section className="rd-panel">
-            <p className="rd-note">Nothing is published to this account yet.</p>
-          </section>
-        )}
-
-        {status === 'ready' && payload && (
-          <>
-            <section className="rd-hero">
-              <p className="rd-hero-label">Portfolio value</p>
-              <p className="rd-total">{amount(payload.totals.value_cad, 'CAD')}</p>
-              <p className={`rd-gain ${tone(payload.totals.pl_cad)}`}>
-                {payload.totals.pl_cad >= 0 ? '\u25B2' : '\u25BC'} {amount(payload.totals.pl_cad, 'CAD')} &middot;{' '}
-                {signedPct(payload.totals.ret_pct)} <span className="rd-quiet">total gain</span>
-              </p>
-              <div className="rd-chips">
-                {payload.accounts.map((account) => (
-                  <span key={account.name} className="rd-chip">
-                    <b>{account.name}</b> {amount(account.value_cad, 'CAD')}
-                  </span>
+          <main className="sd-workspace">
+            <section className="sd-panel">
+              <div className="sd-panel-head">
+                <h2>
+                  Portfolio <span>{payload.positions.length}</span>
+                </h2>
+                <span className="rd-quiet">{read ? `${read.scored_count} scored` : ''}</span>
+              </div>
+              <div className="sd-portfolio-columns">
+                <span>Ticker</span>
+                <span>CAD value</span>
+                <span>Weight</span>
+                <span>Day</span>
+                <span>Rating</span>
+                <span>Flag</span>
+              </div>
+              <div className="rd-table-body">
+                {ordered.map((position) => (
+                  <div
+                    className="sd-portfolio-row"
+                    key={`${position.account}-${position.ticker}`}
+                    title={position.pl !== null && position.pl !== undefined ? `P/L ${amount(position.pl, position.cur)}` : undefined}
+                  >
+                    <span className="rd-cell-name">
+                      <span className="rd-cell-line">
+                        <strong>{position.ticker}</strong>
+                        <em className="rd-acct">{position.account}</em>
+                      </span>
+                      <small>{position.name}</small>
+                    </span>
+                    <span>{amount(position.value_cad, 'CAD')}</span>
+                    <span>{position.weight_account_pct !== null && position.weight_account_pct !== undefined ? `${position.weight_account_pct.toFixed(1)}%` : '--'}</span>
+                    <span className={tone(position.day_pct)}>{signedPct(position.day_pct)}</span>
+                    <span>{position.model?.in_universe && position.model.composite !== null && position.model.composite !== undefined ? position.model.composite.toFixed(1) : '--'}</span>
+                    <span className="rd-flag">{position.model?.peak_margin_flag ? 'Peak' : ''}</span>
+                  </div>
                 ))}
               </div>
-            </section>
-
-            <section className="rd-panel">
-              <div className="rd-panel-head">
-                <h2>Your stocks</h2>
-                <span className="rd-quiet">
-                  {read ? `${read.scored_count} of ${payload.positions.length} carry a desk score` : `${payload.positions.length} positions`}
-                </span>
-              </div>
-              {grouped.map(({ account, rows }) => (
-                <div key={account.name} className="rd-group">
-                  <h3 className="rd-group-head">
-                    {account.name} <span className="rd-quiet">{rows.length}</span>
-                  </h3>
-                  <ul className="rd-rows">
-                    {rows.map((position) => (
-                      <PositionRow key={`${position.account}-${position.ticker}`} position={position} />
-                    ))}
-                  </ul>
-                </div>
-              ))}
+              <p className="sd-portfolio-foot">
+                Research view, not advice. Ratings are the desk model&apos;s composite for names inside its
+                universe{payload.model?.universe_size ? ` (${payload.model.universe_size} scored)` : ''}; &quot;--&quot; means outside it.
+              </p>
             </section>
 
             {read && (
-              <section className="rd-panel">
-                <div className="rd-panel-head">
+              <section className="sd-panel">
+                <div className="sd-panel-head">
                   <h2>What the desk sees</h2>
                   <span className="rd-quiet">research view, not advice</span>
                 </div>
-                {read.note && <p className="rd-note">{read.note}</p>}
-                <div className="rd-read-grid">
-                  <div className="rd-read-list">
-                    <h4>Standing out</h4>
-                    <ul>
-                      {read.strongest.map((entry) => (
-                        <li key={entry.ticker}>
-                          <span className="rd-read-name">
-                            <span className="rd-ticker">{entry.ticker}</span>
-                            <span className="rd-sub">{entry.name}</span>
+                <div className="sd-order-columns rd-read-body">
+                  <div className="sd-order-side">
+                    <h3>
+                      Standing out <span>{read.strongest.length}</span>
+                    </h3>
+                    {read.strongest.map((entry) => (
+                      <div className="sd-order-row" key={entry.ticker}>
+                        <div className="sd-order-top">
+                          <span className="rd-cell-name">
+                            <strong>{entry.ticker}</strong>
+                            <small>{entry.name}</small>
                           </span>
-                          <span className="rd-read-score">{entry.composite.toFixed(1)}</span>
-                        </li>
-                      ))}
-                    </ul>
+                          <span>{entry.composite.toFixed(1)}</span>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  <div className="rd-read-list">
-                    <h4>Needs watching</h4>
-                    <ul>
-                      {read.weakest.map((entry) => (
-                        <li key={entry.ticker}>
-                          <span className="rd-read-name">
-                            <span className="rd-ticker">{entry.ticker}</span>
-                            <span className="rd-sub">{entry.name}</span>
+                  <div className="sd-order-side">
+                    <h3>
+                      Needs watching <span>{read.weakest.length}</span>
+                    </h3>
+                    {read.weakest.map((entry) => (
+                      <div className="sd-order-row" key={entry.ticker}>
+                        <div className="sd-order-top">
+                          <span className="rd-cell-name">
+                            <strong>{entry.ticker}</strong>
+                            <small>{entry.name}</small>
                           </span>
-                          <span className="rd-read-score">{entry.composite.toFixed(1)}</span>
-                        </li>
-                      ))}
-                    </ul>
+                          <span>{entry.composite.toFixed(1)}</span>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
-                {read.flags.length > 0 && (
-                  <p className="rd-note">
-                    Peak-margin flags: {read.flags.map((flag) => flag.ticker).join(' \u00b7 ')}
-                  </p>
-                )}
-                <p className="rd-quiet">
-                  {read.unscored_count} of {payload.positions.length} positions are outside the desk&apos;s model - mostly
-                  ETFs and smaller listings.
+                <p className="sd-portfolio-foot">
+                  {read.unscored_count} of {payload.positions.length} positions are outside the desk&apos;s model - mostly ETFs
+                  and smaller listings.
                 </p>
               </section>
             )}
 
-            <footer className="rd-foot">
-              <span>Prices from your app &middot; {payload.as_of ?? 'n/a'}</span>
-              {payload.fx_usd_cad ? <span>FX C${payload.fx_usd_cad}/US$</span> : null}
-              {payload.model?.universe_size ? <span>Desk model covers {payload.model.universe_size} names</span> : null}
-            </footer>
-          </>
-        )}
-      </main>
+            <section className="sd-panel sd-context">
+              <div className="sd-panel-head">
+                <h2>
+                  Attention <span>{read ? read.flags.length : 0}</span>
+                </h2>
+              </div>
+              {read && read.flags.length > 0 ? (
+                <ul className="sd-attention">
+                  {read.flags.map((flag) => (
+                    <li key={flag.ticker}>
+                      <strong>{flag.ticker}</strong> - peak-margin flag on the desk model
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="sd-empty">No flags on the scored holdings.</p>
+              )}
+              {read?.note && <p className="sd-empty">{read.note}</p>}
+            </section>
+          </main>
+
+          <footer className="sd-status">
+            <span>
+              Prices {payload.as_of ?? 'n/a'}
+              {payload.fx_usd_cad ? ` \u00b7 FX C$${payload.fx_usd_cad}/US$` : ''}
+            </span>
+            <span>Research view - not advice</span>
+          </footer>
+        </>
+      )}
     </div>
   );
 }

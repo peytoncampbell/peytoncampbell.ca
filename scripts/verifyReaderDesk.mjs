@@ -11,8 +11,9 @@
  * Contracts asserted:
  *   gate   - 'Your desk' heading, email/password fields, Sign in + Email me a link, noindex meta,
  *            the blush canvas token, and no horizontal overflow at 1280/390.
- *   render - C$ formatting of the total, an up row and a down row, the model badge (scored row only),
- *            'Standing out' / 'Needs watching' lists, the peak-margin flag line, sign-out returning
+ *   render - the console shell (KPIs: book value, account return, day change, account mix), the
+ *            portfolio table (a row per position with day % and model rating), 'Standing out' /
+ *            'Needs watching' lists, the attention flag, sign-out via the Account menu returning
  *            to the gate, and no horizontal overflow at 1280/390.
  */
 import assert from 'node:assert/strict';
@@ -59,11 +60,11 @@ const SYNTH = {
   as_of: '2026-09-27 09:27 GMT-04:00',
   fx_usd_cad: 1.4141,
   model: { universe_size: 1073 },
-  accounts: [{ name: 'TSYN', value_cad: 1234.56, pl_cad: 234.56, positions: 2, scored: 1 }],
-  totals: { value_cad: 1234.56, pl_cad: 234.56, ret_pct: 23.46 },
+  accounts: [{ name: 'TSYN', value_cad: 1234.56, pl_cad: 234.56, day_cad: 15.8, positions: 2, scored: 1 }],
+  totals: { value_cad: 1234.56, pl_cad: 234.56, cost_cad: 1000, day_cad: 15.8, day_pct: 1.33, ret_pct: 23.46 },
   positions: [
-    { ticker: 'SYN01', name: 'Synthetic One Corp', account: 'TSYN', cur: 'CAD', qty: 10, price: 100, value: 1000, pl: 123.4, ret_pct: 12.34, value_cad: 1000, weight_account_pct: 81.0, model: { in_universe: true, rank_global: 12, universe_size: 1073, composite: 61.4, peak_margin_flag: true } },
-    { ticker: 'SYN02', name: 'Synthetic Two Ltd', account: 'TSYN', cur: 'USD', qty: 2, price: 117.28, value: 234.56, pl: -12.34, ret_pct: -5.0, value_cad: 331.7, weight_account_pct: 19.0, model: { in_universe: false } },
+    { ticker: 'SYN01', name: 'Synthetic One Corp', account: 'TSYN', cur: 'CAD', qty: 10, price: 100, value: 1000, pl: 123.4, ret_pct: 12.34, value_cad: 1000, day_cad: 20.5, day_pct: 2.1, weight_account_pct: 81.0, model: { in_universe: true, rank_global: 12, universe_size: 1073, composite: 61.4, peak_margin_flag: true } },
+    { ticker: 'SYN02', name: 'Synthetic Two Ltd', account: 'TSYN', cur: 'USD', qty: 2, price: 117.28, value: 234.56, pl: -12.34, ret_pct: -5.0, value_cad: 331.7, day_cad: -4.7, day_pct: -1.4, weight_account_pct: 19.0, model: { in_universe: false } },
   ],
   read: {
     scored_count: 1,
@@ -149,21 +150,20 @@ async function gateChecks(page, width, height) {
 async function renderChecks(page, width, height) {
   await page.setViewport({ width, height });
   await page.goto(`${base}/mydesk`, { waitUntil: 'domcontentloaded' });
-  await page.waitForSelector('.rd-total', { timeout: 15000 });
-  const total = await page.$eval('.rd-total', (el) => el.textContent.trim());
-  check(`total at ${width}`, total === 'C$1,234.56', total);
-  const gain = await page.$eval('.rd-gain', (el) => el.textContent.replace(/\s+/g, ' ').trim());
-  check(`gain line at ${width}`, gain.includes('C$234.56') && gain.includes('+23.46%'), gain);
-  const rows = await page.$$eval('.rd-row', (els) => els.map((li) => li.innerText.replace(/\s+/g, ' ')));
+  await page.waitForSelector('.sd-kpis', { timeout: 15000 });
+  const kpis = await page.$$eval('.sd-kpis strong', (els) => els.map((e) => e.textContent.trim()));
+  check(`book value at ${width}`, kpis[0] === 'C$1,234.56', kpis.join(' | '));
+  check(`account return at ${width}`, kpis[1] === '+23.46%', kpis[1]);
+  check(`day change at ${width}`, kpis[2] === '+C$15.80', kpis[2]);
+  check(`account mix at ${width}`, kpis[3] === '100.0%', kpis[3]);
+  const rows = await page.$$eval('.sd-portfolio-row', (els) => els.map((r) => r.innerText.replace(/\s+/g, ' ')));
   check(`row count at ${width}`, rows.length === 2, `${rows.length} rows`);
-  check(`SYN01 row at ${width}`, rows.some((r) => r.includes('SYN01') && r.includes('+12.34%')), rows[0]?.slice(0, 90));
-  check(`SYN02 row at ${width}`, rows.some((r) => r.includes('SYN02') && r.includes('-5.00%')), rows[1]?.slice(0, 90));
-  const badge = await page.$$eval('.rd-row .rd-badge', (els) => els.map((e) => e.textContent.trim()));
-  check(`model badge at ${width}`, badge.length === 1 && badge[0] === '61', badge.join(','));
-  const heads = await page.$$eval('.rd-read-list h4', (els) => els.map((e) => e.textContent.trim()));
-  check(`read lists at ${width}`, heads.includes('Standing out') && heads.includes('Needs watching'), heads.join(' | '));
-  const notes = await page.$$eval('.rd-note', (els) => els.map((e) => e.textContent).join('\n'));
-  check(`flags at ${width}`, /Peak-margin flags:.*SYN01/.test(notes));
+  check(`SYN01 row at ${width}`, rows.some((r) => r.includes('SYN01') && r.includes('+2.10%') && r.includes('61.4')), rows[0]?.slice(0, 90));
+  check(`SYN02 row at ${width}`, rows.some((r) => r.includes('SYN02') && r.includes('-1.40%') && r.includes('--')), rows[1]?.slice(0, 90));
+  const heads = await page.$$eval('.sd-order-side h3', (els) => els.map((e) => e.textContent.trim()));
+  check(`read lists at ${width}`, heads.some((h) => h.startsWith('Standing out')) && heads.some((h) => h.startsWith('Needs watching')), heads.join(' | '));
+  const flags = await page.$$eval('.sd-attention li', (els) => els.map((e) => e.textContent).join('\n'));
+  check(`attention flag at ${width}`, /SYN01/.test(flags), flags.slice(0, 70));
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   check(`render no overflow at ${width}`, overflow <= 1, `${overflow}px`);
   if (options.out) await page.screenshot({ path: resolve(options.out, `reader-desk-${width}.png`) });
@@ -197,7 +197,8 @@ async function main() {
     await renderChecks(page, 1280, 800);
     await renderChecks(page, 390, 844);
     await page.setViewport({ width: 1280, height: 800 });
-    await page.click('.rd-bar-right button');
+    await page.click('.sd-account summary');
+    await page.click('.rd-signout');
     await page.waitForSelector('.rd-field input[type="password"]', { timeout: 10000 }).then(
       () => check('sign-out returns to the gate', true),
       () => check('sign-out returns to the gate', false, 'gate form never appeared'));

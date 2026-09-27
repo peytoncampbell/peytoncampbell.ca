@@ -1,6 +1,7 @@
-/* ---------------------------------------------------------------- reader desk (pink)
-   One person's own page: softer and warmer than the dark site on purpose, sized for a phone
-   first. Scoped tokens live on .rd-root so nothing here can leak into the owner console. */
+/* ---------------------------------------------------------------- reader desk
+   The gate is the quiet pink page; the signed-in desk is the stock desk's console composition
+   (StockDashboard.css classes) under a reader-pink token set. Scoped tokens live on .rd-root and
+   .stock-dashboard.rd-desk so nothing here can leak into the owner console. */
 
 .rd-root {
   --rd-bg: #faf0ef;
@@ -88,17 +89,6 @@
   background: #fff6f8;
 }
 
-.rd-mark.small {
-  width: 1.75rem;
-  height: 1.75rem;
-  border-radius: 10px;
-}
-
-.rd-mark.small::after {
-  width: 0.36rem;
-  height: 0.36rem;
-}
-
 .rd-form {
   display: grid;
   gap: 0.8rem;
@@ -175,11 +165,6 @@
   background: var(--rd-rose-soft);
 }
 
-.rd-btn.small {
-  padding: 0.35rem 0.7rem;
-  font-size: 0.8rem;
-}
-
 .rd-gate-foot {
   display: grid;
   gap: 0.4rem;
@@ -215,305 +200,131 @@
   font-size: 0.78rem;
 }
 
-/* ------------------------------------------------------------------ signed-in shell */
+/* ------------------------------------------------- signed-in: console in pink */
 
-.rd-main {
-  width: 100%;
-  max-width: 66rem;
-  margin: 0 auto;
-  display: grid;
-  gap: 1rem;
+.stock-dashboard.rd-desk {
+  --sd-bg: #160f16;
+  --sd-panel: #231724;
+  --sd-raised: #2e1f30;
+  --sd-text: #f3e9ef;
+  --sd-muted: #b79cad;
+  --sd-line: #553a50;
+  --sd-select: #e08fb4;
+
+  height: auto;
+  min-height: 100dvh;
+  grid-template-rows: auto auto auto auto;
+  background: linear-gradient(180deg, #1e1222 0%, #160f16 55%, #140d14 100%);
 }
 
-.rd-bar {
-  width: 100%;
-  max-width: 66rem;
-  margin: 0 auto 1.15rem;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  align-items: center;
-  justify-content: space-between;
+.stock-dashboard.rd-desk .sd-workspace {
+  align-items: start;
 }
 
-.rd-bar-left,
-.rd-bar-right {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
+.stock-dashboard.rd-desk .sd-brand {
+  color: #f0b3cd;
 }
 
-.rd-bar-title {
-  display: grid;
+.stock-dashboard.rd-desk .up,
+.stock-dashboard.rd-desk .sd-kpis strong.up,
+.stock-dashboard.rd-desk .sd-portfolio-row .up {
+  color: #a6d4b4;
 }
 
-.rd-bar-title strong {
-  font-size: 0.98rem;
-  font-weight: 700;
+.stock-dashboard.rd-desk .down,
+.stock-dashboard.rd-desk .sd-kpis strong.down,
+.stock-dashboard.rd-desk .sd-portfolio-row .down {
+  color: #eda39b;
 }
 
-.rd-bar-title span {
-  color: var(--rd-faint);
-  font-size: 0.74rem;
-}
-
-.rd-hero {
-  padding: 1.5rem 1.6rem;
-  border: 1px solid var(--rd-line);
-  border-radius: 20px;
-  background:
-    linear-gradient(120deg, rgba(173, 71, 99, 0.06), transparent 55%),
-    var(--rd-surface);
-  box-shadow: var(--rd-shadow);
-}
-
-.rd-hero-label {
-  margin: 0;
-  color: var(--rd-soft);
-  font-size: 0.78rem;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
-
-.rd-total {
-  margin: 0.2rem 0 0.1rem;
-  font-size: clamp(2rem, 5vw, 2.6rem);
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  font-variant-numeric: tabular-nums;
-}
-
-.rd-gain {
-  margin: 0;
-  font-size: 0.95rem;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-
-.rd-gain .rd-quiet {
+.stock-dashboard.rd-desk .sd-brand span {
+  color: var(--sd-muted);
   font-weight: 400;
 }
 
-.rd-gain.up {
-  color: var(--rd-up);
+.stock-dashboard.rd-desk .sd-refresh,
+.stock-dashboard.rd-desk .sd-account summary {
+  color: var(--sd-muted);
 }
 
-.rd-gain.down {
-  color: var(--rd-down);
+.stock-dashboard.rd-desk .sd-account > div {
+  min-width: 15rem;
 }
 
-.rd-gain.flat {
-  color: var(--rd-soft);
+.rd-account-email {
+  color: var(--sd-text);
+  font-size: 12px;
+  overflow-wrap: anywhere;
 }
 
-.rd-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-top: 0.9rem;
+.stock-dashboard.rd-desk .sd-portfolio-columns {
+  height: auto;
+  min-height: 30px;
 }
 
-.rd-chip {
-  padding: 0.32rem 0.7rem;
-  border: 1px solid var(--rd-line);
-  border-radius: 999px;
-  background: var(--rd-surface);
-  color: var(--rd-soft);
-  font-size: 0.82rem;
-  font-variant-numeric: tabular-nums;
+.stock-dashboard.rd-desk .sd-portfolio-row {
+  min-height: 40px;
+  border-top-color: #3a2940;
 }
 
-.rd-chip b {
-  color: var(--rd-ink);
-  margin-right: 0.3rem;
-  font-weight: 700;
+.rd-table-body {
+  min-width: 0;
 }
 
-/* ------------------------------------------------------------------ panels + rows */
-
-.rd-panel {
-  padding: 1.3rem 1.4rem;
-  border: 1px solid var(--rd-line);
-  border-radius: 20px;
-  background: var(--rd-surface);
-  box-shadow: var(--rd-shadow);
-}
-
-.rd-panel-head {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  align-items: baseline;
-  justify-content: space-between;
-  margin-bottom: 0.75rem;
-}
-
-.rd-panel-head h2 {
-  margin: 0;
-  font-size: 1.05rem;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-}
-
-.rd-group + .rd-group {
-  margin-top: 1.1rem;
-}
-
-.rd-group-head {
-  display: flex;
-  gap: 0.45rem;
-  align-items: baseline;
-  margin: 0 0 0.35rem;
-  font-size: 0.86rem;
-  font-weight: 700;
-  color: var(--rd-rose);
-}
-
-.rd-rows {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.rd-row {
+.rd-cell-name {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 8.5rem 5.25rem 4rem;
-  align-items: center;
-  gap: 0.65rem;
-  padding: 0.5rem 0.15rem;
-  border-bottom: 1px solid var(--rd-line-soft);
-}
-
-.rd-row:last-child {
-  border-bottom: none;
-}
-
-.rd-row-name {
+  gap: 1px;
   min-width: 0;
+  text-align: left;
 }
 
-.rd-row-line {
+.rd-cell-line {
   display: flex;
   align-items: center;
-  gap: 0.45rem;
+  gap: 6px;
   min-width: 0;
 }
 
-.rd-ticker {
-  font-weight: 700;
-  letter-spacing: 0.02em;
-}
-
-.rd-sub {
-  display: block;
+.rd-cell-name small {
+  display: none;
   overflow: hidden;
-  color: var(--rd-faint);
-  font-size: 0.76rem;
-  line-height: 1.35;
   text-overflow: ellipsis;
   white-space: nowrap;
+  color: var(--sd-muted);
+  font-size: 11px;
+  line-height: 1.3;
 }
 
-.rd-badge {
-  flex: 0 0 auto;
-  padding: 0.08rem 0.42rem;
+.rd-acct {
+  padding: 0 6px;
+  border: 1px solid var(--sd-line);
   border-radius: 999px;
-  background: var(--rd-rose-soft);
-  color: var(--rd-rose-deep);
-  font-size: 0.7rem;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-}
-
-.rd-row-value {
-  text-align: right;
-  font-variant-numeric: tabular-nums;
+  color: var(--sd-muted);
+  font-size: 10px;
+  font-style: normal;
+  line-height: 16px;
   white-space: nowrap;
 }
 
-.rd-row-gain {
-  text-align: right;
+.rd-flag {
+  color: #e2b6a6;
+}
+
+.rd-pad {
+  padding: 14px;
+}
+
+.stock-dashboard.rd-desk .rd-read-body {
+  padding-top: 6px;
+}
+
+.stock-dashboard.rd-desk .sd-order-top > span:last-child {
+  color: var(--sd-text);
   font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
 }
 
-.rd-row-gain.up {
-  color: var(--rd-up);
-}
-
-.rd-row-gain.down {
-  color: var(--rd-down);
-}
-
-.rd-row-gain.flat {
-  color: var(--rd-soft);
-}
-
-.rd-row-weight {
-  text-align: right;
-  color: var(--rd-faint);
-  font-size: 0.8rem;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
-/* ------------------------------------------------------------------ desk read */
-
-.rd-read-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.9rem;
-  margin: 0.35rem 0 0.75rem;
-}
-
-.rd-read-list h4 {
-  margin: 0 0 0.3rem;
-  color: var(--rd-soft);
-  font-size: 0.76rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
-
-.rd-read-list ul {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.rd-read-list li {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  justify-content: space-between;
-  padding: 0.42rem 0.15rem;
-  border-bottom: 1px solid var(--rd-line-soft);
-}
-
-.rd-read-list li:last-child {
-  border-bottom: none;
-}
-
-.rd-read-name {
-  min-width: 0;
-}
-
-.rd-read-score {
-  flex: 0 0 auto;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  color: var(--rd-rose-deep);
-}
-
-.rd-foot {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem 1rem;
-  padding: 0.25rem 0.25rem 0;
-  color: var(--rd-faint);
-  font-size: 0.76rem;
+.stock-dashboard.rd-desk .sd-empty {
+  color: var(--sd-muted);
 }
 
 /* ------------------------------------------------------------------ small screens */
@@ -523,60 +334,69 @@
     padding: 1rem 0.9rem 2.25rem;
   }
 
-  .rd-bar {
-    margin-bottom: 0.9rem;
-  }
-
   .rd-btn {
     min-height: 2.75rem;
-  }
-
-  .rd-btn.small {
-    min-height: 2.75rem;
-    padding-inline: 0.95rem;
   }
 
   .rd-field input {
     min-height: 2.75rem;
   }
 
+  .stock-dashboard.rd-desk {
+    padding: 10px;
+  }
+
+  .stock-dashboard.rd-desk button,
+  .stock-dashboard.rd-desk summary {
+    min-height: 2.75rem;
+  }
+
+  .stock-dashboard.rd-desk .sd-kpis strong {
+    font-size: 21px;
+  }
+
+  .stock-dashboard.rd-desk .sd-portfolio-row {
+    min-height: 44px;
+  }
+
   /* Long fund names keep their distinguishing words: up to two lines on phones. */
-  .rd-sub {
+  .rd-cell-name small {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    white-space: normal;
+  }
+}
+
+@media (max-width: 700px) {
+  /* Phone rows: the six-column table stacks into mini-cards so names and figures keep room. */
+  .stock-dashboard.rd-desk .sd-portfolio-columns {
+    display: none;
+  }
+
+  .rd-cell-name small {
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     white-space: normal;
   }
 
-  .rd-row {
+  .stock-dashboard.rd-desk .sd-portfolio-row {
     grid-template-columns: minmax(0, 1fr) auto;
     grid-template-areas:
-      'name gain'
-      'value weight';
-    row-gap: 0.1rem;
-    column-gap: 0.75rem;
+      'name day'
+      'value rating'
+      'weight flag';
+    align-items: baseline;
+    row-gap: 1px;
+    column-gap: 10px;
+    padding: 8px;
   }
 
-  .rd-row-name {
-    grid-area: name;
-  }
-
-  .rd-row-value {
-    grid-area: value;
-    text-align: left;
-    color: var(--rd-soft);
-    font-size: 0.84rem;
-  }
-
-  .rd-row-gain {
-    grid-area: gain;
-  }
-
-  .rd-row-weight {
-    grid-area: weight;
-  }
-
-  .rd-read-grid {
-    grid-template-columns: 1fr;
-  }
+  .stock-dashboard.rd-desk .sd-portfolio-row > :nth-child(1) { grid-area: name; }
+  .stock-dashboard.rd-desk .sd-portfolio-row > :nth-child(2) { grid-area: value; text-align: left; color: var(--sd-muted); }
+  .stock-dashboard.rd-desk .sd-portfolio-row > :nth-child(3) { grid-area: weight; text-align: left; color: var(--sd-muted); font-size: 12px; }
+  .stock-dashboard.rd-desk .sd-portfolio-row > :nth-child(4) { grid-area: day; }
+  .stock-dashboard.rd-desk .sd-portfolio-row > :nth-child(5) { grid-area: rating; }
+  .stock-dashboard.rd-desk .sd-portfolio-row > :nth-child(6) { grid-area: flag; }
 }

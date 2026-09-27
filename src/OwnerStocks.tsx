@@ -6,6 +6,7 @@ import type { AnalysisView, StockSelection } from './StockDashboard';
 import { FactorBars, PILLAR_META } from './StockAnalysis';
 import { PublishedCallEvaluation, StockNewsEvidence } from './StockEvidence';
 import { StockHistoryData } from './StockHistoryData';
+import { StockOutcomesData } from './StockOutcomesData';
 import { StockChanges, useChangeReview } from './StockChanges';
 import type { ChangeGroup, ChangeItem } from './StockChanges';
 import { changePair, ratingsFor } from './stockChangeData';
@@ -2332,7 +2333,7 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
     sessions={orderRows.length ? `Sessions: ${[...new Set(orderRows.map(({ line }) => `${line.region ?? 'Venue unknown'} ${line.session_state ?? 'state unknown'}`))].join(' · ')}` : 'Venue sessions unavailable'}
     attention={attention} candidates={weeklyRanking.map(row => ({ ticker: row.ticker, rating: row.rating.toFixed(1), availability: brokerBlocked(row) ? 'Unavailable' : row.broker_ok === true ? null : 'Unknown', note: brokerNote(row) ?? 'Broker availability not confirmed' }))} brief={newsLatest?.summary ?? null}
     status={<>Book {latest?.as_of ?? 'unavailable'} · Plan {playbook?.today?.as_of ?? 'unavailable'} · FX {playbook?.today?.fx_age_days == null ? 'unknown' : `${playbook.today.fx_age_days.toFixed(1)}d`}</>}
-    sections={{ book: fullBook, opportunities: <>{weeklyPanel}{playbookPanel}</>, reports: weeklyPanel, model: modelPanel, history: historyPanel, brief: briefPanel,
+    sections={{ book: fullBook, opportunities: <>{weeklyPanel}{playbookPanel}</>, reports: weeklyPanel, model: modelPanel, history: <StockOutcomesData key={ownerGeneration.current.value} ownerKey={latest ? String(ownerGeneration.current.value) : null} snapshots={historyPanel} fetchRows={path => ownerFetch(path, ensureFresh)} onAccessCheck={() => void load()} />, brief: briefPanel,
       ticket: <><p>Proposed orders only. No orders are executed by this page. Sale proceeds are planned, not settled cash.</p><TodayTicket today={playbook?.today} />{!playbook?.today && <p>Ticket unavailable.</p>}</>,
       status: <section className="own-panel"><h2>Status and attention</h2><ul>{attention.map((item, i) => <li key={i}>{item}</li>)}</ul><h3>Venue sessions</h3><ul>{sessions.map(item => <li key={item}>{item}</li>)}</ul><p>{playbook?.today?.market_note}</p><p>Automations {today?.automations_ok ?? '--'} / {today?.automations_total ?? '--'}</p><p>{funding?.sentence} {funding?.shortfall}</p><TodayTicket today={playbook?.today} /></section>,
     }}

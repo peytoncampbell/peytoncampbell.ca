@@ -16,6 +16,8 @@
     "verify:insight-data": "node scripts/verifyStockInsightData.js",
     "verify:evidence": "node scripts/verifyStockEvidence.js",
     "verify:stock-history": "node scripts/verifyStockHistory.js",
+    "verify:outcomes": "node scripts/verifyStockOutcomes.js",
+    "verify:outcome-data": "node scripts/verifyStockOutcomesData.js",
     "verify:history-data": "node scripts/verifyStockHistoryData.js",
     "verify:dashboard:shell": "node scripts/verifyStockDashboardShell.js",
     "verify:owner-session": "node scripts/verifyOwnerSession.js",

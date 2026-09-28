@@ -224,6 +224,22 @@ export async function ownerFetch(path: string, fresh: () => Promise<Session | nu
   return { ok: true, status: res.status, rows: (await res.json()) as any[] };
 }
 
+/** The two desks: the owner console and the reader desk, each with its own route. */
+export type DeskHome = '/stocks' | '/mydesk';
+
+/**
+ * Which desk a signed-in account belongs on. `pc_digest_private` answers for the account itself -
+ * the view is auth.uid()-gated - so a confirmed row means the owner console; anything else (a
+ * valid empty result, an error, a dead session) is the reader desk, whose own gate keeps its
+ * "nothing published yet" state for an account with no row. Never route an unconfirmed account to
+ * the console: the database would show it nothing, which is the "opens the wrong page and shows no
+ * data" complaint this resolver exists to fix.
+ */
+export async function resolveDeskHome(fresh: () => Promise<Session | null>): Promise<DeskHome> {
+  const res = await ownerFetch('pc_digest_private?select=as_of&limit=1', fresh).catch(() => null);
+  return res?.ok && Array.isArray(res.rows) && res.rows.length ? '/stocks' : '/mydesk';
+}
+
 /** Keeps the owner pages out of search results without touching the public site's metadata. */
 export function useNoIndex() {
   useEffect(() => {

@@ -209,7 +209,7 @@ const readRdView = (): RdView => {
   }
 };
 
-export default function ReaderDesk({ onHome }: { onHome: () => void }) {
+export default function ReaderDesk({ onHome, onOwnerConsole }: { onHome: () => void; onOwnerConsole?: () => void }) {
   const { session, ready, error, signIn, requestLink, signOut, ensureFresh } = useOwnerSession();
   useNoIndex();
 
@@ -249,6 +249,18 @@ export default function ReaderDesk({ onHome }: { onHome: () => void }) {
       }
       const row = res.rows[0];
       const data = row && row.payload && row.payload.schema === 'reader-digest/1' ? (row.payload as ReaderPayload) : null;
+      // No reader row can mean an owner account on the wrong page. The same auth.uid()-gated view
+      // the console reads decides: only a confirmed owner read hands the account over, and any
+      // failure keeps this page's own empty state. A malformed reader payload still counts as a
+      // reader row - that account belongs here, not on the console.
+      if (!row) {
+        const ownerRes = await ownerFetch('pc_digest_private?select=as_of&limit=1', ensureFresh).catch(() => null);
+        if (cancelled) return;
+        if (ownerRes?.ok && Array.isArray(ownerRes.rows) && ownerRes.rows.length) {
+          onOwnerConsole?.();
+          return;
+        }
+      }
       setPayload(data);
       setStatus(data ? 'ready' : 'empty');
     })();

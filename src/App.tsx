@@ -289,13 +289,13 @@ export default function App() {
   };
 
   if (route === '/login') {
-    return <OwnerLogin onSignedIn={() => navigate('/stocks')} onHome={navigateHome} />;
+    return <OwnerLogin onSignedIn={(path) => navigate(path)} onHome={navigateHome} />;
   }
   if (route === '/stocks') {
-    return <OwnerStocks onSignedOut={() => navigate('/login')} onHome={navigateHome} />;
+    return <OwnerStocks onSignedOut={() => navigate('/login')} onHome={navigateHome} onReaderDesk={() => navigate('/mydesk')} />;
   }
   if (route === '/mydesk') {
-    return <ReaderDesk onHome={navigateHome} />;
+    return <ReaderDesk onHome={navigateHome} onOwnerConsole={() => navigate('/stocks')} />;
   }
 
   const projectSlug = route.match(/^\/projects\/([^/]+)\/?$/)?.[1];
@@ -637,7 +637,7 @@ export default function App() {
                 navigate('/login');
               }}
             >
-              Owner sign-in
+              Sign in
             </a>{' '}
             for the full book - book value, cost basis and every position.
           </p>

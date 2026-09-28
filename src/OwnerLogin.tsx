@@ -1,15 +1,17 @@
 import { useEffect, useState } from 'react';
-import { AUTH_CONFIGURED, useNoIndex, useOwnerSession } from './ownerAuth';
+import { AUTH_CONFIGURED, resolveDeskHome, useNoIndex, useOwnerSession, type DeskHome } from './ownerAuth';
 
 /**
- * The owner's way in.
+ * The way in.
  *
  * A separate route rather than a section of the public site: the console behind it is a different
- * page entirely, and this one exists only to establish the session. It is deliberately not linked
- * from the navigation - the only pointer is a quiet line in the desk section and the footer.
+ * page entirely, and this one exists only to establish the session and hand the account to its own
+ * desk - the owner console for the allowlisted account, the reader desk for everyone else. The
+ * navigation carries one accent-coloured "Log in" item pointing here, with the desk section's
+ * quiet line kept as the contextual shortcut.
  */
-export default function OwnerLogin({ onSignedIn, onHome }: { onSignedIn: () => void; onHome: () => void }) {
-  const { session, ready, error, signIn, requestLink } = useOwnerSession();
+export default function OwnerLogin({ onSignedIn, onHome }: { onSignedIn: (path: DeskHome) => void; onHome: () => void }) {
+  const { session, ready, error, signIn, requestLink, ensureFresh } = useOwnerSession();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
@@ -20,9 +22,15 @@ export default function OwnerLogin({ onSignedIn, onHome }: { onSignedIn: () => v
     document.title = 'Sign in | Peyton Campbell';
   }, []);
 
+  // Every signed-in account goes to the desk its own identity can actually read - the resolver
+  // asks the same auth.uid()-gated view the console reads, so routing and data cannot disagree.
+  // This is the one routing path: a password sign-in and a returned emailed link both settle here.
   useEffect(() => {
-    if (ready && session) onSignedIn();
-  }, [ready, session, onSignedIn]);
+    if (!ready || !session) return;
+    let active = true;
+    void resolveDeskHome(ensureFresh).then((path) => { if (active) onSignedIn(path); });
+    return () => { active = false; };
+  }, [ready, session, ensureFresh, onSignedIn]);
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -30,16 +38,15 @@ export default function OwnerLogin({ onSignedIn, onHome }: { onSignedIn: () => v
     setNotice(null);
     const ok = await signIn(email.trim(), password);
     setBusy(false);
-    if (ok) {
-      setPassword('');
-      onSignedIn();
-    }
+    // No navigate here: the session effect above resolves the desk once the sign-in settles.
+    if (ok) setPassword('');
   };
 
   const sendLink = async () => {
     setBusy(true);
     setNotice(null);
-    const ok = await requestLink(email.trim());
+    // The link returns to this gate, where the session effect sends the account to its desk.
+    const ok = await requestLink(email.trim(), '/login');
     setBusy(false);
     if (ok) setNotice('Check that inbox for a sign-in link - it comes back to this site.');
   };
@@ -50,7 +57,7 @@ export default function OwnerLogin({ onSignedIn, onHome }: { onSignedIn: () => v
         <div className="own-gate-head">
           <span className="own-mark">PC</span>
           <div>
-            <h1>Owner sign-in</h1>
+            <h1>Sign in</h1>
             <p>One account. The book, the calls and the history live behind it.</p>
           </div>
         </div>

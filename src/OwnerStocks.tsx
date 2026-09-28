@@ -1162,12 +1162,15 @@ async function compareChangePairs(pairs: ChangePair[]): Promise<ComparedChanges>
   return { groups, details };
 }
 
-export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () => void; onHome: () => void }) {
+export default function OwnerStocks({ onSignedOut, onHome, onReaderDesk }: { onSignedOut: () => void; onHome: () => void; onReaderDesk?: () => void }) {
   const { session, ready, error, setError, signOut, ensureFresh, invalidateSession } = useOwnerSession();
   const ownerIdentity = session?.user_id ?? session?.access_token ?? null;
   // Parent scroll/layout renders must not restart a fetch and collapse the reading workspace.
   const signedOutCallback = useRef(onSignedOut);
   signedOutCallback.current = onSignedOut;
+  // Same reason: a parent rerender must not restart the load or stale the reader hand-off.
+  const readerDeskCallback = useRef(onReaderDesk);
+  readerDeskCallback.current = onReaderDesk;
   // An opaque, mounted-session namespace; never pass a credential as a history cache key.
   const ownerGeneration = useRef({ identity: ownerIdentity, value: 0 });
   if (ownerGeneration.current.identity !== ownerIdentity) {
@@ -1257,6 +1260,17 @@ export default function OwnerStocks({ onSignedOut, onHome }: { onSignedOut: () =
     if (!Array.isArray(privateRes.rows) || !privateRes.rows.length) {
       clearPrivate();
       setPriv([]);
+      // A valid, empty private result can be a reader account that signed in at the wrong door.
+      // One probe of the reader view - the same auth.uid() gate the reader desk itself reads
+      // through - decides: a confirmed reader row hands the account over, anything else keeps
+      // this console's own message. The clear has already run; only this probe is awaited.
+      const probeSequence = loadSequence.current;
+      const readerRes = await ownerFetch('pc_reader_view?select=updated_at&limit=1', ensureFresh).catch(() => null);
+      if (probeSequence !== loadSequence.current) return;
+      if (readerRes?.ok && Array.isArray(readerRes.rows) && readerRes.rows.length) {
+        readerDeskCallback.current?.();
+        return;
+      }
       setError('No private book rows returned. Access or publication unavailable.');
       return;
     }

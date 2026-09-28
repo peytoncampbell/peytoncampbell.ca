@@ -22,9 +22,12 @@ function harness() {
   let respond = () => ok([{ marker: 'cached' }]);
   const context = { ownerIdentity: 'owner-A', loadSequence: { current: 0 }, useCallback: f => f,
     ensureFresh() {}, invalidateSession() { state.invalidated = true; },
-    onSignedOut() { assert.equal(state.invalidated, true, 'Local invalidation precedes navigation'); state.signedOut = true; }, ownerFetch: async path => respond(path.split('?')[0]) };
+    onSignedOut() { assert.equal(state.invalidated, true, 'Local invalidation precedes navigation'); state.signedOut = true; },
+    onReaderDesk() { state.handOffs = (state.handOffs || 0) + 1; },
+    ownerFetch: async path => respond(path.split('?')[0]) };
   for (const name of ['DataOwner', 'Priv', 'Pub', 'News', 'WeeklyRows', 'PlaybookRows', 'Quant', 'SourceWarnings', 'ComparisonRead', 'Compared', 'HistoryPage', 'Refreshing', 'Error']) context[`set${name}`] = value => { state[name] = value; };
   context.signedOutCallback = { current: context.onSignedOut };
+  context.readerDeskCallback = { current: context.onReaderDesk };
   vm.createContext(context);
   vm.runInContext(clearCode + loadCode, context);
   return { state, context, load: () => context.load(), respond: fn => { respond = fn; } };
@@ -48,6 +51,7 @@ for (const [label, gate] of [['403', failed(403)], ['401', failed(401)], ['empty
     const h = harness(); await h.load(); assert.equal(h.state.PlaybookRows[0].marker, 'cached');
     h.respond(table => table === 'pc_digest_private' ? gate : table === 'pc_news' ? Promise.reject(new Error('synthetic network failure')) : ok([{ marker: 'late' }]));
     await h.load(); cleared(h.state, label === 'empty');
+    assert.equal(h.state.handOffs ?? 0, label === 'empty' ? 1 : 0, 'only the valid-empty gate probes the reader view');
     assert.equal(Boolean(h.state.signedOut), label === '401');
     assert.equal(Boolean(h.state.invalidated), label === '401');
     h.respond(table => table === 'pc_digest_private' ? ok([{ marker: 'new' }]) : failed(500));
@@ -63,6 +67,31 @@ for (const [label, gate] of [['403', failed(403)], ['401', failed(401)], ['empty
     finally { pending.reject(new Error('synthetic late rejection')); await loading; await turn(); }
   });
 }
+await test('a valid empty private result with a reader row hands the account over exactly once', async () => {
+  const h = harness(); await h.load();
+  h.respond(table => table === 'pc_digest_private' ? ok([]) : ok([{ marker: 'reader-row' }]));
+  await h.load();
+  assert.equal(h.state.Priv.length, 0, 'the private workspace stays cleared');
+  assert.equal(h.state.handOffs, 1, 'the hand-off fires exactly once, from the probe result');
+  assert.equal(Boolean(h.state.Error), false, 'no console error is raised when the account belongs on the reader desk');
+  assert.equal(Boolean(h.state.signedOut), false, 'the hand-off is not a sign-out');
+});
+await test('a valid empty private result with no reader row keeps the console message and never hands off', async () => {
+  const h = harness(); await h.load();
+  h.respond(table => table === 'pc_digest_private' ? ok([]) : failed(500));
+  await h.load();
+  assert.equal(h.state.Priv.length, 0);
+  assert.equal(h.state.handOffs ?? 0, 0, 'an unconfirmed account stays on the console');
+  assert.match(String(h.state.Error), /No private book rows returned/);
+});
+await test('a readable private book never probes the reader view', async () => {
+  const seen = [];
+  const h = harness();
+  h.respond(table => { seen.push(table); return ok([{ marker: 'rows' }]); });
+  await h.load();
+  assert.equal(seen.includes('pc_reader_view'), false, "the owner's path is untouched");
+  assert.equal(h.state.handOffs ?? 0, 0);
+});
 for (const kind of ['private-500', 'private-network', 'secondary-500', 'secondary-network']) {
   await test(`${kind} retains same-owner cache with warning`, async () => {
     const h = harness(); await h.load();

@@ -166,7 +166,7 @@ async function gateChecks(page, width, height) {
   const noindex = await page.$eval('meta[name="robots"]', (el) => el.content).catch(() => null);
   check(`gate noindex at ${width}`, noindex === 'noindex,nofollow', String(noindex));
   const bg = await page.$eval('.rd-root', (el) => getComputedStyle(el).backgroundColor);
-  check(`gate blush canvas at ${width}`, bg === 'rgb(250, 240, 239)', bg);
+  check(`gate blush canvas at ${width}`, bg === 'rgb(245, 241, 243)', bg);
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   check(`gate no overflow at ${width}`, overflow <= 1, `${overflow}px`);
   if (options.out) await page.screenshot({ path: resolve(options.out, `reader-gate-${width}.png`) });
@@ -181,6 +181,24 @@ async function renderChecks(page, width, height) {
   check(`account return at ${width}`, kpis[1] === '+23.46%', kpis[1]);
   check(`day change at ${width}`, kpis[2] === '+C$15.80', kpis[2]);
   check(`account mix at ${width}`, kpis[3] === '100.0%', kpis[3]);
+  const hierarchy = await page.evaluate(() => {
+    const panels = [...document.querySelectorAll('.sd-workspace > .sd-panel')];
+    const portfolio = panels.find(el => el.querySelector('h2')?.textContent.trim().startsWith('Portfolio'));
+    const plan = panels.find(el => el.querySelector('h2')?.textContent.trim().startsWith("Today's plan"));
+    const firstMetric = document.querySelector('.sd-kpis strong');
+    return {
+      title: document.querySelector('.rd-overview h1')?.textContent.trim(),
+      planFirst: !!(plan && portfolio && (plan.compareDocumentPosition(portfolio) & Node.DOCUMENT_POSITION_FOLLOWING)),
+      planAbove: !!(plan && portfolio && plan.getBoundingClientRect().bottom <= portfolio.getBoundingClientRect().top + 1),
+      metricSize: firstMetric ? parseFloat(getComputedStyle(firstMetric).fontSize) : 0,
+      workspaceWidth: document.querySelector('.sd-workspace')?.getBoundingClientRect().width,
+      portfolioWidth: portfolio?.getBoundingClientRect().width,
+    };
+  });
+  check(`overview heading at ${width}`, hierarchy.title === 'Your desk');
+  check(`actions before full holdings at ${width}`, hierarchy.planFirst && hierarchy.planAbove, JSON.stringify(hierarchy));
+  check(`full-width holdings at ${width}`, hierarchy.portfolioWidth >= hierarchy.workspaceWidth - 2);
+  check(`clear account hierarchy at ${width}`, hierarchy.metricSize >= 30);
   // The book's density control is the console's own: Cards / List / Detailed on pc-desk-view.
   const viewLabels = await page.$$eval('.rd-view', (els) => els.map((e) => e.textContent.trim()));
   check(`view switcher at ${width}`, viewLabels.join(',') === 'Cards,List,Detailed', viewLabels.join(','));
@@ -217,6 +235,19 @@ async function renderChecks(page, width, height) {
   await (await page.$$('.rd-view'))[0].click(); // Cards again, persisted for the next pass
   const heads = await page.$$eval('.sd-order-side h3', (els) => els.map((e) => e.textContent.trim()));
   check(`read lists at ${width}`, heads.some((h) => h.startsWith('Standing out')) && heads.some((h) => h.startsWith('Needs watching')), heads.join(' | '));
+  const decisionSizes = await page.$$eval('.rd-plan .rd-row-why, .rd-plan .rd-order-mode', els => els.map(el => parseFloat(getComputedStyle(el).fontSize)));
+  check(`readable order instructions at ${width}`, decisionSizes.length > 0 && decisionSizes.every(size => size >= 14));
+  const planNotes = await page.$('.rd-plan-notes');
+  check(`secondary plan notes start folded at ${width}`, !!planNotes && !(await planNotes.evaluate(el => el.open)));
+  if (planNotes) await page.click('.rd-plan-notes > summary');
+  const risk = await page.$$eval('.rd-order-risk', els => els.some(el => el.innerText.includes('No price protection') && el.getBoundingClientRect().height > 0));
+  check(`market risk stays inline at ${width}`, risk);
+  if (width < 761) {
+    await (await page.$$('.rd-view'))[1].click();
+    const labels = await page.$$eval('.rd-mobile-label', els => els.filter(el => el.getBoundingClientRect().height > 0).map(el => el.textContent.trim()));
+    check(`phone row labels at ${width}`, ['Weight', 'Day', 'Rating'].every(label => labels.includes(label)));
+    await (await page.$$('.rd-view'))[0].click();
+  }
   const panels = await page.$$eval('.sd-panel', (els) => els.map((e) => e.innerText.replace(/\s+/g, ' ')));
   const planText = panels.find((t) => t.includes("Today's plan")) || '';
   check(`plan panel at ${width}`, planText.includes('Sell / trim') && planText.includes('Buy'), planText.slice(0, 110));
@@ -237,6 +268,27 @@ async function renderChecks(page, width, height) {
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   check(`render no overflow at ${width}`, overflow <= 1, `${overflow}px`);
   if (options.out) await page.screenshot({ path: resolve(options.out, `reader-desk-${width}.png`) });
+}
+
+async function largePlanChecks(page) {
+  const original = SYNTH.ticket.lines;
+  SYNTH.ticket.lines = ['SELL', 'BUY'].flatMap((action, side) => Array.from({ length: 7 }, (_, index) => ({ ...original[side], action, ticker: `SYN${side}${index}` })));
+  try {
+    await page.goto(`${base}/mydesk`, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.rd-plan .sd-order-row');
+    const controls = await page.$$('.rd-more-orders');
+    check('large plan has independent expansion controls', controls.length === 2);
+    const rows = () => page.$$eval('.rd-plan .sd-order-side', els => els.map(el => el.querySelectorAll('.sd-order-row').length));
+    check('large plan previews both sides', JSON.stringify(await rows()) === '[4,4]');
+    if (controls.length === 2) {
+      await controls[0].click();
+      check('show all preserves sell count', JSON.stringify(await rows()) === '[7,4]');
+      await controls[1].click();
+      check('show all preserves buy count', JSON.stringify(await rows()) === '[7,7]');
+      await controls[0].click();
+      check('collapse is reversible', JSON.stringify(await rows()) === '[4,7]');
+    }
+  } finally { SYNTH.ticket.lines = original; }
 }
 
 async function main() {
@@ -266,6 +318,7 @@ async function main() {
     }, SESSION);
     await renderChecks(page, 1280, 800);
     await renderChecks(page, 390, 844);
+    await largePlanChecks(page);
     await page.setViewport({ width: 1280, height: 800 });
     await page.click('.sd-account summary');
     await page.click('.rd-signout');

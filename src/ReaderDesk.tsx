@@ -176,6 +176,38 @@ const fmtQty = (qty: number | null | undefined): string => {
   return Number.isInteger(qty) ? String(qty) : String(Number(qty.toFixed(4)));
 };
 
+/** A short preview keeps both sides reachable; expanding never changes the published queue. */
+function ReaderOrders({ side, lines }: { side: 'sell' | 'buy'; lines: ReaderTicketLine[] }) {
+  const [expanded, setExpanded] = useState(false);
+  const label = side === 'sell' ? 'Sell / trim' : 'Buy';
+  return (
+    <div className="sd-order-side">
+      <h3>{label} <span>{lines.length}</span></h3>
+      {lines.length === 0 && <p className="sd-empty">{side === 'sell' ? 'Nothing to sell or trim today.' : 'No funded buys today.'}</p>}
+      <div id={`rd-orders-${side}`}>
+        {(expanded ? lines : lines.slice(0, 4)).map((line, index) => (
+          <div className="sd-order-row" key={`${line.account}-${line.ticker}-${line.kind_label}-${index}`}>
+            <div className="sd-order-top">
+              <span className="rd-cell-line"><strong>{line.ticker}</strong>{line.account && <em className="rd-acct">{line.account}</em>}</span>
+              <span className="rd-order-amount">Est. {amount(line.est_cad, 'CAD')}</span>
+            </div>
+            <p className="rd-order-mode">{line.kind_label}</p>
+            <small className="rd-row-why">
+              qty {fmtQty(line.qty)} @ {line.limit_local ?? '--'} {line.currency}
+              {line.funded_via ? ` · ${line.funded_via}` : ''}
+            </small>
+            {line.market_order === true && line.price_protection === false && <small className="rd-order-risk">No price protection</small>}
+            {line.why && <small className="rd-row-why">{line.why}</small>}
+          </div>
+        ))}
+      </div>
+      {lines.length > 4 && <button className="rd-more-orders" type="button" aria-expanded={expanded} aria-controls={`rd-orders-${side}`} onClick={() => setExpanded(value => !value)}>
+        {expanded ? 'Show fewer' : `Show all ${lines.length} ${side === 'sell' ? 'sell / trim proposals' : 'buy proposals'}`}
+      </button>}
+    </div>
+  );
+}
+
 const UNFUNDED_LABELS: Record<string, string> = {
   'no cash or sale proceeds left': 'Needs cash',
   'not fillable from this broker': 'Not fillable here',
@@ -389,6 +421,13 @@ export default function ReaderDesk({ onHome, onOwnerConsole }: { onHome: () => v
     <div className="stock-dashboard rd-desk">
       <header className="sd-header">
         <strong className="sd-brand">PC <span>Stock desk</span></strong>
+        {status === 'ready' && payload && (
+          <nav aria-label="Primary">
+            <a href="#rd-overview">Overview</a>
+            <a href="#rd-plan">Today’s plan</a>
+            <a href="#rd-portfolio">Portfolio</a>
+          </nav>
+        )}
         <button
           type="button"
           className="sd-refresh"
@@ -404,7 +443,6 @@ export default function ReaderDesk({ onHome, onOwnerConsole }: { onHome: () => v
           <summary>Account</summary>
           <div>
             <span className="rd-account-email">{session.email}</span>
-            {payload?.as_of && <span className="rd-quiet">Prices {payload.as_of}</span>}
             <button type="button" onClick={onHome}>
               Site
             </button>
@@ -435,7 +473,11 @@ export default function ReaderDesk({ onHome, onOwnerConsole }: { onHome: () => v
 
       {status === 'ready' && payload && (
         <>
-          <section className="sd-kpis">
+          <div className="rd-overview" id="rd-overview">
+            <h1>Your desk</h1>
+            <p>{payload.as_of ? `Snapshot ${payload.as_of}` : 'Snapshot date unavailable'}</p>
+          </div>
+          <section className="sd-kpis" aria-label="Account overview">
             <div>
               <span>Book value</span>
               <strong>{amount(payload.totals.value_cad, 'CAD')}</strong>
@@ -462,198 +504,15 @@ export default function ReaderDesk({ onHome, onOwnerConsole }: { onHome: () => v
             </div>
           </section>
 
-          <main className="sd-workspace">
-            <section className="sd-panel">
-              <div className="sd-panel-head">
-                <h2>
-                  Portfolio <span>{payload.positions.length}</span>
-                </h2>
-                <div className="rd-head-right">
-                  <span className="rd-quiet">{read ? `${read.scored_count} scored` : ''}</span>
-                  <div className="rd-views" role="group" aria-label="How to show the book">
-                    {(Object.keys(RD_VIEW_LABELS) as RdView[]).map((option) => (
-                      <button
-                        key={option}
-                        type="button"
-                        className={`rd-view${view === option ? ' is-on' : ''}`}
-                        aria-pressed={view === option}
-                        onClick={() => {
-                          setView(option);
-                          try {
-                            localStorage.setItem('pc-desk-view', option);
-                          } catch {
-                            /* the choice just will not persist */
-                          }
-                        }}
-                      >
-                        {RD_VIEW_LABELS[option]}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              {view === 'grid' && (
-                <div className="rd-cards">
-                  {ordered.map((position) => {
-                    const rating = ratingOf(position);
-                    return (
-                      <article className="rd-card" key={`${position.account}-${position.ticker}`} title={ratingTitle(position)}>
-                        <div className="rd-card-head">
-                          <span className="rd-cell-line">
-                            <strong>{position.ticker}</strong>
-                            <em className="rd-acct">{position.account}</em>
-                          </span>
-                          <span className={position.call ? `rd-call rd-call-${position.call.toLowerCase()}` : 'rd-call rd-call-none'}>
-                            {position.call ?? ''}
-                          </span>
-                        </div>
-                        <dl className="rd-card-metrics">
-                          <div>
-                            <dt>Value</dt>
-                            <dd>{amount(position.value_cad, 'CAD')}</dd>
-                          </div>
-                          <div>
-                            <dt>Weight</dt>
-                            <dd>{position.weight_account_pct !== null && position.weight_account_pct !== undefined ? `${position.weight_account_pct.toFixed(1)}%` : '--'}</dd>
-                          </div>
-                          <div>
-                            <dt>Day</dt>
-                            <dd className={tone(position.day_pct)}>{signedPct(position.day_pct)}</dd>
-                          </div>
-                          <div>
-                            <dt>Rating</dt>
-                            <dd className="rd-rating">{rating !== null ? rating.toFixed(1) : '--'}</dd>
-                          </div>
-                        </dl>
-                        <p className="rd-card-name">{position.name}</p>
-                      </article>
-                    );
-                  })}
-                </div>
-              )}
-              {view === 'list' && (
-                <div className="sd-portfolio-columns">
-                  <span>Ticker</span>
-                  <span>CAD value</span>
-                  <span>Weight</span>
-                  <span>Day</span>
-                  <span>Rating</span>
-                  <span>Call</span>
-                </div>
-              )}
-              {view === 'list' && (
-                <div className="rd-table-body">
-                  {ordered.map((position) => {
-                    const rating = ratingOf(position);
-                    return (
-                      <div
-                        className="sd-portfolio-row"
-                        key={`${position.account}-${position.ticker}`}
-                        title={ratingTitle(position)}
-                      >
-                        <span className="rd-cell-name">
-                          <span className="rd-cell-line">
-                            <strong>{position.ticker}</strong>
-                            <em className="rd-acct">{position.account}</em>
-                          </span>
-                          <small>{position.name}</small>
-                        </span>
-                        <span>{amount(position.value_cad, 'CAD')}</span>
-                        <span>{position.weight_account_pct !== null && position.weight_account_pct !== undefined ? `${position.weight_account_pct.toFixed(1)}%` : '--'}</span>
-                        <span className={tone(position.day_pct)}>{signedPct(position.day_pct)}</span>
-                        <span>{rating !== null ? rating.toFixed(1) : '--'}</span>
-                        <span className={position.call ? `rd-call rd-call-${position.call.toLowerCase()}` : 'rd-call rd-call-none'}>
-                          {position.call ?? ''}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-              {view === 'full' && (
-                <div className="rd-table-body">
-                  {ordered.map((position) => {
-                    const rating = ratingOf(position);
-                    return (
-                      <div className="rd-detail-row" key={`${position.account}-${position.ticker}`} title={ratingTitle(position)}>
-                        <div className="sd-order-top">
-                          <span className="rd-cell-name">
-                            <span className="rd-cell-line">
-                              <strong>{position.ticker}</strong>
-                              <em className="rd-acct">{position.account}</em>
-                            </span>
-                            <small>{position.name}</small>
-                          </span>
-                          <span className={position.call ? `rd-call rd-call-${position.call.toLowerCase()}` : 'rd-call rd-call-none'}>
-                            {position.call ?? ''}
-                          </span>
-                        </div>
-                        <small className="rd-row-why">
-                          {fmtQty(position.qty)} @ {position.price ?? '--'} {position.cur}
-                          {position.value_cad !== null && position.value_cad !== undefined ? ` \u00b7 ${amount(position.value_cad, 'CAD')}` : ''}
-                          {position.day_pct !== null && position.day_pct !== undefined ? ` \u00b7 day ${signedPct(position.day_pct)}` : ''}
-                          {` \u00b7 rating ${rating !== null ? rating.toFixed(1) : '--'}`}
-                        </small>
-                        {position.call_why && <small className="rd-row-why">{position.call_why}</small>}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-              <p className="sd-portfolio-foot">
-                Research view, not advice. Ratings are the desk&apos;s own for this book; &quot;--&quot; means the
-                equity model does not score it{payload.model?.universe_size ? ` (its universe has ${payload.model.universe_size} names)` : ''}.
-              </p>
-            </section>
-
-            <section className="sd-panel">
+          <main className="sd-workspace rd-workspace">
+            <section className="sd-panel rd-plan" id="rd-plan" aria-label="Today's proposed plan">
               <div className="sd-panel-head">
                 <h2>Today&apos;s plan</h2>
                 <span className="rd-quiet">proposals only &middot; no orders</span>
               </div>
               {ticket ? (
                 <div className="rd-plan-body">
-                  <div className="sd-order-columns">
-                    <div className="sd-order-side">
-                      <h3>
-                        Sell / trim <span>{ticketSells.length}</span>
-                      </h3>
-                      {ticketSells.length === 0 && <p className="sd-empty">Nothing to sell or trim today.</p>}
-                      {ticketSells.map((line) => (
-                        <div className="sd-order-row" key={`${line.ticker}-${line.kind_label}`}>
-                          <div className="sd-order-top">
-                            <strong>{line.ticker}</strong>
-                            <span className={`rd-call ${line.reason_kind === 'exit_rule' || line.reason_kind === 'etf-rule' ? 'rd-call-sell' : 'rd-call-trim'}`}>
-                              {line.kind_label}
-                            </span>
-                          </div>
-                          <small className="rd-row-why">
-                            qty {fmtQty(line.qty)} @ {line.limit_local ?? '--'} {line.currency} &middot; est {amount(line.est_cad, 'CAD')}
-                          </small>
-                          {line.why && <small className="rd-row-why">{line.why}</small>}
-                        </div>
-                      ))}
-                    </div>
-                    <div className="sd-order-side">
-                      <h3>
-                        Buy <span>{ticketBuys.length}</span>
-                      </h3>
-                      {ticketBuys.length === 0 && <p className="sd-empty">No funded buys today.</p>}
-                      {ticketBuys.map((line) => (
-                        <div className="sd-order-row" key={`${line.ticker}-${line.kind_label}`}>
-                          <div className="sd-order-top">
-                            <strong>{line.ticker}</strong>
-                            <span className="rd-call rd-call-add">{line.kind_label}</span>
-                          </div>
-                          <small className="rd-row-why">
-                            qty {fmtQty(line.qty)} @ {line.limit_local ?? '--'} {line.currency} &middot; est {amount(line.est_cad, 'CAD')}
-                            {line.funded_via ? ` \u00b7 ${line.funded_via}` : ''}
-                          </small>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="rd-watch">
+                  <div className="rd-watch rd-funding">
                     <h3>
                       Funding <span>{ticket.counts.buys}</span>
                     </h3>
@@ -667,6 +526,10 @@ export default function ReaderDesk({ onHome, onOwnerConsole }: { onHome: () => v
                         <strong>{group.label}</strong>: {group.tickers.join(', ')}
                       </p>
                     ))}
+                  </div>
+                  <div className="sd-order-columns">
+                    <ReaderOrders side="sell" lines={ticketSells} />
+                    <ReaderOrders side="buy" lines={ticketBuys} />
                   </div>
                   <div className="rd-watch">
                     <h3>
@@ -685,11 +548,14 @@ export default function ReaderDesk({ onHome, onOwnerConsole }: { onHome: () => v
                       <p className="sd-empty">Clear - no name is reading below the floor right now.</p>
                     )}
                   </div>
-                  {(ticket.notes ?? []).concat(payload.notes ?? []).map((note) => (
-                    <p className="rd-plan-note" key={note}>
-                      {note}
-                    </p>
-                  ))}
+                  {(ticket.notes?.length || payload.notes?.length) ? (
+                    <details className="rd-plan-notes">
+                      <summary>Plan notes</summary>
+                      {(ticket.notes ?? []).concat(payload.notes ?? []).map((note, index) => (
+                        <p className="rd-plan-note" key={index}>{note}</p>
+                      ))}
+                    </details>
+                  ) : null}
                   <p className="sd-portfolio-foot">
                     The desk&apos;s ticket{payload.plan_as_of ? ` (as of ${payload.plan_as_of})` : ''} - limits and sizes only; place orders
                     in your broker, and nothing here is advice.
@@ -824,6 +690,149 @@ export default function ReaderDesk({ onHome, onOwnerConsole }: { onHome: () => v
                 )}
               </section>
             </div>
+
+            <section className="sd-panel rd-portfolio" id="rd-portfolio" aria-label="Portfolio">
+              <div className="sd-panel-head">
+                <h2>
+                  Portfolio <span>{payload.positions.length}</span>
+                </h2>
+                <div className="rd-head-right">
+                  <span className="rd-quiet">{read ? `${read.scored_count} scored` : ''}</span>
+                  <div className="rd-views" role="group" aria-label="How to show the book">
+                    {(Object.keys(RD_VIEW_LABELS) as RdView[]).map((option) => (
+                      <button
+                        key={option}
+                        type="button"
+                        className={`rd-view${view === option ? ' is-on' : ''}`}
+                        aria-pressed={view === option}
+                        onClick={() => {
+                          setView(option);
+                          try {
+                            localStorage.setItem('pc-desk-view', option);
+                          } catch {
+                            /* the choice just will not persist */
+                          }
+                        }}
+                      >
+                        {RD_VIEW_LABELS[option]}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              {view === 'grid' && (
+                <div className="rd-cards">
+                  {ordered.map((position) => {
+                    const rating = ratingOf(position);
+                    return (
+                      <article className="rd-card" key={`${position.account}-${position.ticker}`} title={ratingTitle(position)}>
+                        <div className="rd-card-head">
+                          <span className="rd-cell-line">
+                            <strong>{position.ticker}</strong>
+                            <em className="rd-acct">{position.account}</em>
+                          </span>
+                          <span className={position.call ? `rd-call rd-call-${position.call.toLowerCase()}` : 'rd-call rd-call-none'}>
+                            {position.call ?? ''}
+                          </span>
+                        </div>
+                        <dl className="rd-card-metrics">
+                          <div>
+                            <dt>Value</dt>
+                            <dd>{amount(position.value_cad, 'CAD')}</dd>
+                          </div>
+                          <div>
+                            <dt>Weight</dt>
+                            <dd>{position.weight_account_pct !== null && position.weight_account_pct !== undefined ? `${position.weight_account_pct.toFixed(1)}%` : '--'}</dd>
+                          </div>
+                          <div>
+                            <dt>Day</dt>
+                            <dd className={tone(position.day_pct)}>{signedPct(position.day_pct)}</dd>
+                          </div>
+                          <div>
+                            <dt>Rating</dt>
+                            <dd className="rd-rating">{rating !== null ? rating.toFixed(1) : '--'}</dd>
+                          </div>
+                        </dl>
+                        <p className="rd-card-name">{position.name}</p>
+                      </article>
+                    );
+                  })}
+                </div>
+              )}
+              {view === 'list' && (
+                <div className="sd-portfolio-columns">
+                  <span>Ticker</span>
+                  <span>CAD value</span>
+                  <span>Weight</span>
+                  <span>Day</span>
+                  <span>Rating</span>
+                  <span>Call</span>
+                </div>
+              )}
+              {view === 'list' && (
+                <div className="rd-table-body">
+                  {ordered.map((position) => {
+                    const rating = ratingOf(position);
+                    return (
+                      <div
+                        className="sd-portfolio-row"
+                        key={`${position.account}-${position.ticker}`}
+                        title={ratingTitle(position)}
+                      >
+                        <span className="rd-cell-name">
+                          <span className="rd-cell-line">
+                            <strong>{position.ticker}</strong>
+                            <em className="rd-acct">{position.account}</em>
+                          </span>
+                          <small>{position.name}</small>
+                        </span>
+                        <span>{amount(position.value_cad, 'CAD')}</span>
+                        <span><small className="rd-mobile-label">Weight </small>{position.weight_account_pct !== null && position.weight_account_pct !== undefined ? `${position.weight_account_pct.toFixed(1)}%` : '--'}</span>
+                        <span className={tone(position.day_pct)}><small className="rd-mobile-label">Day </small>{signedPct(position.day_pct)}</span>
+                        <span><small className="rd-mobile-label">Rating </small>{rating !== null ? rating.toFixed(1) : '--'}</span>
+                        <span className={position.call ? `rd-call rd-call-${position.call.toLowerCase()}` : 'rd-call rd-call-none'}>
+                          {position.call ?? ''}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              {view === 'full' && (
+                <div className="rd-table-body">
+                  {ordered.map((position) => {
+                    const rating = ratingOf(position);
+                    return (
+                      <div className="rd-detail-row" key={`${position.account}-${position.ticker}`} title={ratingTitle(position)}>
+                        <div className="sd-order-top">
+                          <span className="rd-cell-name">
+                            <span className="rd-cell-line">
+                              <strong>{position.ticker}</strong>
+                              <em className="rd-acct">{position.account}</em>
+                            </span>
+                            <small>{position.name}</small>
+                          </span>
+                          <span className={position.call ? `rd-call rd-call-${position.call.toLowerCase()}` : 'rd-call rd-call-none'}>
+                            {position.call ?? ''}
+                          </span>
+                        </div>
+                        <small className="rd-row-why">
+                          {fmtQty(position.qty)} @ {position.price ?? '--'} {position.cur}
+                          {position.value_cad !== null && position.value_cad !== undefined ? ` \u00b7 ${amount(position.value_cad, 'CAD')}` : ''}
+                          {position.day_pct !== null && position.day_pct !== undefined ? ` \u00b7 day ${signedPct(position.day_pct)}` : ''}
+                          {` \u00b7 rating ${rating !== null ? rating.toFixed(1) : '--'}`}
+                        </small>
+                        {position.call_why && <small className="rd-row-why">{position.call_why}</small>}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              <p className="sd-portfolio-foot">
+                Research view, not advice. Ratings are the desk&apos;s own for this book; &quot;--&quot; means the
+                equity model does not score it{payload.model?.universe_size ? ` (its universe has ${payload.model.universe_size} names)` : ''}.
+              </p>
+            </section>
 
             {read && (
               <section className="sd-panel rd-span">

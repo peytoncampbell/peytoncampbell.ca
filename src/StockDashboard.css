@@ -2,6 +2,7 @@
 .stock-dashboard {
   --sd-bg: #10161f; --sd-panel: #18212d; --sd-raised: #202c3a;
   --sd-text: #e2e8f0; --sd-muted: #a7b5c6; --sd-line: #304052; --sd-select: #8fafe6;
+  --sd-up: #a8cdb7; --sd-down: #e2b0a6; --sd-warning: #e2c9a1;
   box-sizing: border-box; height: 100dvh; padding: 12px;
   display: grid; grid-template-rows: 40px 72px minmax(0, 1fr) 24px; gap: 8px;
   background: var(--sd-bg); color: var(--sd-text);
@@ -9,17 +10,18 @@
 }
 .stock-dashboard *, .stock-dashboard *::before, .stock-dashboard *::after { box-sizing: border-box; }
 .stock-dashboard button, .stock-dashboard summary { font: inherit; color: inherit; cursor: pointer; }
-.stock-dashboard button { background: transparent; border: 1px solid var(--sd-line); border-radius: 4px; padding: 3px 7px; }
+.stock-dashboard button { background: transparent; border: 1px solid var(--sd-line); border-radius: 10px; padding: 3px 7px; }
 .stock-dashboard button:hover, .stock-dashboard button[aria-current], .stock-dashboard button[aria-pressed=true] { background: var(--sd-raised); color: var(--sd-select); }
 .stock-dashboard button:disabled { opacity: .5; cursor: default; }
 .stock-dashboard :focus-visible { outline: 2px solid var(--sd-select); outline-offset: -2px; }
-.stock-dashboard a { color: var(--sd-select); }
+.stock-dashboard a { color: var(--sd-select); text-underline-offset: 4px; }
+.stock-dashboard ::selection { background: var(--sd-select); color: var(--sd-bg); }
 .stock-dashboard h2, .stock-dashboard h3, .stock-dashboard p { margin: 0; }
 .stock-dashboard h2 { font-size: 16px; font-weight: 600; }
 .stock-dashboard h3 { font-size: 14px; font-weight: 600; }
 .stock-dashboard small { font-size: 12px; color: var(--sd-muted); }
-.stock-dashboard .up { color: #a8cdb7; }
-.stock-dashboard .down, .stock-dashboard .sd-warning { color: #e2b0a6; }
+.stock-dashboard .up { color: var(--sd-up); }
+.stock-dashboard .down, .stock-dashboard .sd-warning { color: var(--sd-down); }
 .sd-size-probe { position: absolute; visibility: hidden; pointer-events: none; font-size: 14px; line-height: 1; }
 .sd-header { display: flex; gap: 24px; align-items: center; min-width: 0; }
 .sd-brand { font-size: 18px; white-space: nowrap; }
@@ -28,14 +30,14 @@
 .sd-header nav button { padding: 6px 12px; border-color: transparent; }
 .sd-refresh { margin-left: auto; }
 .sd-account { position: relative; }
-.sd-account > div { position: absolute; z-index: 5; right: 0; display: grid; gap: 10px; padding: 14px; background: var(--sd-raised); border: 1px solid var(--sd-line); border-radius: 6px; }
-.sd-kpis { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); background: var(--sd-panel); border: 1px solid var(--sd-line); border-radius: 6px; }
+.sd-account > div { position: absolute; z-index: 5; right: 0; display: grid; gap: 10px; padding: 14px; background: var(--sd-raised); border: 1px solid var(--sd-line); border-radius: 10px; }
+.sd-kpis { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); background: var(--sd-panel); border: 1px solid var(--sd-line); border-radius: 10px; }
 .sd-kpis > div { display: grid; align-content: center; padding: 4px 16px; border-right: 1px solid var(--sd-line); min-width: 0; }
 .sd-kpis > div:last-child { border: 0; }
 .sd-kpis > div > span { color: var(--sd-muted); font-size: 12px; }
 .sd-kpis strong { font-size: 24px; line-height: 1.15; font-weight: 600; }
 .sd-workspace { display: grid; grid-template-columns: minmax(0,32fr) minmax(0,48fr) minmax(0,20fr); gap: 8px; min-width: 0; min-height: 0; }
-.sd-panel { min-width: 0; min-height: 0; background: var(--sd-panel); border: 1px solid var(--sd-line); border-radius: 6px; }
+.sd-panel { min-width: 0; min-height: 0; background: var(--sd-panel); border: 1px solid var(--sd-line); border-radius: 10px; }
 .sd-panel-head { min-height: 42px; padding: 7px 10px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px; border-bottom: 1px solid var(--sd-line); }
 .sd-panel-head button, .sd-context-head button { font-size: 12px; white-space: nowrap; }
 .sd-panel-head h2 > span, .sd-context-head h3 > span, .sd-order-side h3 > span { color: var(--sd-muted); font-size: 12px; font-weight: 400; margin-left: 4px; }
@@ -57,12 +59,12 @@
 .sd-order-top strong, .sd-order-top b { font-weight: 600; }
 .sd-order-top > :last-child { color: var(--sd-muted); font-size: 14px; }
 .sd-order-bottom { display: flex; flex-wrap: wrap; justify-content: space-between; column-gap: 4px; font-size: 14px; color: var(--sd-muted); line-height: 1.25; }
-.sd-order-bottom em { color: #e2b0a6; font-style: normal; }
+.sd-order-bottom em { color: var(--sd-down); font-style: normal; }
 .sd-sell .sd-order-bottom { display: flex; }
 .sd-sell .sd-order-bottom > span { display: inline; }
 .stock-dashboard .sd-sell .sd-order-row { min-height: 46px; }
 .sd-context { display: flex; flex-direction: column; }
-.sd-attention { margin: 8px 10px 4px; padding-left: 14px; color: #e2c9a1; font-size: 12px; }
+.sd-attention { margin: 8px 10px 4px; padding-left: 14px; color: var(--sd-warning); font-size: 12px; }
 .sd-attention li { margin-bottom: 5px; }
 .sd-attention-excerpt { overflow-wrap: anywhere; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
 .sd-context-head { padding: 8px 10px 4px; display: flex; align-items: center; justify-content: space-between; gap: 4px; }
@@ -76,7 +78,7 @@
 .sd-status { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--sd-muted); min-width: 0; }
 .sd-status button { border: 0; padding: 2px; font-size: 12px; }
 .sd-attention-details { position: relative; flex-shrink: 0; }
-.sd-attention-details > div { position: absolute; bottom: 28px; right: 0; z-index: 6; width: min(440px, 85vw); max-height: 50dvh; overflow-y: auto; padding: 14px; background: var(--sd-raised); border: 1px solid var(--sd-line); border-radius: 6px; }
+.sd-attention-details > div { position: absolute; bottom: 28px; right: 0; z-index: 6; width: min(440px, 85vw); max-height: 50dvh; overflow-y: auto; padding: 14px; background: var(--sd-raised); border: 1px solid var(--sd-line); border-radius: 10px; }
 .sd-attention-details li { margin-bottom: 8px; }
 .sd-persistent-warning { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sd-unavailable { grid-template-rows: 48px auto; align-content: start; }
@@ -101,7 +103,7 @@
 .sd-changes-link { padding: 4px 10px; }
 .sd-changes-link button { font-size: 12px; }
 .sd-inspector > .sd-panel-head { flex-shrink: 0; }
-.sd-reading { overflow-y: auto; min-height: 0; padding: 16px; background: var(--sd-panel); border: 1px solid var(--sd-line); border-radius: 6px; overflow-wrap: anywhere; }
+.sd-reading { overflow-y: auto; min-height: 0; padding: 16px; background: var(--sd-panel); border: 1px solid var(--sd-line); border-radius: 10px; overflow-wrap: anywhere; }
 .sd-reading .own-panel { margin-bottom: 16px; background: var(--sd-panel); box-shadow: none; }
 .sd-reading .own-card, .sd-reading .own-full-card { background: var(--sd-raised); box-shadow: none; }
 .sd-reading .own-split { display: block; }
@@ -176,7 +178,11 @@
   .stock-dashboard button,
   .stock-dashboard summary { min-height: 2.75rem; }
   .stock-dashboard .sd-portfolio-row { min-height: 44px; }
-  .stock-dashboard .sd-pagination button { min-width: 2.75rem; }
+  /* the reflow class sets its own taller floor for order rows when it is on (short viewports) */
+  .stock-dashboard:not(.sd-reflow) .sd-order-row { min-height: 44px; }
+  .stock-dashboard .sd-pagination button,
+  .stock-dashboard .sd-candidates button,
+  .stock-dashboard .sd-account button { min-width: 2.75rem; }
 }
 
 /* Desk chrome keeps a thumb target wherever the desk reflows (tablet included); the rows and
@@ -184,5 +190,10 @@
 @media (max-width: 1099px) {
   .stock-dashboard .sd-header nav button,
   .stock-dashboard .sd-refresh,
-  .stock-dashboard summary { min-height: 2.75rem; }
+  .stock-dashboard summary,
+  .stock-dashboard .sd-account button,
+  .stock-dashboard .sd-panel-head button,
+  .stock-dashboard .sd-sessions,
+  .stock-dashboard .sd-pagination button { min-height: 2.75rem; }
+  .stock-dashboard .sd-account button { min-width: 2.75rem; }
 }

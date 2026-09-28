@@ -94,7 +94,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.75rem;
-  min-height: 2.55rem;
+  min-height: 2.75rem;
   border-radius: 999px;
   padding: 0.35rem 0.9rem 0.35rem 0.35rem;
   color: white;
@@ -583,7 +583,7 @@
   padding: 0.34rem 0.52rem;
   background: rgba(255, 255, 255, 0.04);
   color: #d4deeb;
-  font-size: 0.74rem;
+  font-size: 0.75rem;
   font-weight: 750;
 }
 
@@ -739,7 +739,7 @@
   align-items: center;
   justify-content: center;
   gap: 0.4rem;
-  min-height: 2.5rem;
+  min-height: 2.75rem;
   width: fit-content;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 999px;
@@ -847,7 +847,7 @@
 }
 
 .layout-palette span,
-.phone-controls button {
+.phone-controls span {
   border: 1px solid rgba(255, 255, 255, 0.09);
   border-radius: 999px;
   padding: 0.36rem 0.48rem;
@@ -1205,7 +1205,7 @@
 
 .architecture-node span {
   color: #8adff0;
-  font: 800 0.72rem ui-monospace, 'Cascadia Mono', 'Segoe UI Mono', monospace;
+  font: 800 0.75rem ui-monospace, 'Cascadia Mono', 'Segoe UI Mono', monospace;
 }
 
 .architecture-node strong {
@@ -1833,7 +1833,7 @@
   .project-tech span,
   .tech-list span {
     padding: 0.3rem 0.46rem;
-    font-size: 0.7rem;
+    font-size: 0.75rem;
   }
 
   .featured-case,
@@ -1904,7 +1904,7 @@
 
 .desk-stat-k {
   color: #8fa0bb;
-  font-size: 0.74rem;
+  font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -1936,7 +1936,7 @@
   padding: 0.2rem 0.6rem;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 999px;
-  font-size: 0.74rem;
+  font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -1963,7 +1963,7 @@
   padding: 0.6rem 0.9rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.07);
   color: #8fa0bb;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.06em;
   text-align: right;
@@ -2142,7 +2142,7 @@
 
 .own-field span {
   color: #8fa0bb;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -2314,7 +2314,7 @@
   padding: 0.5rem 0.75rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   color: #8fa0bb;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.06em;
   text-align: right;
@@ -2833,7 +2833,7 @@ h1, h2, h3, h4,
   border-radius: 6px;
   padding: 0.18rem 0.45rem;
   color: var(--ink-3);
-  font-size: 0.72rem;
+  font-size: 0.75rem;
 }
 
 .phone-mock, .console-mock, .tester-mock, .catan-mock { padding: 0.8rem; display: grid; gap: 0.4rem; }
@@ -2859,7 +2859,7 @@ h1, h2, h3, h4,
 .phone-clock { color: var(--accent); font-size: 1.6rem; font-weight: 700; font-variant-numeric: tabular-nums; }
 .phone-controls { display: flex; flex-wrap: wrap; gap: 0.35rem; justify-content: center; }
 
-.phone-controls button {
+.phone-controls span {
   border: 1px solid var(--line);
   border-radius: 8px;
   padding: 0.3rem 0.55rem;
@@ -2870,7 +2870,7 @@ h1, h2, h3, h4,
 }
 
 .hex-grid { display: flex; flex-wrap: wrap; gap: 0.35rem; }
-.hex-grid span { border: 1px solid var(--line); border-radius: 6px; padding: 0.18rem 0.45rem; color: var(--ink-3); font-size: 0.72rem; }
+.hex-grid span { border: 1px solid var(--line); border-radius: 6px; padding: 0.18rem 0.45rem; color: var(--ink-3); font-size: 0.75rem; }
 .catan-mock strong { color: var(--text); font-size: 0.92rem; font-weight: 600; }
 
 /* ---- story: keep it quiet, it is the only warm section ---------------- */
@@ -3214,7 +3214,7 @@ html, body { background-color: var(--bg); }
 
 .own-card-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.4rem; margin: 0; }
 .own-card-metrics div { display: grid; gap: 0.05rem; }
-.own-card-metrics dt { color: var(--ink-3); font-size: 0.68rem; letter-spacing: 0.01em; }
+.own-card-metrics dt { color: var(--ink-3); font-size: 0.75rem; letter-spacing: 0.01em; }
 .own-card-metrics dd { margin: 0; color: var(--text); font-size: 0.86rem; font-variant-numeric: tabular-nums; }
 
 .own-card-read { margin: 0; color: var(--ink-2); font-size: 0.87rem; line-height: 1.5; }
@@ -3428,7 +3428,7 @@ html, body { background-color: var(--bg); }
 
 /* ---- the ranked model tables: weekly screen, playbook, quant ------- */
 .own-rank-wrap { overflow-x: auto; margin-top: 0.2rem; }
-.own-call { display: inline-block; padding: 0.06rem 0.42rem; border-radius: 5px; font-size: 0.68rem; font-weight: 600; letter-spacing: 0.02em; }
+.own-call { display: inline-block; padding: 0.06rem 0.42rem; border-radius: 5px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.02em; }
 .own-call-hold { color: var(--ink-3); border: 1px solid var(--line); }
 .own-call-add { color: var(--accent); border: 1px solid rgba(53, 208, 224, 0.45); }
 .own-call-trim { color: #e2b56b; border: 1px solid rgba(226, 181, 107, 0.45); }
@@ -3707,7 +3707,7 @@ html, body { background-color: var(--bg); }
   border: 1px solid rgba(232, 165, 82, 0.45);
   border-radius: 5px;
   color: var(--warn);
-  font-size: 0.68rem;
+  font-size: 0.75rem;
   font-weight: 600;
   white-space: nowrap;
 }
@@ -3721,7 +3721,7 @@ html, body { background-color: var(--bg); }
   padding: 0.06rem 0.42rem;
   border: 1px solid var(--line);
   border-radius: 5px;
-  font-size: 0.68rem;
+  font-size: 0.75rem;
   font-weight: 600;
   white-space: nowrap;
 }
@@ -3753,3 +3753,18 @@ html, body { background-color: var(--bg); }
    (trim and the quiet hold tone already exist with the ranked tables) */
 .own-call-buy { color: var(--accent); border: 1px solid rgba(53, 208, 224, 0.45); }
 .own-call-sell { color: #e98585; border: 1px solid rgba(233, 133, 133, 0.45); }
+
+/* Tablets and phones: the gate and the standalone links take the 44px touch floor the phones get
+   on the desks, so every control at a touch width is thumb-sized. Inline links inside running text
+   keep their line box. */
+@media (max-width: 1024px) {
+  .own-btn { min-height: 2.75rem; }
+  .own-field input { min-height: 2.75rem; }
+  .own-gate-foot a,
+  .desk-note a,
+  .contact-fallback a { display: inline-flex; align-items: center; min-height: 2.75rem; min-width: 2.75rem; }
+}
+
+@media (max-width: 640px) {
+  .brand-lockup { min-width: 2.75rem; }
+}

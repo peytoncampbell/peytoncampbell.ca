@@ -23,6 +23,7 @@
     "verify:owner-session": "node scripts/verifyOwnerSession.js",
     "verify:reader": "node scripts/verifyReaderDesk.mjs",
     "verify:owner-data": "node scripts/verifyOwnerDataLoad.js",
+    "verify:responsive": "node scripts/verifyResponsive.js",
     "verify:owner-lifecycle": "node scripts/verifyOwnerSessionLifecycle.js",
     "verify:changes": "node scripts/verifyStockChanges.js",
     "verify:change-data": "node scripts/verifyStockChangeData.js",

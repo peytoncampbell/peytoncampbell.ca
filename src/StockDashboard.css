@@ -41,14 +41,14 @@
 .sd-panel-head h2 > span, .sd-context-head h3 > span, .sd-order-side h3 > span { color: var(--sd-muted); font-size: 12px; font-weight: 400; margin-left: 4px; }
 .sd-portfolio-columns, .stock-dashboard .sd-portfolio-row { display: grid; grid-template-columns: minmax(0,1.15fr) minmax(0,1.25fr) minmax(0,.85fr) minmax(0,.85fr) minmax(0,.55fr) minmax(60px,.8fr); gap: 4px; align-items: center; width: 100%; padding: 0 8px; text-align: right; }
 .sd-portfolio-columns > :first-child, .sd-portfolio-row > :first-child { text-align: left; }
-.sd-portfolio-columns { height: 28px; font-size: 11px; line-height: 1.1; color: var(--sd-muted); }
+.sd-portfolio-columns { height: 28px; font-size: 12px; line-height: 1.1; color: var(--sd-muted); }
 .stock-dashboard .sd-portfolio-row { min-height: 28px; font-size: 14px; border: 0; border-top: 1px solid #263344; border-radius: 0; }
 .sd-portfolio-row strong { font-weight: 600; }
 .sd-portfolio-row > :last-child { font-size: 14px; }
-.stock-dashboard .sd-portfolio-foot { font-size: 11px; color: var(--sd-muted); padding: 4px 8px; }
+.stock-dashboard .sd-portfolio-foot { font-size: 12px; color: var(--sd-muted); padding: 4px 8px; }
 .sd-funding { padding: 6px 10px; font-size: 14px; background: var(--sd-raised); min-height: 48px; }
 .stock-dashboard .sd-funding small { display: block; margin-top: 2px; font-size: 14px; }
-.stock-dashboard .sd-sessions { display: block; width: 100%; border: 0; border-bottom: 1px solid var(--sd-line); border-radius: 0; color: var(--sd-muted); font-size: 11px; padding: 4px 8px; text-align: left; }
+.stock-dashboard .sd-sessions { display: block; width: 100%; border: 0; border-bottom: 1px solid var(--sd-line); border-radius: 0; color: var(--sd-muted); font-size: 12px; padding: 4px 8px; text-align: left; }
 .sd-order-columns { display: grid; grid-template-columns: minmax(0,1.05fr) minmax(0,1fr); gap: 8px; padding: 0 8px; min-height: 0; min-width: 0; }
 .sd-order-side { min-width: 0; }
 .sd-order-side h3 { display: flex; align-items: center; gap: 4px; min-height: 26px; }
@@ -66,7 +66,7 @@
 .sd-attention li { margin-bottom: 5px; }
 .sd-attention-excerpt { overflow-wrap: anywhere; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
 .sd-context-head { padding: 8px 10px 4px; display: flex; align-items: center; justify-content: space-between; gap: 4px; }
-.stock-dashboard .sd-scope { font-size: 11px; color: var(--sd-muted); padding: 0 10px 3px; }
+.stock-dashboard .sd-scope { font-size: 12px; color: var(--sd-muted); padding: 0 10px 3px; }
 .sd-candidates { list-style: none; margin: 0; padding: 0 10px; }
 .sd-candidates li { display: flex; justify-content: space-between; align-items: center; min-height: 26px; border-bottom: 1px solid var(--sd-line); }
 .stock-dashboard .sd-candidates button { padding: 2px 0; border: 0; text-align: left; }
@@ -83,8 +83,8 @@
 @media (max-width: 1099px), (max-height: 699px) {
   .sd-attention-details > div { position: fixed; bottom: 12px; right: 12px; }
 }
-.sd-pagination { display: flex; justify-content: space-between; gap: 4px; align-items: center; font-size: 11px; padding: 3px 4px; }
-.sd-pagination button { font-size: 11px; padding: 1px 4px; }
+.sd-pagination { display: flex; justify-content: space-between; gap: 4px; align-items: center; font-size: 12px; padding: 3px 4px; }
+.sd-pagination button { font-size: 12px; padding: 1px 4px; }
 .sd-inspector { display: flex; flex-direction: column; min-height: 0; height: 100%; }
 .sd-inspector-content { overflow-y: auto; min-height: 0; padding: 10px; overflow-wrap: anywhere; }
 .sd-inspector-content section + section { border-top: 1px solid var(--sd-line); margin-top: 16px; padding-top: 12px; }
@@ -167,4 +167,22 @@
   .sd-kpis strong { font-size: 21px; }
   .sd-reflow .sd-order-columns, .sd-reflow .sd-kpis { grid-template-columns: minmax(0,1fr); }
   .sd-account > div { max-width: 280px; overflow-wrap: anywhere; }
+}
+
+/* Phones: the reader desk already floors every control at 44px (ReaderDesk.css); the console
+   takes the same floor here, so the two mirrors stay one design and every tap target is
+   thumb-sized at 390. */
+@media (max-width: 640px) {
+  .stock-dashboard button,
+  .stock-dashboard summary { min-height: 2.75rem; }
+  .stock-dashboard .sd-portfolio-row { min-height: 44px; }
+  .stock-dashboard .sd-pagination button { min-width: 2.75rem; }
+}
+
+/* Desk chrome keeps a thumb target wherever the desk reflows (tablet included); the rows and
+   their density stay exactly as the desktop lays them out. */
+@media (max-width: 1099px) {
+  .stock-dashboard .sd-header nav button,
+  .stock-dashboard .sd-refresh,
+  .stock-dashboard summary { min-height: 2.75rem; }
 }

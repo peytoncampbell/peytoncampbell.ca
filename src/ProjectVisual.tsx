@@ -41,7 +41,7 @@ export default function ProjectVisual({ type, title }: ProjectVisualProps) {
           <div className="phone-clock">12:00</div>
           <div className="phone-controls">
             {['Goal', 'Horn', 'Clock', 'BLE'].map((item) => (
-              <button key={item} type="button">{item}</button>
+              <span key={item}>{item}</span>
             ))}
           </div>
         </div>

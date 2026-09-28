@@ -99,6 +99,7 @@ async function openFixture(viewport, fixture = stockDashboardFixture()) {
   const page = await context.newPage();
   const requests = new Map();
   const queries = [];
+  const probes = [];
   const unexpected = [];
   const errors = [];
   await page.setViewport(viewport);
@@ -123,6 +124,14 @@ async function openFixture(viewport, fixture = stockDashboardFixture()) {
         if (fixture.abortTables?.includes(table)) { void request.abort('failed'); return; }
         if (fixture.hangTables?.includes(table)) { (fixture.pendingRequests ||= []).push(request); return; }
         void request.respond({ status: fixture.statuses?.[table] ?? 200, headers, body: JSON.stringify(fixture.routes[table]) }); return;
+      }
+      // After a valid-but-empty private gate the console probes the reader view once, through the
+      // same auth.uid() gate the reader desk reads, to decide whether the account belongs on
+      // /mydesk (account routing). Declared per fixture so a stray probe anywhere else still lands
+      // in `unexpected`; served empty by default, which keeps the console's own message.
+      if (table === 'pc_reader_view' && fixture.probes?.includes(table) && request.method() === 'GET') {
+        probes.push({ select: url.searchParams.get('select'), limit: url.searchParams.get('limit') });
+        void request.respond({ status: 200, headers, body: JSON.stringify(fixture.probeRows ?? []) }); return;
       }
       unexpected.push(`${request.method()} ${url.pathname}`);
       void request.respond({ status: 403, headers, body: '{"error":"Unexpected synthetic API route"}' }); return;
@@ -150,7 +159,7 @@ async function openFixture(viewport, fixture = stockDashboardFixture()) {
   if (fixture.routes.pc_digest_private.length && (fixture.statuses?.pc_digest_private ?? 200) === 200) {
     await page.waitForFunction(() => document.body.innerText.includes('SYN01'));
   }
-  return { page, context, fixture, requests, queries, unexpected, errors };
+  return { page, context, fixture, requests, queries, probes, unexpected, errors };
 }
 
 async function withFixture(label, viewport, fixture, run) {
@@ -158,10 +167,19 @@ async function withFixture(label, viewport, fixture, run) {
   await scenario(label, async () => {
     try {
       state = await openFixture(viewport, fixture);
+      const expectedProbes = fixture.probes?.includes('pc_reader_view') ? 1 : 0;
+      assert.equal(state.probes.length, expectedProbes, expectedProbes
+        ? 'A valid empty private gate probes the reader view exactly once'
+        : 'No reader-view probe unless the private gate returns a valid empty result');
       assert.deepEqual(state.unexpected, [], 'No unexpected auth/API requests during load');
       assert.deepEqual(state.errors, [], 'Fixture renders without browser errors');
       console.log(`LOADED ${label}: ${state.requests.size} intercepted tables; ${fixture.holdings.length} holdings; ${fixture.expectedBuys.length} unique buys; ${fixture.sales.length} sales`);
       await run(state);
+      // the scenario may declare a valid-empty gate mid-run, so read the expectation after it
+      const expectedAfter = fixture.probes?.includes('pc_reader_view') ? 1 : 0;
+      assert.equal(state.probes.length, expectedAfter, expectedAfter
+        ? 'A valid empty private gate probes the reader view exactly once'
+        : 'No reader-view probe unless the private gate returns a valid empty result');
       assert.deepEqual(state.unexpected, [], 'No unexpected auth/API requests');
       assert.deepEqual(state.errors, [], 'No uncaught browser errors');
     } finally {
@@ -839,7 +857,7 @@ try {
       await withFixture(`private-${gate}-secondary-${fault}`, { width: 1280, height: 720 }, stockDashboardFixture(), async ({ page, fixture, requests: stateRequests }) => {
         await inspector(page, `${portfolioRows}[data-stock-ticker="SYN01"]`, 'SYN01');
         const originalPrivate = fixture.routes.pc_digest_private;
-        if (gate === 'empty') fixture.routes.pc_digest_private = [];
+        if (gate === 'empty') { fixture.routes.pc_digest_private = []; fixture.probes = ['pc_reader_view']; }
         else fixture.statuses = { pc_digest_private: gate };
         if (fault !== 'success') fixture[fault === 'abort' ? 'abortTables' : 'hangTables'] = ['pc_news'];
         const navigations = [];
@@ -940,7 +958,9 @@ try {
   if (options.mode === 'all' || options.mode === 'resilience') {
     const emptyPrivate = stockDashboardFixture();
     emptyPrivate.routes.pc_digest_private = [];
-    await withFixture('private-book-gate', { width: 1280, height: 720 }, emptyPrivate, async ({ page }) => {
+    emptyPrivate.probes = ['pc_reader_view'];
+    await withFixture('private-book-gate', { width: 1280, height: 720 }, emptyPrivate, async ({ page, probes: probeLog }) => {
+      assert.deepEqual(probeLog, [{ select: 'updated_at', limit: '1' }], 'The hand-off probe reads one reader-view row and nothing else');
       assert.equal(await page.$('[data-order-side]'), null, 'No derived financial workspace without an approved private book');
       assert(!await page.evaluate(() => document.body.innerText.includes('BUY01')), 'Secondary payload cannot bypass the private-book gate');
       assert.match(await page.evaluate(() => document.body.innerText), /access|private|allowlist|publication/i);
@@ -948,6 +968,17 @@ try {
     const fallback = stockDashboardFixture();
     delete fallback.routes.pc_playbook[0].today.funding.raised_cad;
     delete fallback.routes.pc_playbook[0].today.funding.shortfall_cad;
+    // The derived shortfall has to be a real one. The queue is capped at the money (2026-09-27), so a
+    // plan whose proceeds cover its buys has a shortfall of exactly C$0 - which the panel suppresses by
+    // design ("never a float residue that prints as C$0"), making this scenario unfalsifiable with the
+    // full sale list. Trim the plan's proceeds below its need so the subtraction the panel owes the
+    // owner is a figure, and keep the rendered lines in step with the funding sources.
+    const kept = fallback.sales.slice(0, 3);
+    fallback.sales = kept;
+    const fallbackToday = fallback.routes.pc_playbook[0].today;
+    fallbackToday.sells = kept.filter((line) => line.action === 'SELL');
+    fallbackToday.trims = kept.filter((line) => line.action === 'TRIM');
+    fallbackToday.funding.sources = kept.map((line) => ({ ticker: line.ticker, cad: line.est_cad, reason_kind: line.reason_kind, why: line.why }));
     await withFixture('funding-fallback', { width: 1280, height: 720 }, fallback, async ({ page }) => {
       const text = compact(await page.$eval(panel('orders'), e => e.innerText));
       const raised = fallback.sales.reduce((sum, line) => sum + line.est_cad, 0);

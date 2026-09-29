@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 export type StockSelection = { ticker: string; origin: 'portfolio' | 'buy' | 'sell' | 'candidate' | 'change'; action?: string; changeId?: string };
 export type AnalysisView = 'quick' | 'summary' | 'history' | 'evidence';
 export type DashboardRow = { ticker: string; summary: ReactNode; action?: string };
-export type DashboardSection = 'opportunities' | 'reports' | 'model' | 'brief' | 'book' | 'history' | 'ticket' | 'status' | 'changes';
+export type DashboardSection = 'opportunities' | 'universe' | 'reports' | 'model' | 'brief' | 'book' | 'history' | 'ticket' | 'status' | 'changes';
 type Props = {
   portfolio: DashboardRow[]; buys: DashboardRow[]; sells: DashboardRow[];
   details: Record<string, ReactNode>;
@@ -17,7 +17,7 @@ type Props = {
   email?: string; refreshing?: boolean;
   onRefresh: () => void; onHome: () => void; onSignOut: () => void;
 };
-const labels: Record<DashboardSection, string> = { opportunities: 'Opportunities', reports: 'Reports', model: 'Model', brief: 'Brief', book: 'Full book', history: 'History', ticket: 'Full ticket', status: 'Status details', changes: 'Changes' };
+const labels: Record<DashboardSection, string> = { opportunities: 'Opportunities', universe: 'Universe', reports: 'Reports', model: 'Model', brief: 'Brief', book: 'Full book', history: 'History', ticket: 'Full ticket', status: 'Status details', changes: 'Changes' };
 
 /** Layout owns navigation and capacity only. All finance values and detail markup come from the desk. */
 export default function StockDashboard(props: Props) {
@@ -125,7 +125,7 @@ export default function StockDashboard(props: Props) {
       {rows.slice(page * size, (page + 1) * size).map((row, index) => <button key={`${row.ticker}-${index}`} className="sd-order-row" data-stock-ticker={row.ticker} data-stock-origin={side} data-stock-action={row.action} onClick={() => select({ ticker: row.ticker, origin: side, action: row.action })} aria-label={`Inspect ${row.ticker} ${side} proposal`}>{row.summary}</button>)}
       {pagination(side, page, rows.length, size, change)}
     </div>;
-  const researchSections: DashboardSection[] = ['opportunities', 'reports', 'model', 'brief'];
+  const researchSections: DashboardSection[] = ['opportunities', 'universe', 'reports', 'model', 'brief'];
   const research = section !== null && researchSections.includes(section);
   const detail = selected ? (props.renderDetail ? props.renderDetail(selected, analysisView) : props.details[selected.ticker]) : null;
   return <div ref={root} className={`stock-dashboard${enlarged ? ' sd-reflow' : ''}${section || expanded ? ' sd-secondary' : ''}`}>

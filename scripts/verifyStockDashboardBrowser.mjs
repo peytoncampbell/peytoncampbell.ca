@@ -2,7 +2,7 @@
 /**
  * Real built-app regression; synthetic data only; fail-closed network boundary.
  * Usage: PUPPETEER_MODULE=/path/to/puppeteer-core CHROME_PATH=/path/to/chrome
- *   node scripts/verifyStockDashboardBrowser.mjs [--mode all|structure|interactions|depth-shell|depth-data|depth-inspector|depth-evidence|depth-history|depth-changes|stress|reflow|resilience]
+ *   node scripts/verifyStockDashboardBrowser.mjs [--mode all|structure|interactions|universe|depth-shell|depth-data|depth-inspector|depth-evidence|depth-history|depth-changes|stress|reflow|resilience]
  *     [--url http://127.0.0.1:8787/stocks] [--out /caller/scratch/screenshots]
  * Without --url, serves existing docs on an owned ephemeral localhost port; never builds.
  * Default all is strict acceptance. Narrow modes are incremental diagnostics, not acceptance.
@@ -41,7 +41,7 @@ for (let i = 0; i < args.length; i++) {
   assert(args[i + 1] && !args[i + 1].startsWith('--'), `Missing value for ${args[i]}`);
   options[args[i].slice(2)] = args[++i];
 }
-assert(['all', 'structure', 'interactions', 'depth-shell', 'depth-data', 'depth-inspector', 'depth-evidence', 'depth-history', 'depth-changes', 'stress', 'reflow', 'resilience'].includes(options.mode), 'Invalid --mode');
+assert(['all', 'structure', 'interactions', 'universe', 'depth-shell', 'depth-data', 'depth-inspector', 'depth-evidence', 'depth-history', 'depth-changes', 'stress', 'reflow', 'resilience'].includes(options.mode), 'Invalid --mode');
 if (options.out) {
   options.out = resolve(options.out);
   assert(options.out !== root && !options.out.startsWith(root + sep), '--out must be caller scratch, outside the repository');
@@ -371,6 +371,34 @@ async function interactions(state) {
   }
 }
 
+async function universeRanking({ page, fixture }) {
+  await clickControl(page, /^research$/i);
+  await clickControl(page, /^universe$/i);
+  await visibleText(page, 'Top 15 universe stocks');
+  const actual = await page.$$eval('.sd-universe tbody tr', rows => rows.map(row => ({
+    symbol: row.querySelector('strong').textContent,
+    score: row.lastElementChild.textContent,
+    text: row.textContent,
+  })));
+  assert.equal(actual.length, 15, 'Exactly fifteen universe names are reachable');
+  fixture.routes.pc_quant[0].top.forEach((row, i) => {
+    assert.equal(actual[i].symbol, row.symbol, 'Keep published universe order, including held names');
+    assert.equal(actual[i].score, row.score.toFixed(1), 'Use universe score, not book score');
+    assert(actual[i].text.includes(row.name), 'Company name is shown');
+  });
+  assert(actual.some(row => row.symbol === 'SYN01'), 'Held name stays in the ranking');
+  assert(actual.some(row => row.symbol === 'UNI15'), 'Names outside the gated candidates stay in the ranking');
+  await visibleText(page, 'Not filtered by buy gates or broker availability');
+  const geometry = await page.evaluate(() => ({
+    overflow: document.documentElement.scrollWidth > innerWidth + 1,
+    fonts: [...document.querySelectorAll('.sd-universe td, .sd-universe strong')].map(e => parseFloat(getComputedStyle(e).fontSize)),
+    navs: [...document.querySelectorAll('nav[aria-label="Primary"]')].filter(e => e.getClientRects().length).length,
+  }));
+  assert(!geometry.overflow, 'Universe ranking fits the viewport');
+  assert(geometry.fonts.every(size => size >= 14), 'Rank and score stay readable');
+  assert.equal(geometry.navs, 1, 'Research does not add a second primary navigation');
+}
+
 async function paginate(state, kind, expected) {
   const { page } = state;
   const selector = kind === 'portfolio' ? portfolioRows : sideRows('buy');
@@ -615,6 +643,11 @@ try {
     }
   }
   if (options.mode === 'all' || options.mode === 'interactions') await withFixture('interactions', { width: 1440, height: 900 }, stockDashboardFixture(), interactions);
+  if (options.mode === 'all' || options.mode === 'universe') {
+    for (const [width, height] of [[1280, 800], [390, 844], [360, 640]]) {
+      await withFixture(`universe-${width}`, { width, height }, stockDashboardFixture(), universeRanking);
+    }
+  }
   if (options.mode === 'all' || options.mode === 'depth-shell') await withFixture('expanded-analysis-shell', { width: 1280, height: 720 }, stockDashboardFixture(), expandedShell);
   if (options.mode === 'all' || options.mode === 'depth-evidence') {
     for (const [width, height] of [[1280, 720], [390, 844]]) {

@@ -292,10 +292,33 @@ type QuantRow = {
   measured: { names: number; anchors: number; horizons: string[]; rows: QuantSignal[] } | null;
   surprise: QuantSurprise | null;
   pit: QuantPit | null;
-  top: { symbol: string; score: number }[];
+  top?: { symbol: string; score: number; name?: string; country?: string; exchange?: string }[] | null;
   headline: string;
   drift_warning: string | null;
 };
+
+function UniverseRanking({ quant }: { quant: QuantRow | null }) {
+  // Keep the publisher's order: rounded score ties must not reshuffle the underlying ranking.
+  const rows = (Array.isArray(quant?.top) ? quant.top : [])
+    .filter(row => row && typeof row.symbol === 'string' && row.symbol && Number.isFinite(row.score)).slice(0, 15);
+  return <section className="sd-universe" aria-labelledby="sd-universe-heading">
+    <div className="sd-analysis-head">
+      <h2 id="sd-universe-heading">Top 15 universe stocks</h2>
+      {quant && <span className="own-quiet">{rows.length} shown · Research published {quant.as_of ?? 'date unavailable'}</span>}
+    </div>
+    <p>Highest composite scores across the scored universe, including held names. Not filtered by buy gates or broker availability; this is research, not a buy queue.</p>
+    {rows.length ? <table aria-label="Universe ranking">
+      <thead><tr><th scope="col">Rank</th><th scope="col">Stock</th><th scope="col">Score / 100</th></tr></thead>
+      <tbody>{rows.map((row, index) => <tr key={row.symbol} data-universe-symbol={row.symbol}>
+        <td>{index + 1}</td>
+        <th scope="row"><strong>{row.symbol}</strong>{row.name && row.name !== row.symbol && <span className="sd-universe-name">{row.name}</span>}
+          {(row.country || row.exchange) && <small>{[row.country, row.exchange].filter(Boolean).join(' · ')}</small>}
+        </th>
+        <td>{row.score.toFixed(1)}</td>
+      </tr>)}</tbody>
+    </table> : <p className="sd-empty">Universe ranking unavailable in this publish. Refresh after the next research update.</p>}
+  </section>;
+}
 
 const signed = (v: number | null) => (v === null ? '\u2014' : `${v >= 0 ? '+' : ''}${v.toFixed(2)}`);
 
@@ -2347,7 +2370,7 @@ export default function OwnerStocks({ onSignedOut, onHome, onReaderDesk }: { onS
     sessions={orderRows.length ? `Sessions: ${[...new Set(orderRows.map(({ line }) => `${line.region ?? 'Venue unknown'} ${line.session_state ?? 'state unknown'}`))].join(' · ')}` : 'Venue sessions unavailable'}
     attention={attention} candidates={weeklyRanking.map(row => ({ ticker: row.ticker, rating: row.rating.toFixed(1), availability: brokerBlocked(row) ? 'Unavailable' : row.broker_ok === true ? null : 'Unknown', note: brokerNote(row) ?? 'Broker availability not confirmed' }))} brief={newsLatest?.summary ?? null}
     status={<>Book {latest?.as_of ?? 'unavailable'} · Plan {playbook?.today?.as_of ?? 'unavailable'} · FX {playbook?.today?.fx_age_days == null ? 'unknown' : `${playbook.today.fx_age_days.toFixed(1)}d`}</>}
-    sections={{ book: fullBook, opportunities: <>{weeklyPanel}{playbookPanel}</>, reports: weeklyPanel, model: modelPanel, history: <StockOutcomesData key={ownerGeneration.current.value} ownerKey={latest ? String(ownerGeneration.current.value) : null} snapshots={historyPanel} fetchRows={path => ownerFetch(path, ensureFresh)} onAccessCheck={() => void load()} />, brief: briefPanel,
+    sections={{ book: fullBook, opportunities: <>{weeklyPanel}{playbookPanel}</>, universe: <UniverseRanking quant={quant} />, reports: weeklyPanel, model: modelPanel, history: <StockOutcomesData key={ownerGeneration.current.value} ownerKey={latest ? String(ownerGeneration.current.value) : null} snapshots={historyPanel} fetchRows={path => ownerFetch(path, ensureFresh)} onAccessCheck={() => void load()} />, brief: briefPanel,
       ticket: <><p>Proposed orders only. No orders are executed by this page. Sale proceeds are planned, not settled cash.</p><TodayTicket today={playbook?.today} />{!playbook?.today && <p>Ticket unavailable.</p>}</>,
       status: <section className="own-panel"><h2>Status and attention</h2><ul>{attention.map((item, i) => <li key={i}>{item}</li>)}</ul><h3>Venue sessions</h3><ul>{sessions.map(item => <li key={item}>{item}</li>)}</ul><p>{playbook?.today?.market_note}</p><p>Automations {today?.automations_ok ?? '--'} / {today?.automations_total ?? '--'}</p><p>{funding?.sentence} {funding?.shortfall}</p><TodayTicket today={playbook?.today} /></section>,
     }}

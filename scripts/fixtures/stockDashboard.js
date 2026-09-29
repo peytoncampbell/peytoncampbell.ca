@@ -93,7 +93,9 @@ export function stockDashboardFixture({ holdingsCount = 15, buysCount = 10 } = {
         cells: [0.04, 0.06, 0.08].map(ic => ({ ic, t: 2.4, n: 120 })), spread: [1, 2, 3] }] },
       surprise: { events: 240, names: 80, window: 'synthetic sample', buckets: [{ label: 'Synthetic beat', n: 120, f63: 2, f126: 4, up_rate: 61 }] },
       pit: { captures: 14, rows: 15400, ladders: 7, days: 14, next: { label: 'Synthetic forward test', in_days: 42 } },
-      top: candidates.map(c => ({ symbol: c.ticker, score: c.rating })) }],
+      top: Array.from({ length: 15 }, (_, i) => ({ symbol: i === 0 ? 'SYN01' : symbol('UNI', i),
+        name: `Synthetic universe company ${i + 1}`, country: i % 2 ? 'Japan' : 'Canada',
+        exchange: 'SYNTH', score: 98.5 - i })) }],
   };
   return { routes, holdings, expectedBuys, sales, candidates, funding, privateRows };
 }

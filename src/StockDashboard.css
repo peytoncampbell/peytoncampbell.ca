@@ -113,6 +113,20 @@
 .sd-reading pre { white-space: pre-wrap; overflow-wrap: anywhere; }
 .sd-reading > section > p, .sd-reading > section > h3 { margin: 12px 0; }
 .sd-reading .own-quiet, .sd-reading .own-note, .sd-reading .own-card-quiet { color: var(--sd-muted); }
+.sd-universe > p { max-width: 75ch; color: var(--sd-muted); line-height: 1.5; }
+.sd-universe th, .sd-universe td { padding: 9px 8px; border-bottom: 1px solid var(--sd-line); text-align: left; font-size: 14px; }
+.sd-universe thead th { color: var(--sd-muted); font-size: 12px; font-weight: 500; }
+.sd-universe th:first-child { width: 3.5rem; }
+.sd-universe th:last-child, .sd-universe td:last-child { width: 6rem; text-align: right; }
+.sd-universe tbody th { font-weight: 400; }
+.sd-universe tbody td:first-child { color: var(--sd-muted); }
+.sd-universe tbody td:last-child, .sd-universe strong { font-weight: 600; }
+.sd-universe-name { margin-left: 8px; }
+.sd-universe small { display: block; margin-top: 2px; }
+@media (max-width: 640px) {
+  .sd-universe-name { display: block; margin-left: 0; }
+  .sd-universe th:last-child, .sd-universe td:last-child { width: 5rem; }
+}
 .sd-stock-detail { min-width: 0; line-height: 1.45; }
 .sd-stock-detail > section { min-width: 0; }
 .sd-stock-detail p, .sd-stock-detail dl { margin: 8px 0; }

@@ -34,6 +34,22 @@
     <meta property="twitter:image" content="https://peytoncampbell.ca/og-image.svg" />
 
     <link rel="preload" as="image" href="/portrait-1200.webp" type="image/webp" fetchpriority="high" />
+    <!--
+      Config for the shared cross-app nav (src/nav.js, imported by src/main.tsx).
+
+      It MUST live in <head>, ahead of the module script. Two reasons:
+        1. ES module imports are evaluated before the importing module's body runs, so an
+           assignment inside main.tsx would land after nav.js already read it.
+        2. Vite hoists the bundled module script INTO <head>, so a classic script left in
+           <body> ends up running after it. Both were tried; both silently disabled
+           `hideOn` and drew a second navbar on top of the portfolio's own.
+
+      inline: render in flow, not as a sticky bar (the app routes own their page frame)
+      hideOn: pages that already provide their own navigation
+    -->
+    <script>
+      window.PC_NAV = { root: '/', inline: true, hideOn: '/,/login' };
+    </script>
     <script defer data-domain="peytoncampbell.ca" src="https://plausible.io/js/script.js"></script>
     <script type="application/ld+json">
       {
@@ -118,8 +134,8 @@
         ]
       }
     </script>
-    <script type="module" crossorigin src="/assets/index-1Pp8hIsT.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-C841S93m.css">
+    <script type="module" crossorigin src="/assets/index-BkQ5OfLe.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-BTTvwTp2.css">
   </head>
   <body>
     <div id="root"></div>

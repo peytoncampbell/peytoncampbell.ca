@@ -26,6 +26,10 @@
  * own src says /budget/ and its BASE_URL says /budget/ - both describe where THIS app
  * lives, not where the site lives. Guessing between the two is how you ship a Stocks
  * link pointing at /budget/stocks/. Defaults to "..", correct for a tool at /tool/.
+ * `hideOn` (or data-hide-on) is a comma-separated list of paths where the nav should not
+ * render. The portfolio already has its own navbar with these same links, so drawing a
+ * second one on top of it is just noise; the app routes need it and the home page does
+ * not.
  */
 (function () {
   'use strict';
@@ -51,16 +55,35 @@
 
   /** Infer the active tool from the URL. data-app wins when present. */
   function detectFromPath() {
-    var path = (window.location.pathname || '').toLowerCase();
+    // Trailing slashes are stripped first: /stocks and /stocks/ are the same route, and
+    // matching only on "/stocks/" left /stocks highlighting Home instead.
+    var path = (window.location.pathname || '/').toLowerCase().replace(/\/+$/, '');
     for (var i = LINKS.length - 1; i >= 0; i--) {
       if (!LINKS[i].prefix) continue;
-      if (path.indexOf('/' + LINKS[i].prefix + '/') !== -1) return LINKS[i].id;
+      if (path === '/' + LINKS[i].prefix || path.indexOf('/' + LINKS[i].prefix + '/') !== -1) {
+        return LINKS[i].id;
+      }
     }
     return 'home';
   }
 
   var script = currentScript();
   var current = CONFIG.app || (script && script.getAttribute('data-app')) || detectFromPath();
+
+  var hidden = String(
+    CONFIG.hideOn || (script && script.getAttribute('data-hide-on')) || ''
+  )
+    .split(',')
+    .map(function (entry) { return entry.trim(); })
+    .filter(Boolean)
+    .map(function (entry) { return entry.replace(/\/+$/, '') || '/'; });
+
+  var here = (window.location.pathname || '/').replace(/\/+$/, '') || '/';
+  var suppressed = hidden.indexOf(here) !== -1 || (hidden.indexOf('/') !== -1 && here === '/');
+
+  // In-flow when embedded in an app that already provides a full-page chrome, so it
+  // reads as part of the console rather than a second sticky bar stacked above it.
+  var inline = CONFIG.inline === true || (script && script.hasAttribute('data-inline'));
 
   // ".." from /budget/ lands on the site root; from a root-served page it still
   // resolves correctly, so the default is safe for the common case.
@@ -73,6 +96,9 @@
     '-webkit-backdrop-filter:blur(14px);background:rgba(8,12,22,.72);',
     'border-bottom:1px solid rgba(148,163,184,.16);',
     "font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,sans-serif}",
+    // In-flow variant: no stickiness, no chrome - the host app owns the page frame.
+    '.pc-nav--inline{position:static;background:transparent;border-bottom:0;',
+    'backdrop-filter:none;-webkit-backdrop-filter:none}',
     '.pc-nav *{box-sizing:border-box}',
     '.pc-nav-inner{max-width:1180px;margin:0 auto;padding:10px 18px;display:flex;',
     'align-items:center;justify-content:space-between;gap:14px}',
@@ -104,6 +130,7 @@
   ].join('');
 
   function build() {
+    if (suppressed) return;
     if (document.querySelector('.pc-nav')) return; // idempotent: safe if included twice
 
     var style = document.createElement('style');
@@ -112,7 +139,7 @@
     document.head.appendChild(style);
 
     var nav = document.createElement('nav');
-    nav.className = 'pc-nav';
+    nav.className = inline ? 'pc-nav pc-nav--inline' : 'pc-nav';
     nav.setAttribute('aria-label', 'Site sections');
 
     var inner = document.createElement('div');
@@ -162,6 +189,16 @@
     });
 
     nav.appendChild(inner);
+
+    if (inline) {
+      // In flow before the app's own container. Prepending to <body> would put it at
+      // the end of a full-page app that renders into a single root div, i.e. below
+      // everything. body's first element child is the app root, so insert before that.
+      var first = document.body.firstElementChild;
+      if (first) document.body.insertBefore(nav, first);
+      else document.body.appendChild(nav);
+      return;
+    }
 
     // Insert as the first body child so sticky positioning works without fighting
     // whatever layout the host app already has.

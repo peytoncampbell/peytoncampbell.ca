@@ -1,0 +1,106 @@
+{
+ "generated_at": "2026-10-01T00:00:00",
+ "as_of": "2026-10-01",
+ "month": "2026-09",
+ "income_cents": 500000,
+ "spending_cents": 176000,
+ "unallocated_cents": 324000,
+ "budget_total": 176000,
+ "category_totals": [
+  {
+   "category": "Groceries",
+   "cents": 72000,
+   "share": 0.4091,
+   "yearly": 864000,
+   "budget": 70000
+  },
+  {
+   "category": "Dining",
+   "cents": 38000,
+   "share": 0.2159,
+   "yearly": 456000,
+   "budget": 35000
+  },
+  {
+   "category": "Shopping",
+   "cents": 31000,
+   "share": 0.1761,
+   "yearly": 372000,
+   "budget": 30000
+  },
+  {
+   "category": "Subscriptions",
+   "cents": 12000,
+   "share": 0.0682,
+   "yearly": 144000,
+   "budget": 15000
+  },
+  {
+   "category": "Gas & Transit",
+   "cents": 9000,
+   "share": 0.0511,
+   "yearly": 108000,
+   "budget": 12000
+  },
+  {
+   "category": "Health",
+   "cents": 6000,
+   "share": 0.0341,
+   "yearly": 72000,
+   "budget": 8000
+  },
+  {
+   "category": "Entertainment",
+   "cents": 5000,
+   "share": 0.0284,
+   "yearly": 60000,
+   "budget": 6000
+  },
+  {
+   "category": "Cash & Fees",
+   "cents": 3000,
+   "share": 0.017,
+   "yearly": 36000,
+   "budget": 0
+  }
+ ],
+ "months": [
+  {
+   "month": "2026-07",
+   "income": 500000,
+   "spending": 146000,
+   "gross": 146000,
+   "refunds": 0,
+   "reimbursements": 0,
+   "complete": true
+  },
+  {
+   "month": "2026-08",
+   "income": 500000,
+   "spending": 161000,
+   "gross": 161000,
+   "refunds": 0,
+   "reimbursements": 0,
+   "complete": true
+  },
+  {
+   "month": "2026-09",
+   "income": 500000,
+   "spending": 176000,
+   "gross": 176000,
+   "refunds": 0,
+   "reimbursements": 0,
+   "complete": true
+  }
+ ],
+ "account_count": 3,
+ "txn_count": 0,
+ "averaging_months": 3,
+ "months_used": [
+  "2026-07",
+  "2026-08",
+  "2026-09"
+ ],
+ "aggregates_only": true,
+ "_note": "DEMO DATA - invented, not real. The live dashboard reads Supabase; this file exists so a fresh clone and a signed-out visitor see a populated page. Regenerate with scripts/make_example_snapshot.py."
+}

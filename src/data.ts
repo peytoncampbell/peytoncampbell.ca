@@ -23,6 +23,21 @@ export const NAV_LINKS = [
   { label: 'Contact', href: '#contact' },
 ];
 
+/**
+ * Tools that live on this domain but outside the portfolio's single page.
+ *
+ * `spa: true` means this app already routes it (see App.tsx), so the click can be
+ * intercepted and rendered client-side. `spa: false` means it is a separately built
+ * static app under docs/ — the budget dashboard — where a real navigation is correct
+ * because that bundle is not part of this one. Marking one of those `spa` would swap
+ * the page for a blank <NotFound />.
+ */
+export const TOOL_LINKS = [
+  { label: 'Stocks', href: '/stocks', spa: true },
+  { label: 'My Desk', href: '/mydesk', spa: true },
+  { label: 'Budget', href: '/budget/', spa: false },
+];
+
 export const HERO = {
   headline: 'Full-stack developer for product tools.',
   subheadline:

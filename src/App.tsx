@@ -17,7 +17,7 @@ import {
   X,
 } from 'lucide-react';
 import clsx from 'clsx';
-import { BUILDING_NOW, CONTACT_TRUST, EXPERIENCE, HERO, HIGHLIGHTS, NAV_LINKS, PROJECTS, TECH_STACK } from './data';
+import { BUILDING_NOW, CONTACT_TRUST, EXPERIENCE, HERO, HIGHLIGHTS, NAV_LINKS, PROJECTS, TECH_STACK, TOOL_LINKS } from './data';
 import ScrollProgress from './ScrollProgress';
 import ArchitectureDiagram from './ArchitectureDiagram';
 import PortfolioDigest from './PortfolioDigest';
@@ -325,6 +325,22 @@ export default function App() {
                     {link.label}
                   </a>
                 ))}
+                {TOOL_LINKS.map((tool) => (
+                  <a
+                    key={tool.href}
+                    href={tool.href}
+                    onClick={(event) => {
+                      trackEvent({ name: 'Navigation click', props: { target: tool.label } });
+                      // Routing apps are intercepted; the budget dashboard is a separate
+                      // build under /budget/, so it needs the real navigation.
+                      if (!tool.spa) return;
+                      event.preventDefault();
+                      navigate(tool.href);
+                    }}
+                  >
+                    {tool.label}
+                  </a>
+                ))}
                 <a
                   href="/login"
                   className="nav-login"
@@ -369,6 +385,21 @@ export default function App() {
                   trackEvent({ name: 'Navigation click', props: { target: link.label } });
                 }}>
                   {link.label}
+                </a>
+              ))}
+              {TOOL_LINKS.map((tool) => (
+                <a
+                  key={tool.href}
+                  href={tool.href}
+                  onClick={(event) => {
+                    setIsMobileMenuOpen(false);
+                    trackEvent({ name: 'Navigation click', props: { target: tool.label } });
+                    if (!tool.spa) return;
+                    event.preventDefault();
+                    navigate(tool.href);
+                  }}
+                >
+                  {tool.label}
                 </a>
               ))}
               <a href={`${baseUrl}PeytonCampbellResume.pdf`} target="_blank" rel="noopener noreferrer" onClick={() => trackEvent({ name: 'Resume click', props: { location: 'mobile menu' } })}>

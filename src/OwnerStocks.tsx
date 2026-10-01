@@ -1327,6 +1327,29 @@ export default function OwnerStocks({ onSignedOut, onHome, onReaderDesk }: { onS
     if (session) void load();
   }, [session, load]);
 
+  // KEEP THE CONSOLE CURRENT WITHOUT A RELOAD (2026-10-01). The page read the desk once, when the
+  // session landed, so it showed whatever had been published at that moment until the owner clicked
+  // Refresh - on a tab left open it read hours stale, which is the one thing an hourly desk must not
+  // do. load() is six REST reads of the published rows (no per-name quote fan-out), so a short
+  // interval is cheap, and pc_digest is upserted by the hourly task rather than appended, so there
+  // is nothing to accumulate.
+  //
+  // The interval is also the retry cadence, which is why it is not conditional on a failure: a
+  // refresh that failed on a flaky connection would otherwise leave the last successful snapshot on
+  // screen until the next manual click. load() already retains that snapshot and flags freshness,
+  // so re-running it is always safe.
+  //
+  // A hidden tab is skipped entirely - a desk left open overnight on a second monitor should not
+  // poll Supabase until morning. The first visible tick after that pick-up happens within the
+  // interval, well inside the desk's hourly publication.
+  useEffect(() => {
+    if (!session) return;
+    const id = setInterval(() => {
+      if (!document.hidden) void load();
+    }, 5 * 60 * 1000);
+    return () => clearInterval(id);
+  }, [session, load]);
+
   const latest = dataOwner === ownerIdentity && session && priv && priv.length > 0 ? priv[0] : null;
   const today = pub[0] ?? null;
   const changeReview = useChangeReview(session?.user_id ?? null, latest ? String(ownerGeneration.current.value) : null);

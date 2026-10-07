@@ -1,8 +1,16 @@
 /* Stock desk only: public portfolio and legacy owner views keep their own layout. */
-.stock-dashboard {
+
+/* The tokens are declared for the console AND the owner sign-in gate. `.own-*` markup appears in
+   both, but OwnerLogin renders OUTSIDE .stock-dashboard (its root is .own-gate), so var(--sd-*)
+   would be undefined there and the gate would lose its colour. Geometry stays on .stock-dashboard
+   alone - widening that rule would hand the gate a 100dvh grid.
+   The reader re-points these same variables at its rose palette under .stock-dashboard.rd-desk. */
+.stock-dashboard, .own-gate {
   --sd-bg: #10161f; --sd-panel: #18212d; --sd-raised: #202c3a;
   --sd-text: #e2e8f0; --sd-muted: #a7b5c6; --sd-line: #304052; --sd-select: #8fafe6;
   --sd-up: #a8cdb7; --sd-down: #e2b0a6; --sd-warning: #e2c9a1;
+}
+.stock-dashboard {
   box-sizing: border-box; height: 100dvh; padding: 12px;
   display: grid; grid-template-rows: 40px 72px minmax(0, 1fr) 24px; gap: 8px;
   background: var(--sd-bg); color: var(--sd-text);
@@ -31,17 +39,20 @@
 .sd-refresh { margin-left: auto; }
 .sd-account { position: relative; }
 .sd-account > div { position: absolute; z-index: 5; right: 0; display: grid; gap: 10px; padding: 14px; background: var(--sd-raised); border: 1px solid var(--sd-line); border-radius: 10px; }
-.sd-kpis { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); background: var(--sd-panel); border: 1px solid var(--sd-line); border-radius: 10px; }
+.sd-kpis { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); background: var(--sd-panel); border: 1px solid var(--sd-line); border-radius: var(--radius-panel, 16px); }
 .sd-kpis > div { display: grid; align-content: center; padding: 4px 16px; border-right: 1px solid var(--sd-line); min-width: 0; }
 .sd-kpis > div:last-child { border: 0; }
 .sd-kpis > div > span { color: var(--sd-muted); font-size: 12px; }
 .sd-kpis strong { font-size: 24px; line-height: 1.15; font-weight: 600; }
 .sd-workspace { display: grid; grid-template-columns: minmax(0,32fr) minmax(0,48fr) minmax(0,20fr); gap: 8px; min-width: 0; min-height: 0; }
-.sd-panel { min-width: 0; min-height: 0; background: var(--sd-panel); border: 1px solid var(--sd-line); border-radius: 10px; }
+.sd-panel { min-width: 0; min-height: 0; background: var(--sd-panel); border: 1px solid var(--sd-line); border-radius: var(--radius-panel, 16px); }
 .sd-panel-head { min-height: 42px; padding: 7px 10px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px; border-bottom: 1px solid var(--sd-line); }
 .sd-panel-head button, .sd-context-head button { font-size: 12px; white-space: nowrap; }
 .sd-panel-head h2 > span, .sd-context-head h3 > span, .sd-order-side h3 > span { color: var(--sd-muted); font-size: 12px; font-weight: 400; margin-left: 4px; }
-.sd-portfolio-columns, .stock-dashboard .sd-portfolio-row { display: grid; grid-template-columns: minmax(0,1.15fr) minmax(0,1.25fr) minmax(0,.85fr) minmax(0,.85fr) minmax(0,.55fr) minmax(60px,.8fr); gap: 4px; align-items: center; width: 100%; padding: 0 8px; text-align: right; }
+/* The rating column carries 2-3 characters ("92") but was sized at .55fr, so its header had to
+   break across two lines to fit. Widened to match "Call" - the header now sets on one line at the
+   same baseline as its neighbours instead of hanging half a line low. */
+.sd-portfolio-columns, .stock-dashboard .sd-portfolio-row { display: grid; grid-template-columns: minmax(0,1.05fr) minmax(0,1.1fr) minmax(0,.85fr) minmax(0,.85fr) minmax(0,1.1fr) minmax(60px,.8fr); gap: 4px; align-items: center; width: 100%; padding: 0 8px; text-align: right; }
 .sd-portfolio-columns > :first-child, .sd-portfolio-row > :first-child { text-align: left; }
 .sd-portfolio-columns { height: 28px; font-size: 12px; line-height: 1.1; color: var(--sd-muted); }
 .stock-dashboard .sd-portfolio-row { min-height: 28px; font-size: 14px; border: 0; border-top: 1px solid #263344; border-radius: 0; }

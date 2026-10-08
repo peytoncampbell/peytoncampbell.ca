@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Peyton Campbell | Full-Stack Software Developer</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0a0f17" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+    />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="canonical" href="https://peytoncampbell.ca/" />
+    
+    <!-- SEO Metadata -->
+    <meta name="description" content="Full-stack software developer in London, Ontario building React, Next.js, Python, C#, .NET MAUI, BLE, sports technology, and IoT product tools." />
+    <meta name="keywords" content="Peyton Campbell, full-stack software developer, React, Next.js, TypeScript, Python, C#, .NET MAUI, BLE, sports technology, IoT" />
+    <meta name="author" content="Peyton Campbell" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://peytoncampbell.ca/" />
+    <meta property="og:title" content="Peyton Campbell | Full-Stack Software Developer" />
+    <meta property="og:description" content="Building product tools across React, Next.js, Python, C#, .NET MAUI, BLE, sports technology, and IoT workflows." />
+    <meta property="og:image" content="https://peytoncampbell.ca/og-image.svg" />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://peytoncampbell.ca/" />
+    <meta property="twitter:title" content="Peyton Campbell | Full-Stack Software Developer" />
+    <meta property="twitter:description" content="Building product tools across React, Next.js, Python, C#, .NET MAUI, BLE, sports technology, and IoT workflows." />
+    <meta property="twitter:image" content="https://peytoncampbell.ca/og-image.svg" />
+
+    <link rel="preload" as="image" href="/portrait-1200.webp" type="image/webp" fetchpriority="high" />
+    <!--
+      Config for the shared cross-app nav (src/nav.js, imported by src/main.tsx).
+
+      It MUST live in <head>, ahead of the module script. Two reasons:
+        1. ES module imports are evaluated before the importing module's body runs, so an
+           assignment inside main.tsx would land after nav.js already read it.
+        2. Vite hoists the bundled module script INTO <head>, so a classic script left in
+           <body> ends up running after it. Both were tried; both silently disabled
+           `hideOn` and drew a second navbar on top of the portfolio's own.
+
+      inline: render in flow, not as a sticky bar (the app routes own their page frame)
+      hideOn: pages that already provide their own navigation
+    -->
+    <script>
+      window.PC_NAV = { root: '/', inline: true, hideOn: '/,/login' };
+    </script>
+    <script defer data-domain="peytoncampbell.ca" src="https://plausible.io/js/script.js"></script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Person",
+            "@id": "https://peytoncampbell.ca/#person",
+            "name": "Peyton Campbell",
+            "url": "https://peytoncampbell.ca/",
+            "image": "https://peytoncampbell.ca/portrait-1200.webp",
+            "jobTitle": "Full-Stack Software Developer",
+            "address": {
+              "@type": "PostalAddress",
+              "addressLocality": "London",
+              "addressRegion": "ON",
+              "addressCountry": "CA"
+            },
+            "alumniOf": [
+              {
+                "@type": "CollegeOrUniversity",
+                "name": "University of Western Ontario"
+              },
+              {
+                "@type": "CollegeOrUniversity",
+                "name": "Fanshawe College"
+              }
+            ],
+            "knowsAbout": [
+              "React",
+              "Next.js",
+              "TypeScript",
+              "Python",
+              "C#",
+              ".NET MAUI",
+              "Bluetooth Low Energy",
+              "IoT",
+              "Sports technology"
+            ],
+            "sameAs": [
+              "https://github.com/peytoncampbell",
+              "https://www.linkedin.com/in/peyton-campbell/"
+            ]
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://peytoncampbell.ca/#website",
+            "url": "https://peytoncampbell.ca/",
+            "name": "Peyton Campbell | Full-Stack Software Developer",
+            "publisher": {
+              "@id": "https://peytoncampbell.ca/#person"
+            }
+          },
+          {
+            "@type": "ItemList",
+            "@id": "https://peytoncampbell.ca/#projects",
+            "name": "Selected software projects",
+            "itemListElement": [
+              {
+                "@type": "CreativeWork",
+                "position": 1,
+                "name": "Scoreboard Configurator & Admin Layout Editor",
+                "description": "Web-based scoreboard configurator and internal admin layout editor for customer-facing previews and editable hardware-specific layouts."
+              },
+              {
+                "@type": "CreativeWork",
+                "position": 2,
+                "name": "ScoreController",
+                "url": "https://apps.apple.com/us/app/score-controller/id1563410119",
+                "description": "Cross-platform scoreboard controller for iOS, Android, and Windows with real-time BLE communication."
+              },
+              {
+                "@type": "SoftwareApplication",
+                "position": 3,
+                "name": "Catan Settlement Optimizer",
+                "url": "https://peytoncampbell.ca/catan/",
+                "applicationCategory": "GameApplication",
+                "description": "Interactive Catan optimizer that ranks settlement positions using probability, scarcity, and port-aware heuristics."
+              }
+            ]
+          }
+        ]
+      }
+    </script>
+    <script type="module" crossorigin src="/assets/index-B3zKsYSm.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-1V482BEE.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>

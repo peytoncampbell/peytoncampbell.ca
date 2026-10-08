@@ -24,6 +24,7 @@ import PortfolioDigest from './PortfolioDigest';
 import OwnerLogin from './OwnerLogin';
 import OwnerStocks from './OwnerStocks';
 import ReaderDesk from './ReaderDesk';
+import Odds from './Odds';
 import NotFound from './NotFound';
 import ProjectDetail from './ProjectDetail';
 import ProjectVisual from './ProjectVisual';
@@ -296,6 +297,9 @@ export default function App() {
   }
   if (route === '/mydesk') {
     return <ReaderDesk onHome={navigateHome} onOwnerConsole={() => navigate('/stocks')} />;
+  }
+  if (route === '/odds') {
+    return <Odds onHome={navigateHome} />;
   }
 
   const projectSlug = route.match(/^\/projects\/([^/]+)\/?$/)?.[1];

@@ -35,6 +35,7 @@ export const NAV_LINKS = [
 export const TOOL_LINKS = [
   { label: 'Stocks', href: '/stocks', spa: true },
   { label: 'My Desk', href: '/mydesk', spa: true },
+  { label: 'Odds', href: '/odds', spa: true },
   { label: 'Budget', href: '/budget/', spa: false },
 ];
 

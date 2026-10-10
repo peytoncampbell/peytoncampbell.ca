@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { AUTH_CONFIGURED, SUPABASE_ANON_KEY, SUPABASE_URL } from './ownerAuth';
+import { submitRefresh, watchRefresh, type RefreshStatus } from './oddsRefresh';
 
 /**
  * The odds board: the scanner's own report, as published.
@@ -25,7 +26,7 @@ type State =
   | { kind: 'error'; message: string }
   | { kind: 'ready'; html: string; generatedAt: string };
 
-async function loadRow(): Promise<State> {
+async function loadRow(signal: AbortSignal): Promise<State> {
   if (!AUTH_CONFIGURED) return { kind: 'unconfigured' };
   try {
     const res = await fetch(
@@ -36,6 +37,7 @@ async function loadRow(): Promise<State> {
           Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
         },
         cache: 'no-store',
+        signal,
       },
     );
     if (!res.ok) return { kind: 'error', message: `HTTP ${res.status}` };
@@ -51,13 +53,72 @@ async function loadRow(): Promise<State> {
 
 export default function Odds({ onHome }: { onHome: () => void }) {
   const [state, setState] = useState<State>({ kind: 'loading' });
+  const [refreshOpen, setRefreshOpen] = useState(false);
+  const [pin, setPin] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [refresh, setRefresh] = useState<RefreshStatus | null>(null);
+  const [refreshError, setRefreshError] = useState('');
+  const [jobId, setJobId] = useState<string | null>(null);
+  const dialog = useRef<HTMLDialogElement>(null);
+  const mounted = useRef(true);
+  const boardLoad = useRef<{ generation: number; controller: AbortController | null }>({ generation: 0, controller: null });
+  const busy = submitting || jobId !== null;
 
   const load = useCallback(() => {
+    boardLoad.current.controller?.abort();
+    const controller = new AbortController();
+    const generation = ++boardLoad.current.generation;
+    boardLoad.current.controller = controller;
     setState({ kind: 'loading' });
-    void loadRow().then(setState);
+    void loadRow(controller.signal).then(result => {
+      if (mounted.current && !controller.signal.aborted && generation === boardLoad.current.generation) setState(result);
+    });
   }, []);
 
   useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; boardLoad.current.controller?.abort(); };
+  }, []);
+  useEffect(() => {
+    if (refreshOpen) dialog.current?.showModal();
+    else dialog.current?.close();
+  }, [refreshOpen]);
+  useEffect(() => {
+    if (!jobId) return;
+    const controller = new AbortController();
+    void watchRefresh(jobId, setRefresh, controller.signal).then(result => {
+      if (controller.signal.aborted) return;
+      setJobId(null);
+      if (result.state === 'complete') load();
+    }).catch(error => {
+      if (controller.signal.aborted) return;
+      setJobId(null);
+      setRefreshError(error instanceof Error ? error.message : 'Could not check the refresh.');
+    });
+    return () => controller.abort();
+  }, [jobId, load]);
+
+  const requestRefresh = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (busy) return;
+    setSubmitting(true);
+    setRefreshError('');
+    const submittedPin = pin;
+    setPin('');
+    try {
+      const result = await submitRefresh(submittedPin);
+      if (!mounted.current) return;
+      setRefresh(result);
+      if ((result.state === 'queued' || result.state === 'running') && result.job_id) {
+        setJobId(result.job_id);
+      }
+    } catch (error) {
+      if (mounted.current) setRefreshError(error instanceof Error ? error.message : 'Refresh request failed.');
+    } finally {
+      if (mounted.current) setSubmitting(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 flex flex-col bg-[#0f1115] text-white">
@@ -66,7 +127,7 @@ export default function Odds({ onHome }: { onHome: () => void }) {
           onClick={onHome}
           className="text-sm text-white/60 transition-colors hover:text-white"
         >
-          &larr; peytoncampbell.ca
+          &larr; <span className="hidden sm:inline">peytoncampbell.ca</span>
         </button>
         <span className="text-sm font-semibold tracking-wide text-white/90">Odds board</span>
         <span className="ml-auto flex items-center gap-3">
@@ -80,6 +141,13 @@ export default function Odds({ onHome }: { onHome: () => void }) {
             className="rounded-md bg-white/10 px-3 py-1 text-xs font-medium text-white/80 transition-colors hover:bg-white/20"
           >
             Reload
+          </button>
+          <button
+            onClick={() => setRefreshOpen(true)}
+            aria-haspopup="dialog"
+            className="rounded-md bg-[#8ab4f8] px-3 py-1 text-xs font-semibold text-[#0b1020] transition-colors hover:bg-[#aecbfa]"
+          >
+            {busy ? 'Refreshing…' : 'Refresh'}
           </button>
         </span>
       </header>
@@ -105,6 +173,40 @@ export default function Odds({ onHome }: { onHome: () => void }) {
           </div>
         )}
       </main>
+      <dialog ref={dialog} onCancel={() => setRefreshOpen(false)}
+        onClose={() => { setRefreshOpen(false); setPin(''); }}
+        aria-labelledby="odds-refresh-title"
+        className="w-[calc(100%_-_2rem)] max-w-sm rounded-xl border border-white/15 bg-[#171a21] p-5 text-white shadow-2xl backdrop:bg-black/70">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <h2 id="odds-refresh-title" className="text-lg font-semibold">Refresh odds</h2>
+          <button type="button" onClick={() => setRefreshOpen(false)} aria-label="Close refresh"
+            className="rounded px-2 py-1 text-white/60 hover:text-white">✕</button>
+        </div>
+        <p className="mb-4 text-sm leading-relaxed text-white/60">
+          Fetch current prices and update the board. Direct feeds are checked first.
+          Refreshes are limited to once every 15 minutes.
+        </p>
+        <form onSubmit={event => { void requestRefresh(event); }}>
+          <label htmlFor="odds-refresh-pin" className="mb-2 block text-sm font-medium">Refresh PIN</label>
+          <input id="odds-refresh-pin" type="password" inputMode="numeric" autoComplete="off"
+            minLength={6} maxLength={10} pattern="[0-9]{6,10}" required autoFocus disabled={busy}
+            value={pin} onChange={event => setPin(event.target.value)}
+            className="mb-3 w-full rounded-lg border border-white/20 bg-black/20 px-3 py-2 text-lg tracking-widest outline-none focus:border-[#8ab4f8] disabled:opacity-50" />
+          <button type="submit" disabled={busy || !/^\d{6,10}$/.test(pin)}
+            className="w-full rounded-lg bg-[#8ab4f8] px-4 py-2 text-sm font-semibold text-[#0b1020] disabled:opacity-40">
+            {busy ? 'Refreshing…' : 'Refresh board'}
+          </button>
+        </form>
+        <div aria-live="polite" className="mt-4 text-sm leading-relaxed text-white/70">
+          {refreshError || refresh?.message || ''}
+          {refresh?.state === 'complete' && typeof refresh.details?.credits_spent === 'number' && (
+            <p className="mt-1 text-xs text-white/50">{refresh.details.credits_spent} Odds API credits used.</p>
+          )}
+          {!!refresh?.retry_after_seconds && (
+            <p className="mt-1 text-xs text-white/50">Try again in {Math.ceil(refresh.retry_after_seconds / 60)} min.</p>
+          )}
+        </div>
+      </dialog>
     </div>
   );
 }

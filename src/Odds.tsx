@@ -225,7 +225,7 @@ export default function Odds({ onHome }: { onHome: () => void }) {
         </div>
         <p className="mb-4 text-sm leading-relaxed text-white/60">
           Refresh direct prices for cached games starting within 72 hours. The request has a 60-second deadline, including queue time.
-          Only verified, fresh matches can produce opportunities; other markets remain pending.
+          Fresh, compatible markets produce provisional EV and arb estimates. These assume matching settlement across books.
           Slow, blocked or unfinished sources appear as coverage gaps. No Odds API credits are used.
           All markets is a separate historical catalogue. Price refreshes are limited to once per minute.
         </p>
@@ -245,8 +245,8 @@ export default function Odds({ onHome }: { onHome: () => void }) {
           {refresh?.state === 'complete' && typeof refresh.details?.credits_spent === 'number' && (
             <p className="mt-1 text-xs text-white/50">{refresh.details.credits_spent} Odds API credits used.</p>
           )}
-          {refresh?.state === 'complete' && typeof refresh.details?.pending_positions === 'number' && (
-            <p className="mt-1 text-xs text-amber-100/70">{refresh.details.pending_positions.toLocaleString()} selections pending verification · {refresh.details.edges ?? 0} EV · {refresh.details.arbs ?? 0} arb.</p>
+          {refresh?.state === 'complete' && typeof refresh.details?.selections === 'number' && (
+            <p className="mt-1 text-xs text-amber-100/70">{refresh.details.selections.toLocaleString()} selections captured · {refresh.details.edges ?? 0} provisional EV · {refresh.details.arbs ?? 0} provisional arb.</p>
           )}
           {!!refresh?.retry_after_seconds && (
             <p className="mt-1 text-xs text-white/50">Try again in {Math.ceil(refresh.retry_after_seconds / 60)} min.</p>

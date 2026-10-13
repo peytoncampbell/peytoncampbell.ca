@@ -145,7 +145,8 @@ find(tree, 'form').props.onSubmit({ preventDefault() {} });
 await flush();
 refreshed.render();
 assert.equal(refreshed.watched.length, 1, 'The accepted job is actually watched');
-refreshed.watched[0].resolve({ state: 'complete', job_id: job });
+refreshed.watched[0].resolve({ state: 'complete', job_id: job,
+  details: { credits_spent: 0, selections: 17391, edges: 7, arbs: 2, provisional: 1 } });
 await flush();
 assert.equal(refreshed.boardRequests.length, 2, 'Completion loads the newly published board');
 refreshed.boardRequests[1].resolve({ ok: true, json: async () => [{ job_id: job,
@@ -154,6 +155,9 @@ await flush();
 const beforeLateResponse = find(refreshed.render(), 'iframe')?.props.srcDoc;
 assert.equal(beforeLateResponse, '<meta name="odds-fast-refresh">SYNTHETIC-FRESH-BOARD', 'A completed refresh opens its own published price board');
 tree = refreshed.render();
+const completion = JSON.stringify(tree);
+assert.ok(completion.includes('provisional EV') && completion.includes('provisional arb'));
+assert.ok(!completion.includes('pending verification'), 'Provisional results replace the pending wall');
 find(tree, 'button', props => props.children === 'All markets').props.onClick();
 assert.equal(find(refreshed.render(), 'native-inventory').key, 1, 'Completion invalidates the old market inventory too');
 tree = refreshed.render();

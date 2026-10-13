@@ -60,4 +60,6 @@ responses = [{ state: 'running', job_id: job }, { state: 'running', job_id: job 
 await assert.rejects(() => api.watchRefresh(job, () => {}, new AbortController().signal, 2), /still running/i);
 responses = [{ state: 'unknown' }];
 await assert.rejects(() => api.submitRefresh('654321'), /invalid response/i);
+responses = [{ state: 'complete', job_id: '00000000-0000-4000-8000-000000000002' }];
+await assert.rejects(() => api.watchRefresh(job, () => assert.fail('Displayed a different job'), new AbortController().signal), /another request/i);
 console.log('Odds refresh transport checks passed: POST-only PIN, status-only polling, failure, cancellation and timeout.');

@@ -60,13 +60,14 @@ function harness() {
       });
     },
   };
-  const element = (type, props) => ({ type, props: props ?? {} });
+  const element = (type, props, key) => ({ type, props: props ?? {}, key });
   const context = {
     hooks, exports: {}, module: { exports: {} }, AbortController, DOMException, Date,
     config: { AUTH_CONFIGURED: true, SUPABASE_URL: 'https://synthetic.supabase.invalid',
       SUPABASE_ANON_KEY: 'SYNTHETIC-PUBLIC-KEY' },
     require: name => {
-      if (name === './OddsInventory') return { __esModule: true, default: () => null };
+      if (name === './OddsInventory') return { __esModule: true, default: 'native-inventory' };
+      if (name === './oddsInventoryData') return { loadNativeBoard: async () => null };
       assert.equal(name, 'react/jsx-runtime');
       return { jsx: element, jsxs: element, Fragment: 'fragment' };
     },
@@ -121,7 +122,9 @@ function find(tree, type, matches = () => true) {
 // A completed refresh must win over the board request that was already in flight.
 const refreshed = harness();
 let tree = refreshed.render();
+await flush();
 assert.equal(refreshed.boardRequests.length, 1);
+assert.equal(find(tree, 'native-inventory').key, 0);
 find(tree, 'input').props.onChange({ target: { value: '000000' } });
 tree = refreshed.render();
 find(tree, 'form').props.onSubmit({ preventDefault() {} });
@@ -135,6 +138,11 @@ refreshed.boardRequests[1].resolve(board('SYNTHETIC-FRESH-BOARD'));
 await flush();
 const beforeLateResponse = find(refreshed.render(), 'iframe')?.props.srcDoc;
 assert.equal(beforeLateResponse, 'SYNTHETIC-FRESH-BOARD', 'A completed refresh opens the refreshed edge board from All markets');
+tree = refreshed.render();
+find(tree, 'button', props => props.children === 'All markets').props.onClick();
+assert.equal(find(refreshed.render(), 'native-inventory').key, 1, 'Completion invalidates the old market inventory too');
+tree = refreshed.render();
+find(tree, 'button', props => props.children === 'EV & Arb').props.onClick();
 refreshed.boardRequests[0].resolve(board('SYNTHETIC-OLD-BOARD'));
 await flush();
 const afterLateResponse = find(refreshed.render(), 'iframe')?.props.srcDoc;
@@ -142,6 +150,7 @@ const afterLateResponse = find(refreshed.render(), 'iframe')?.props.srcDoc;
 // The same lifecycle guard must prevent a completed request from updating an unmounted page.
 const departed = harness();
 departed.render();
+await flush();
 departed.unmount();
 departed.boardRequests[0].resolve(board('SYNTHETIC-LATE-BOARD'));
 await flush();

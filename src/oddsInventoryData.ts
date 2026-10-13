@@ -20,7 +20,7 @@ const base = `${SUPABASE_URL}/storage/v1/object/public/odds-inventory/`;
 const MAX_DECODED = 96 * 1024 * 1024;
 
 async function compressed(path: string, sha256: string, bytes: number, signal: AbortSignal): Promise<string> {
-  if (!/^snapshots\/[a-f0-9]{24}\/(?:catalogue\.json\.gz|[a-z0-9_]+\/[a-f0-9]{2}\.jsonl\.gz)$/.test(path)) throw new Error('Invalid inventory location.');
+  if (!/^snapshots\/[a-f0-9]{24}\/(?:catalogue\.json\.gz|opportunities\.html\.gz|[a-z0-9_]+\/[a-f0-9]{2}\.jsonl\.gz)$/.test(path)) throw new Error('Invalid inventory location.');
   if (!/^[a-f0-9]{64}$/.test(sha256) || !Number.isSafeInteger(bytes) || bytes <= 0 || bytes > 50*1024*1024) throw new Error('Invalid inventory integrity metadata.');
   const response = await fetch(base + path, { signal });
   if (!response.ok) throw new Error('Could not load the captured markets.');
@@ -61,6 +61,24 @@ export async function loadInventory(signal: AbortSignal): Promise<InventoryCatal
   if (catalogue.schema !== 1 || catalogue.snapshot_id !== pointer.snapshot_id || !Array.isArray(catalogue.books)
     || !Array.isArray(catalogue.events)) throw new Error('Invalid inventory catalogue.');
   return catalogue;
+}
+
+export async function loadNativeBoard(signal: AbortSignal): Promise<{ html: string; generatedAt: string; snapshotId: string } | null> {
+  if (!SUPABASE_URL) return null;
+  const response = await fetch(base + 'current.json', { cache: 'no-store', signal });
+  if (response.status === 404) return null;
+  if (!response.ok) throw new Error('Could not reach the direct EV and arb board.');
+  const pointer = await response.json() as { schema: number; snapshot_id: string;
+    board?: { path: string; sha256: string; bytes: number; generated_at: string } };
+  if (pointer.schema !== 1 || !/^[a-f0-9]{24}$/.test(pointer.snapshot_id)) throw new Error('Invalid opportunity snapshot.');
+  if (!pointer.board) return null;
+  const board = pointer.board;
+  if (board.path !== `snapshots/${pointer.snapshot_id}/opportunities.html.gz`
+    || typeof board.generated_at !== 'string' || !/(?:Z|[+-]\d{2}:\d{2})$/.test(board.generated_at)
+    || !Number.isFinite(Date.parse(board.generated_at))) throw new Error('Invalid opportunity board identity.');
+  const html = await compressed(board.path, board.sha256, board.bytes, signal);
+  if (!html.includes(`<meta name="odds-native-snapshot" content="${pointer.snapshot_id}">`)) throw new Error('Opportunity board belongs to another inventory.');
+  return { html, generatedAt: board.generated_at, snapshotId: pointer.snapshot_id };
 }
 
 export async function loadMarkets(catalogue: InventoryCatalogue, event: InventoryEvent,

@@ -37,11 +37,12 @@ export async function submitRefresh(pin: string): Promise<RefreshStatus> {
 }
 
 export async function watchRefresh(jobId: string, onStatus: (status: RefreshStatus) => void,
-  signal: AbortSignal, maxPolls = 300): Promise<RefreshStatus> {
+  signal: AbortSignal, maxPolls = 3000): Promise<RefreshStatus> {
   for (let attempt = 0; attempt < maxPolls; attempt++) {
     if (signal.aborted) throw new DOMException('Refresh watch aborted.', 'AbortError');
     const status = await rpc('pc_odds_refresh_status', { job_id: jobId }, signal);
     if (signal.aborted) throw new DOMException('Refresh watch aborted.', 'AbortError');
+    if (status.job_id !== jobId) throw new Error('Refresh status belongs to another request.');
     onStatus(status);
     if (status.state === 'complete' || status.state === 'failed') return status;
     if (status.state !== 'queued' && status.state !== 'running') {
@@ -49,7 +50,7 @@ export async function watchRefresh(jobId: string, onStatus: (status: RefreshStat
     }
     await new Promise<void>((resolve, reject) => {
       const cancel = () => { clearTimeout(timer); reject(new DOMException('Refresh watch aborted.', 'AbortError')); };
-      const timer = setTimeout(() => { signal.removeEventListener('abort', cancel); resolve(); }, 2000);
+      const timer = setTimeout(() => { signal.removeEventListener('abort', cancel); resolve(); }, 5000);
       signal.addEventListener('abort', cancel, { once: true });
       if (signal.aborted) cancel();
     });

@@ -17,13 +17,17 @@ const market = { id: 'native-market', name: 'Total', kind: 'straight', native_co
 const pack = value => gzipSync(value, { mtime: 0 });
 const digest = raw => createHash('sha256').update(raw).digest('hex');
 
-function harness({ records = [{ key: event.key, markets: [market] }], metadata = {}, pointer = {}, missing = false } = {}) {
+function harness({ records = [{ key: event.key, markets: [market] }], metadata = {}, pointer = {}, missing = false,
+  boardHtml, boardMetadata = {} } = {}) {
   const raw = pack(records.map(row => JSON.stringify(row)).join('\n') + '\n');
   const catalogue = { schema: 1, snapshot_id: id, books: [], events: [event],
     objects: { [path]: { sha256: digest(raw), bytes: raw.length, decoded_bytes: 0, ...metadata } } };
   const catalogRaw = pack(JSON.stringify(catalogue));
   const current = { schema: 1, snapshot_id: id, catalogue: `snapshots/${id}/catalogue.json.gz`,
     sha256: digest(catalogRaw), bytes: catalogRaw.length, ...pointer };
+  const boardRaw = boardHtml === undefined ? null : pack(boardHtml);
+  if (boardRaw) current.board = { path: `snapshots/${id}/opportunities.html.gz`, sha256: digest(boardRaw),
+    bytes: boardRaw.length, generated_at: '2026-10-13T18:00:00+00:00', ...boardMetadata };
   const requests = [];
   const context = { exports: {}, module: { exports: {} }, crypto: webcrypto, Blob, DecompressionStream,
     TextDecoder, DOMException, console,
@@ -33,6 +37,7 @@ function harness({ records = [{ key: event.key, markets: [market] }], metadata =
       if (options.signal.aborted) throw new DOMException('Aborted', 'AbortError');
       if (url.endsWith('/current.json')) return new Response(missing ? '' : JSON.stringify(current), { status: missing ? 404 : 200 });
       if (url.endsWith('/catalogue.json.gz')) return new Response(catalogRaw);
+      if (url.endsWith('/opportunities.html.gz')) return new Response(boardRaw);
       assert.ok(url.endsWith('/' + path));
       return new Response(raw);
     } };
@@ -72,4 +77,16 @@ await assert.rejects(() => harness({ pointer: { snapshot_id: 'b'.repeat(24) } })
 await assert.rejects(() => harness({ missing: true }).loadInventory(signal), /not been published/);
 const aborted = new AbortController(); aborted.abort();
 await assert.rejects(() => good.loadMarkets(catalog, event, aborted.signal), { name: 'AbortError' });
+assert.equal(await harness().loadNativeBoard(signal), null, 'The preceding capture archive still supports its legacy board');
+const nativeHtml = `<meta name="odds-native-snapshot" content="${id}"><p>Pending verification</p>`;
+const nativeBoard = await harness({ boardHtml: nativeHtml }).loadNativeBoard(signal);
+assert.equal(nativeBoard.html, nativeHtml);
+assert.equal(nativeBoard.snapshotId, id);
+for (const [configuration, error] of [
+  [{ boardHtml: nativeHtml, boardMetadata: { sha256: '0'.repeat(64) } }, /integrity/],
+  [{ boardHtml: nativeHtml, boardMetadata: { path: `snapshots/${'b'.repeat(24)}/opportunities.html.gz` } }, /identity/],
+  [{ boardHtml: nativeHtml, boardMetadata: { generated_at: '2026-10-13T18:00:00' } }, /identity/],
+  [{ boardHtml: '<p>Another snapshot</p>' }, /another inventory/],
+]) await assert.rejects(() => harness(configuration).loadNativeBoard(signal), error);
+await assert.rejects(() => harness({ boardHtml: nativeHtml }).loadNativeBoard(aborted.signal), { name: 'AbortError' });
 console.log('Odds inventory passed: exact prices/lines, hash/size, game identity/counts, location and aborted requests.');

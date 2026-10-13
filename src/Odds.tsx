@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { AUTH_CONFIGURED, SUPABASE_ANON_KEY, SUPABASE_URL } from './ownerAuth';
 import { submitRefresh, watchRefresh, type RefreshStatus } from './oddsRefresh';
 import OddsInventory from './OddsInventory';
+import { loadNativeBoard } from './oddsInventoryData';
 
 /**
  * The odds board: the scanner's own report, as published.
@@ -30,6 +31,8 @@ type State =
 async function loadRow(signal: AbortSignal): Promise<State> {
   if (!AUTH_CONFIGURED) return { kind: 'unconfigured' };
   try {
+    const native = await loadNativeBoard(signal);
+    if (native) return { kind: 'ready', html: native.html, generatedAt: native.generatedAt };
     const res = await fetch(
       `${SUPABASE_URL}/rest/v1/pc_odds?select=generated_at,html&id=eq.1&limit=1`,
       {
@@ -93,7 +96,7 @@ export default function Odds({ onHome }: { onHome: () => void }) {
     void watchRefresh(jobId, setRefresh, controller.signal).then(result => {
       if (controller.signal.aborted) return;
       setJobId(null);
-      if (result.state === 'complete') { load(); setView('board'); }
+      if (result.state === 'complete') { load(); setInventoryRevision(value => value + 1); setView('board'); }
     }).catch(error => {
       if (controller.signal.aborted) return;
       setJobId(null);
@@ -156,7 +159,7 @@ export default function Odds({ onHome }: { onHome: () => void }) {
       </header>
 
       <nav aria-label="Odds views" className="flex flex-none gap-1 border-b border-white/10 px-4 py-2">
-        {([['markets', 'All markets'], ['coverage', 'Coverage'], ['board', 'Edge board']] as const).map(([key,label]) =>
+        {([['markets', 'All markets'], ['coverage', 'Coverage'], ['board', 'EV & Arb']] as const).map(([key,label]) =>
           <button key={key} onClick={() => setView(key)} aria-current={view === key ? 'page' : undefined}
             className={`rounded-lg px-4 py-2 text-sm font-medium ${view === key ? 'bg-[#8ab4f8]/15 text-[#8ab4f8]' : 'text-white/50 hover:bg-white/5 hover:text-white'}`}>{label}</button>)}
       </nav>
@@ -193,9 +196,10 @@ export default function Odds({ onHome }: { onHome: () => void }) {
             className="rounded px-2 py-1 text-white/60 hover:text-white">✕</button>
         </div>
         <p className="mb-4 text-sm leading-relaxed text-white/60">
-          Fetch current prices and update the edge board. Direct feeds are checked first.
+          Collect current markets from all nine direct sources and update EV, arb and All markets together.
+          Only verified, fresh matches can produce opportunities; other markets remain pending.
+          No Odds API credits are used. A full capture can take longer than ten minutes.
           Refreshes are limited to once every 15 minutes.
-          All markets displays the separate captured inventory, with its original source times.
         </p>
         <form onSubmit={event => { void requestRefresh(event); }}>
           <label htmlFor="odds-refresh-pin" className="mb-2 block text-sm font-medium">Refresh PIN</label>
@@ -212,6 +216,9 @@ export default function Odds({ onHome }: { onHome: () => void }) {
           {refreshError || refresh?.message || ''}
           {refresh?.state === 'complete' && typeof refresh.details?.credits_spent === 'number' && (
             <p className="mt-1 text-xs text-white/50">{refresh.details.credits_spent} Odds API credits used.</p>
+          )}
+          {refresh?.state === 'complete' && typeof refresh.details?.pending_positions === 'number' && (
+            <p className="mt-1 text-xs text-amber-100/70">{refresh.details.pending_positions.toLocaleString()} selections pending verification · {refresh.details.edges ?? 0} EV · {refresh.details.arbs ?? 0} arb.</p>
           )}
           {!!refresh?.retry_after_seconds && (
             <p className="mt-1 text-xs text-white/50">Try again in {Math.ceil(refresh.retry_after_seconds / 60)} min.</p>

@@ -27,8 +27,9 @@ const flush = () => new Promise(resolve => setImmediate(resolve));
 const sameDeps = (a, b) => a && b && a.length === b.length &&
   a.every((value, index) => Object.is(value, b[index]));
 
-function harness() {
+function harness(fastBoard = null) {
   const slots = [], effects = [], boardRequests = [], watched = [];
+  const deadlines = new Map(); let timerId = 0;
   let cursor = 0, unmounted = false, writesAfterUnmount = 0;
   const hooks = {
     useState(initial) {
@@ -63,6 +64,8 @@ function harness() {
   const element = (type, props, key) => ({ type, props: props ?? {}, key });
   const context = {
     hooks, exports: {}, module: { exports: {} }, AbortController, DOMException, Date,
+    setTimeout: fn => { const id = ++timerId; deadlines.set(id, fn); return id; },
+    clearTimeout: id => deadlines.delete(id),
     config: { AUTH_CONFIGURED: true, SUPABASE_URL: 'https://synthetic.supabase.invalid',
       SUPABASE_ANON_KEY: 'SYNTHETIC-PUBLIC-KEY' },
     require: name => {
@@ -72,6 +75,17 @@ function harness() {
       return { jsx: element, jsxs: element, Fragment: 'fragment' };
     },
     fetch: (url, options) => {
+      if (url.includes('/pc_odds_fast_board?')) {
+        assert.equal(url, 'https://synthetic.supabase.invalid/rest/v1/pc_odds_fast_board?select=job_id,generated_at,html&id=eq.1&limit=1');
+        if (fastBoard) return Promise.resolve({ ok: true, json: async () => [fastBoard] });
+        // A completed refresh must load its own dedicated row, not fall back.
+        if (watched.length) {
+          const pending = deferred();
+          boardRequests.push({ ...pending, options });
+          return pending.promise;
+        }
+        return Promise.resolve({ ok: true, json: async () => [] });
+      }
       assert.equal(url,
         'https://synthetic.supabase.invalid/rest/v1/pc_odds?select=generated_at,html&id=eq.1&limit=1');
       const pending = deferred();
@@ -104,7 +118,7 @@ function harness() {
     unmounted = true;
     for (const slot of slots) slot?.cleanup?.();
   };
-  return { render, unmount, boardRequests, watched,
+  return { render, unmount, boardRequests, watched, expireLoads: () => { for (const fn of [...deadlines.values()]) fn(); },
     get writesAfterUnmount() { return writesAfterUnmount; } };
 }
 
@@ -134,10 +148,11 @@ assert.equal(refreshed.watched.length, 1, 'The accepted job is actually watched'
 refreshed.watched[0].resolve({ state: 'complete', job_id: job });
 await flush();
 assert.equal(refreshed.boardRequests.length, 2, 'Completion loads the newly published board');
-refreshed.boardRequests[1].resolve(board('SYNTHETIC-FRESH-BOARD'));
+refreshed.boardRequests[1].resolve({ ok: true, json: async () => [{ job_id: job,
+  html: '<meta name="odds-fast-refresh">SYNTHETIC-FRESH-BOARD', generated_at: '2026-10-13T12:00:00Z' }] });
 await flush();
 const beforeLateResponse = find(refreshed.render(), 'iframe')?.props.srcDoc;
-assert.equal(beforeLateResponse, 'SYNTHETIC-FRESH-BOARD', 'A completed refresh opens the refreshed edge board from All markets');
+assert.equal(beforeLateResponse, '<meta name="odds-fast-refresh">SYNTHETIC-FRESH-BOARD', 'A completed refresh opens its own published price board');
 tree = refreshed.render();
 find(tree, 'button', props => props.children === 'All markets').props.onClick();
 assert.equal(find(refreshed.render(), 'native-inventory').key, 1, 'Completion invalidates the old market inventory too');
@@ -156,7 +171,29 @@ departed.boardRequests[0].resolve(board('SYNTHETIC-LATE-BOARD'));
 await flush();
 assert.deepEqual({ beforeLateResponse, afterLateResponse,
   writesAfterUnmount: departed.writesAfterUnmount }, {
-  beforeLateResponse: 'SYNTHETIC-FRESH-BOARD',
-  afterLateResponse: 'SYNTHETIC-FRESH-BOARD', writesAfterUnmount: 0,
+  beforeLateResponse: '<meta name="odds-fast-refresh">SYNTHETIC-FRESH-BOARD',
+  afterLateResponse: '<meta name="odds-fast-refresh">SYNTHETIC-FRESH-BOARD', writesAfterUnmount: 0,
 }, 'Only the current mounted board load may update the displayed odds');
 console.log('Odds refresh lifecycle passed: completed publication wins over late loads; unmount ignores late results.');
+refreshed.unmount();
+
+// The full-catalogue pointer and legacy row must not overwrite the price authority.
+const dedicated = harness({ job_id: job, html: '<meta name="odds-fast-refresh">FAST', generated_at: '2026-10-13T12:00:00Z' });
+tree = dedicated.render(); await flush();
+tree = dedicated.render(); find(tree, 'button', props => props.children === 'EV & Arb').props.onClick();
+assert.equal(find(dedicated.render(), 'iframe').props.srcDoc, '<meta name="odds-fast-refresh">FAST');
+assert.equal(dedicated.boardRequests.length, 0, 'Dedicated row wins without loading a catalogue or legacy board');
+dedicated.unmount();
+
+const hangingBoard = harness();
+tree = hangingBoard.render(); await flush();
+find(tree, 'input').props.onChange({ target: { value: '000000' } });
+tree = hangingBoard.render(); find(tree, 'form').props.onSubmit({ preventDefault() {} });
+await flush(); hangingBoard.render();
+hangingBoard.watched[0].resolve({ state: 'complete', job_id: job });
+await flush();
+assert.equal(hangingBoard.boardRequests.length, 2);
+hangingBoard.expireLoads(); tree = hangingBoard.render();
+assert.equal(find(tree, 'iframe'), null, 'A timed-out final load cannot display the earlier board as this update');
+assert.equal(hangingBoard.boardRequests[1].options.signal.aborted, true, 'The final board GET is aborted at the remaining click deadline');
+hangingBoard.unmount();

@@ -28,9 +28,25 @@ type State =
   | { kind: 'error'; message: string }
   | { kind: 'ready'; html: string; generatedAt: string };
 
-async function loadRow(signal: AbortSignal): Promise<State> {
+async function loadRow(signal: AbortSignal, expectedJobId?: string): Promise<State> {
   if (!AUTH_CONFIGURED) return { kind: 'unconfigured' };
   try {
+    const fast = await fetch(
+      `${SUPABASE_URL}/rest/v1/pc_odds_fast_board?select=job_id,generated_at,html&id=eq.1&limit=1`,
+      { headers: { apikey: SUPABASE_ANON_KEY as string, Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
+        cache: 'no-store', signal },
+    );
+    if (!fast.ok) throw new Error(`Price board HTTP ${fast.status}`);
+    const fastRows = await fast.json() as Array<{ job_id: string; generated_at: string; html: string }>;
+    if (!Array.isArray(fastRows)) throw new Error('Invalid price board response.');
+    if (fastRows.length) {
+      if (expectedJobId && fastRows[0].job_id !== expectedJobId) throw new Error('Published board belongs to a different refresh.');
+      if (typeof fastRows[0].html !== 'string' || !fastRows[0].html.includes('<meta name="odds-fast-refresh"')) {
+        throw new Error('Invalid price board identity.');
+      }
+      return { kind: 'ready', html: fastRows[0].html, generatedAt: fastRows[0].generated_at };
+    }
+    if (expectedJobId) throw new Error('This refresh has no published price board.');
     const native = await loadNativeBoard(signal);
     if (native) return { kind: 'ready', html: native.html, generatedAt: native.generatedAt };
     const res = await fetch(
@@ -65,20 +81,27 @@ export default function Odds({ onHome }: { onHome: () => void }) {
   const [jobId, setJobId] = useState<string | null>(null);
   const dialog = useRef<HTMLDialogElement>(null);
   const mounted = useRef(true);
+  const refreshStarted = useRef(0);
   const boardLoad = useRef<{ generation: number; controller: AbortController | null }>({ generation: 0, controller: null });
   const busy = submitting || jobId !== null;
   const [view, setView] = useState<'markets' | 'coverage' | 'board'>('markets');
   const [inventoryRevision, setInventoryRevision] = useState(0);
 
-  const load = useCallback(() => {
+  const load = useCallback((budgetMs = 10000, expectedJobId?: string) => {
     boardLoad.current.controller?.abort();
     const controller = new AbortController();
     const generation = ++boardLoad.current.generation;
     boardLoad.current.controller = controller;
     setState({ kind: 'loading' });
-    void loadRow(controller.signal).then(result => {
+    const timer = setTimeout(() => {
+      controller.abort();
+      if (mounted.current && generation === boardLoad.current.generation) {
+        setState({ kind: 'error', message: 'The price board could not be displayed within the refresh deadline. Reload to check the acknowledged publication.' });
+      }
+    }, Math.max(0, budgetMs));
+    void loadRow(controller.signal, expectedJobId).then(result => {
       if (mounted.current && !controller.signal.aborted && generation === boardLoad.current.generation) setState(result);
-    });
+    }).finally(() => clearTimeout(timer));
   }, []);
 
   useEffect(() => { load(); }, [load]);
@@ -93,10 +116,14 @@ export default function Odds({ onHome }: { onHome: () => void }) {
   useEffect(() => {
     if (!jobId) return;
     const controller = new AbortController();
-    void watchRefresh(jobId, setRefresh, controller.signal).then(result => {
+    void watchRefresh(jobId, setRefresh, controller.signal, 70,
+      Math.max(0, 60000 - (Date.now() - refreshStarted.current))).then(result => {
       if (controller.signal.aborted) return;
       setJobId(null);
-      if (result.state === 'complete') { load(); setInventoryRevision(value => value + 1); setView('board'); }
+      if (result.state === 'complete') {
+        load(Math.max(0, 60000 - (Date.now() - refreshStarted.current)), result.job_id ?? undefined);
+        setInventoryRevision(value => value + 1); setView('board');
+      }
     }).catch(error => {
       if (controller.signal.aborted) return;
       setJobId(null);
@@ -109,6 +136,7 @@ export default function Odds({ onHome }: { onHome: () => void }) {
     event.preventDefault();
     if (busy) return;
     setSubmitting(true);
+    refreshStarted.current = Date.now();
     setRefreshError('');
     const submittedPin = pin;
     setPin('');
@@ -196,10 +224,10 @@ export default function Odds({ onHome }: { onHome: () => void }) {
             className="rounded px-2 py-1 text-white/60 hover:text-white">✕</button>
         </div>
         <p className="mb-4 text-sm leading-relaxed text-white/60">
-          Collect current markets from all nine direct sources and update EV, arb and All markets together.
+          Refresh direct prices for cached games starting within 72 hours. The request has a 60-second deadline, including queue time.
           Only verified, fresh matches can produce opportunities; other markets remain pending.
-          No Odds API credits are used. A full capture can take longer than ten minutes.
-          Refreshes are limited to once every 15 minutes.
+          Slow, blocked or unfinished sources appear as coverage gaps. No Odds API credits are used.
+          All markets is a separate historical catalogue. Price refreshes are limited to once per minute.
         </p>
         <form onSubmit={event => { void requestRefresh(event); }}>
           <label htmlFor="odds-refresh-pin" className="mb-2 block text-sm font-medium">Refresh PIN</label>

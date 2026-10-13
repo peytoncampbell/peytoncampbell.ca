@@ -10,8 +10,7 @@ function Selection({ row }: { row: InventorySelection }) {
   const price = row.pricing_verified && row.offered_price !== null ? row.offered_price : row.price;
   return <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-3 border-t border-white/5 py-3 first:border-0">
     <div className="min-w-0">
-      <p className="break-words text-sm text-white/90">{row.label}</p>
-      {row.subject && !row.label.includes(row.subject) && <p className="mt-0.5 text-xs text-white/60">{row.subject}</p>}
+      <p className="break-words text-sm text-white/90">{row.subject && !row.label.includes(row.subject) ? `${row.subject} · ${row.label}` : row.label}</p>
       <p className="mt-1 text-xs text-white/45">
         {row.point !== null && <span className="mr-2">Line {row.point}</span>}
         {!row.pricing_verified ? 'Pricing unverified' : row.available ? 'Offered at capture' : 'Unavailable at capture'}
@@ -35,6 +34,8 @@ function Selection({ row }: { row: InventorySelection }) {
 function MarketCard({ market: m }: { market: InventoryMarket }) {
   const [open, setOpen] = useState(false);
   const [page, setPage] = useState(0);
+  const lines = [...new Set(m.selections.map(s => s.point).filter((value): value is string => value !== null))];
+  const subjects = [...new Set(m.selections.map(s => s.subject).filter(Boolean))];
   let scope = '';
   try {
     const native = JSON.parse(m.native_context);
@@ -43,6 +44,8 @@ function MarketCard({ market: m }: { market: InventoryMarket }) {
   return <details onToggle={e => setOpen(e.currentTarget.open)} className="rounded-xl border border-white/10 bg-[#171b23] px-4">
     <summary className="cursor-pointer py-4 text-sm font-semibold">{m.name}
       {scope && <span className="ml-2 text-xs text-[#8ab4f8]">{scope}</span>}
+      {subjects.length === 1 && !m.name.includes(subjects[0]) && <span className="ml-2 text-xs text-[#8ab4f8]">{subjects[0]}</span>}
+      {!!lines.length && <span className="ml-2 text-xs font-normal text-white/60">Line {lines.slice(0,4).join(' / ')}{lines.length > 4 && ` · ${lines.length} line values`}</span>}
       <span className="ml-2 text-xs font-normal text-white/40">{m.selections.length} selections{m.kind === 'combined' ? ' · prebuilt' : ''}</span></summary>
     {open && <div className="pb-2"><details className="mb-2 text-xs text-white/45"><summary className="cursor-pointer">Native market contract</summary>
       <pre className="mt-2 max-h-64 overflow-y-auto whitespace-pre-wrap break-all text-[11px]">{m.native_context}</pre></details>

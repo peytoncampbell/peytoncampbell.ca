@@ -42,3 +42,20 @@ Cloudflare manages the public DNS for `peytoncampbell.ca`. The domain routes tra
 - GitHub Pages serves the `docs/` folder.
 - Cloudflare points `peytoncampbell.ca` at the GitHub Pages deployment.
 - The `CNAME` files keep GitHub Pages attached to the custom domain.
+
+## Odds
+
+`/odds/` opens the captured-market browser, with book/sport/game filters and
+market/player search. Coverage shows the original source times and remaining
+inventory gaps. Edge board displays the existing published HTML board.
+
+Market data comes from immutable gzip objects in the public Supabase
+`odds-inventory` bucket. The client verifies hashes, game identity and selection
+counts before displaying them. Prices and signed lines retain their original
+decimal text. The Python producer and publisher live in the separate
+`oddsjam-lite/site_inventory` package; no server credential belongs in this repo.
+
+The captures are historical. PIN refresh updates the existing edge board;
+the all-market inventory is published separately. Run `npm run
+verify:odds-inventory` and `npm run verify:odds-refresh` before building changes
+to these flows.

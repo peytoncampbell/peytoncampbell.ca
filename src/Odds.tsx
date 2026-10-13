@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AUTH_CONFIGURED, SUPABASE_ANON_KEY, SUPABASE_URL } from './ownerAuth';
 import { submitRefresh, watchRefresh, type RefreshStatus } from './oddsRefresh';
+import OddsInventory from './OddsInventory';
 
 /**
  * The odds board: the scanner's own report, as published.
@@ -63,6 +64,8 @@ export default function Odds({ onHome }: { onHome: () => void }) {
   const mounted = useRef(true);
   const boardLoad = useRef<{ generation: number; controller: AbortController | null }>({ generation: 0, controller: null });
   const busy = submitting || jobId !== null;
+  const [view, setView] = useState<'markets' | 'coverage' | 'board'>('markets');
+  const [inventoryRevision, setInventoryRevision] = useState(0);
 
   const load = useCallback(() => {
     boardLoad.current.controller?.abort();
@@ -90,7 +93,7 @@ export default function Odds({ onHome }: { onHome: () => void }) {
     void watchRefresh(jobId, setRefresh, controller.signal).then(result => {
       if (controller.signal.aborted) return;
       setJobId(null);
-      if (result.state === 'complete') load();
+      if (result.state === 'complete') { load(); setView('board'); }
     }).catch(error => {
       if (controller.signal.aborted) return;
       setJobId(null);
@@ -129,15 +132,15 @@ export default function Odds({ onHome }: { onHome: () => void }) {
         >
           &larr; <span className="hidden sm:inline">peytoncampbell.ca</span>
         </button>
-        <span className="text-sm font-semibold tracking-wide text-white/90">Odds board</span>
+        <span className="text-sm font-semibold tracking-wide text-white/90">Odds</span>
         <span className="ml-auto flex items-center gap-3">
-          {state.kind === 'ready' && (
+          {state.kind === 'ready' && view === 'board' && (
             <span className="hidden text-xs text-white/40 sm:inline">
               published {new Date(state.generatedAt).toLocaleString()}
             </span>
           )}
           <button
-            onClick={load}
+            onClick={() => { load(); setInventoryRevision(value => value + 1); }}
             className="rounded-md bg-white/10 px-3 py-1 text-xs font-medium text-white/80 transition-colors hover:bg-white/20"
           >
             Reload
@@ -152,7 +155,13 @@ export default function Odds({ onHome }: { onHome: () => void }) {
         </span>
       </header>
 
+      <nav aria-label="Odds views" className="flex flex-none gap-1 border-b border-white/10 px-4 py-2">
+        {([['markets', 'All markets'], ['coverage', 'Coverage'], ['board', 'Edge board']] as const).map(([key,label]) =>
+          <button key={key} onClick={() => setView(key)} aria-current={view === key ? 'page' : undefined}
+            className={`rounded-lg px-4 py-2 text-sm font-medium ${view === key ? 'bg-[#8ab4f8]/15 text-[#8ab4f8]' : 'text-white/50 hover:bg-white/5 hover:text-white'}`}>{label}</button>)}
+      </nav>
       <main className="min-h-0 flex-1">
+        {view !== 'board' ? <OddsInventory key={inventoryRevision} coverage={view === 'coverage'} /> : <>
         {state.kind === 'ready' ? (
           <iframe
             title="Odds board"
@@ -172,6 +181,7 @@ export default function Odds({ onHome }: { onHome: () => void }) {
             </p>
           </div>
         )}
+        </>}
       </main>
       <dialog ref={dialog} onCancel={() => setRefreshOpen(false)}
         onClose={() => { setRefreshOpen(false); setPin(''); }}
@@ -183,8 +193,9 @@ export default function Odds({ onHome }: { onHome: () => void }) {
             className="rounded px-2 py-1 text-white/60 hover:text-white">✕</button>
         </div>
         <p className="mb-4 text-sm leading-relaxed text-white/60">
-          Fetch current prices and update the board. Direct feeds are checked first.
+          Fetch current prices and update the edge board. Direct feeds are checked first.
           Refreshes are limited to once every 15 minutes.
+          All markets displays the separate captured inventory, with its original source times.
         </p>
         <form onSubmit={event => { void requestRefresh(event); }}>
           <label htmlFor="odds-refresh-pin" className="mb-2 block text-sm font-medium">Refresh PIN</label>

@@ -66,6 +66,7 @@ function harness() {
     config: { AUTH_CONFIGURED: true, SUPABASE_URL: 'https://synthetic.supabase.invalid',
       SUPABASE_ANON_KEY: 'SYNTHETIC-PUBLIC-KEY' },
     require: name => {
+      if (name === './OddsInventory') return { __esModule: true, default: () => null };
       assert.equal(name, 'react/jsx-runtime');
       return { jsx: element, jsxs: element, Fragment: 'fragment' };
     },
@@ -133,6 +134,7 @@ assert.equal(refreshed.boardRequests.length, 2, 'Completion loads the newly publ
 refreshed.boardRequests[1].resolve(board('SYNTHETIC-FRESH-BOARD'));
 await flush();
 const beforeLateResponse = find(refreshed.render(), 'iframe')?.props.srcDoc;
+assert.equal(beforeLateResponse, 'SYNTHETIC-FRESH-BOARD', 'A completed refresh opens the refreshed edge board from All markets');
 refreshed.boardRequests[0].resolve(board('SYNTHETIC-OLD-BOARD'));
 await flush();
 const afterLateResponse = find(refreshed.render(), 'iframe')?.props.srcDoc;

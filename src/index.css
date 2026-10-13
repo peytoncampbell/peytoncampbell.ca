@@ -3777,3 +3777,116 @@ html, body { background-color: var(--bg); }
 @media (max-width: 640px) {
   .brand-lockup { min-width: 2.75rem; }
 }
+
+
+/* Portfolio refinement: personal typography and a clear path into the work.
+   Scoped to the portfolio so the independently used desks retain their tokens. */
+.portfolio-home {
+  --font-display: 'DM Serif Display', Georgia, serif;
+  --portfolio-muted: #b6c3d5;
+}
+.portfolio-home .site-container { max-width: 1280px; width: calc(100% - 3rem); }
+.portfolio-home h1, .portfolio-home h2, .portfolio-home h3 { font-family: var(--font-display); font-weight: 400; }
+.portfolio-home .site-nav { padding-block: 0.7rem; }
+.portfolio-home .brand-lockup { padding: 0; background: none; border: 0; border-radius: 0; backdrop-filter: none; min-height: 44px; }
+.portfolio-home .brand-name { display: inline; font-family: var(--font-display); font-size: 1.8rem; font-weight: 400; text-transform: none; letter-spacing: -0.02em; }
+.portfolio-home .nav-links { border: 0; border-radius: 0; background: none; backdrop-filter: none; gap: 0.75rem; }
+.portfolio-home .nav-links > a { display: inline-flex; align-items: center; min-height: 44px; padding: 0.4rem 0.7rem; font-size: 0.91rem; font-weight: 500; }
+.portfolio-home .nav-resume { min-height: 44px; border: 0; border-left: 1px solid var(--line-2); border-radius: 0; background: none; color: var(--accent); padding-left: 1.6rem; font-weight: 500; }
+.portfolio-tools { position: relative; color: var(--ink-2); }
+.portfolio-tools summary { display: flex; align-items: center; justify-content: center; gap: 0.45rem; min-height: 44px; padding: 0.4rem 0.7rem; cursor: pointer; list-style: none; font-size: 0.91rem; font-weight: 500; border-radius: 8px; }
+.portfolio-tools summary::-webkit-details-marker { display: none; }
+.portfolio-tools[open] > summary, .portfolio-tools summary:hover { background: rgba(255,255,255,0.04); color: var(--text); }
+.portfolio-tools-panel { position: absolute; top: calc(100% + 0.6rem); right: 0; width: 230px; padding: 0.6rem; border: 1px solid var(--line-2); border-radius: 12px; background: #131b29; box-shadow: 0 12px 35px rgba(0,0,0,0.2); }
+.portfolio-tools-panel p { margin: 0.4rem 0.65rem 0.55rem; color: var(--ink-3); font-size: 0.78rem; }
+.portfolio-home .portfolio-tools-panel a { display: flex; align-items: center; justify-content: space-between; min-height: 44px; padding: 0.7rem; text-align: left; font-size: 0.9rem; font-weight: 500; border-radius: 6px; }
+.portfolio-tools-panel a:hover { background: rgba(255,255,255,0.05); }
+.portfolio-home .hero-shell { min-height: 0; padding: 8.4rem 0 0; overflow: visible; align-items: start; }
+.portfolio-home .hero-shell::before { display: none; }
+.portfolio-home .hero-grid { grid-template-columns: minmax(0, 1fr) 360px; gap: 5rem; align-items: start; }
+.portfolio-home .hero-copy { max-width: none; }
+.portfolio-home .hero-kicker { padding-left: 0; margin-bottom: 0.35rem; color: var(--accent); font-size: 0.8rem; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; }
+.portfolio-home .hero-kicker::before { display: none; }
+.portfolio-home .hero-copy h1 { max-width: none; font-size: clamp(4rem, 6vw, 6.35rem); line-height: 1.05; font-weight: 400; letter-spacing: -0.035em; }
+.hero-introduction { margin: 1rem 0 0; font-size: clamp(1.2rem, 1.6vw, 1.55rem); font-weight: 600; line-height: 1.4; color: var(--text); }
+.portfolio-home .hero-subtitle, .hero-personal { max-width: 67ch; margin: 0.85rem 0 0; color: var(--portfolio-muted); font-size: 1.13rem; line-height: 1.65; }
+.portfolio-home .hero-actions { margin-top: 1.5rem; gap: 1.8rem; }
+.portfolio-home .hero-actions .button-primary { min-height: 48px; padding: 0.8rem 1.55rem; }
+.hero-contact-link { display: inline-flex; align-items: center; gap: 0.7rem; min-height: 44px; color: var(--accent); font-size: 0.95rem; text-decoration: none; }
+.hero-contact-link:hover { color: var(--text); }
+.portfolio-home .hero-aside { display: block; margin: 0; padding: 0; }
+.portfolio-home .hero-portrait { display: block; width: 100%; height: 290px; min-height: 0; object-fit: cover; object-position: center 34%; border: 0; border-radius: 12px; background: none; box-shadow: none; }
+.hero-aside figcaption { margin-top: 0.7rem; color: var(--ink-2); font-size: 0.86rem; line-height: 1.5; }
+.hero-stack { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); margin-top: 2.2rem; padding: 1.15rem 0; border-top: 1px solid var(--line-2); color: var(--ink-2); font-size: 0.88rem; letter-spacing: 0.02em; text-align: center; }
+.hero-stack span + span { border-left: 1px solid var(--line-2); }
+.portfolio-home .site-section { padding-block: clamp(3rem, 5vw, 4.5rem); }
+.portfolio-home .section-title { font-size: clamp(2.3rem, 3.3vw, 3rem); letter-spacing: -0.02em; }
+.portfolio-home .section-intro { margin-bottom: 1.8rem; }
+.portfolio-home .portfolio-work { padding-top: 1.2rem; }
+.portfolio-work .section-intro { margin-bottom: 1.3rem; }
+.portfolio-work > .site-container { position: relative; }
+.all-projects-link { position: absolute; top: 0.3rem; right: 0; display: inline-flex; gap: 0.6rem; align-items: center; min-height: 44px; padding: 0.3rem 0; color: var(--accent); font-size: 0.88rem; }
+.all-projects-link:hover { color: var(--text); }
+.work-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); row-gap: 2rem; }
+.work-item { display: flex; align-items: start; gap: 1.25rem; min-width: 0; padding: 0.3rem 1.8rem 0.3rem 0; }
+.work-item:nth-child(3n+2), .work-item:nth-child(3n+3) { padding-left: 1.8rem; border-left: 1px solid var(--line-2); }
+.work-item-copy { min-width: 0; }
+.work-icon { flex-shrink: 0; margin-top: 0.25rem; color: var(--accent); }
+.work-item h3 { margin: 0 0 0.65rem; color: var(--text); font-size: 1.6rem; line-height: 1.18; }
+.work-item p { margin: 0; color: var(--ink-2); font-size: 0.94rem; line-height: 1.65; }
+.work-links { display: flex; align-items: center; gap: 0.9rem; margin-top: 0.75rem; }
+.work-links button, .work-links a { display: inline-flex; align-items: center; justify-content: center; gap: 0.65rem; min-height: 44px; color: var(--accent); font-size: 0.87rem; }
+.work-links a { min-width: 44px; }
+.work-links button:hover, .work-links a:hover { color: var(--text); }
+.portfolio-home .experience-card { grid-template-columns: 200px minmax(0,1fr); gap: 0.7rem 2rem; padding: 1.8rem 0; border: 0; border-bottom: 1px solid var(--line-2); border-radius: 0; background: none; box-shadow: none; }
+.portfolio-home .experience-meta { grid-row: span 2; flex-direction: column; align-items: start; justify-content: start; gap: 0.5rem; }
+.portfolio-home .experience-card > div:not(.experience-meta), .portfolio-home .experience-card ul { grid-column: 2; }
+.portfolio-home .experience-card h3 { font-size: 1.9rem; }
+.portfolio-home .experience-card::before { display: none; }
+.portfolio-home .story-copy h2 { font-size: clamp(2.7rem, 4.4vw, 4rem); }
+.portfolio-home .story-points h3 { font-size: 1.6rem; }
+.portfolio-home .contact-aside { justify-content: start; }
+.contact-note { margin: 0 0 0.5rem; color: var(--ink-2); font-size: 0.98rem; line-height: 1.6; }
+.portfolio-home .contact-fallback a { overflow-wrap: anywhere; }
+.portfolio-home :where(a, button, summary, input, textarea):focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+.detail-page { --font-display: 'DM Serif Display', Georgia, serif; }
+.detail-page h1, .detail-page h2, .detail-page h3 { font-family: var(--font-display); font-weight: 400; }
+@media (min-width: 1024px) {
+  .portfolio-home .mobile-menu-button { display: none; }
+}
+@media (max-width: 1100px) {
+  .portfolio-home .hero-grid { grid-template-columns: minmax(0,1fr) 280px; gap: 2.8rem; }
+  .portfolio-home .hero-portrait { height: 245px; }
+  .portfolio-home .hero-copy h1 { font-size: clamp(4rem, 7vw, 5.8rem); }
+  .work-item { gap: 0.9rem; padding-right: 1rem; }
+  .work-item:nth-child(3n+2), .work-item:nth-child(3n+3) { padding-left: 1rem; }
+}
+@media (max-width: 767px) {
+  .portfolio-home .site-container { width: calc(100% - 2.5rem); }
+  .portfolio-home .brand-name { font-size: 1.5rem; }
+  .portfolio-home .hero-shell { padding-top: 7rem; }
+  .portfolio-home .hero-grid { grid-template-columns: minmax(0,1fr); gap: 1.9rem; }
+  .portfolio-home .hero-copy h1 { font-size: clamp(3.35rem, 14vw, 5.2rem); }
+  .hero-introduction { font-size: 1.25rem; margin-top: 0.85rem; }
+  .portfolio-home .hero-subtitle, .hero-personal { font-size: 1rem; line-height: 1.65; }
+  .portfolio-home .hero-actions { gap: 1.3rem; margin-top: 1.2rem; }
+  .portfolio-home .hero-actions .button-primary { width: auto; padding-inline: 1rem; }
+  .portfolio-home .hero-aside { display: grid; grid-template-columns: 68px minmax(0,1fr); align-items: center; gap: 1rem; }
+  .portfolio-home .hero-portrait { width: 68px; height: 68px; object-position: center 30%; border-radius: 8px; }
+  .hero-aside figcaption { margin: 0; max-width: 21ch; font-size: 0.85rem; }
+  .hero-stack { margin-top: 1.7rem; font-size: 0.78rem; padding: 1rem 0; }
+  .hero-stack span { padding-inline: 0.35rem; }
+  .portfolio-home .portfolio-work { padding-top: 1.5rem; }
+  .portfolio-work .section-intro { margin-bottom: 1.25rem; }
+  .all-projects-link { position: static; margin: -0.8rem 0 1rem; }
+  .work-grid { grid-template-columns: minmax(0,1fr); row-gap: 0; }
+  .work-item, .work-item:nth-child(3n+2), .work-item:nth-child(3n+3) { padding: 1.5rem 0; border-left: 0; border-bottom: 1px solid var(--line-2); gap: 1.1rem; }
+  .work-item:first-child { padding-top: 0.5rem; }
+  .work-item h3 { font-size: 1.65rem; }
+  .portfolio-home .mobile-drawer { max-height: calc(100svh - 6rem); overflow-y: auto; }
+  .mobile-drawer .portfolio-tools-panel { position: static; width: 100%; margin-top: 0.35rem; box-shadow: none; }
+  .mobile-drawer .portfolio-tools summary { min-height: 48px; font-size: 1rem; }
+  .portfolio-home .experience-card { grid-template-columns: minmax(0,1fr); gap: 1rem; }
+  .portfolio-home .experience-meta { grid-row: auto; flex-direction: row; flex-wrap: wrap; }
+  .portfolio-home .experience-card > div:not(.experience-meta), .portfolio-home .experience-card ul { grid-column: 1; }
+}

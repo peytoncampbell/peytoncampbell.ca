@@ -1,10 +1,11 @@
 import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react';
-import { AnimatePresence, motion, useReducedMotion, useScroll, useTransform } from 'framer-motion';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import {
   ArrowRight,
   ArrowUp,
   CalendarClock,
-  ChevronRight,
+  ChevronDown,
+  CircuitBoard,
   Download,
   ExternalLink,
   Github,
@@ -13,11 +14,13 @@ import {
   Menu,
   ShieldCheck,
   Sparkles,
-  Star,
+  SlidersHorizontal,
+  Smartphone,
+  Terminal,
   X,
 } from 'lucide-react';
 import clsx from 'clsx';
-import { BUILDING_NOW, CONTACT_TRUST, EXPERIENCE, HERO, HIGHLIGHTS, NAV_LINKS, PROJECTS, TECH_STACK, TOOL_LINKS } from './data';
+import { CONTACT_TRUST, EXPERIENCE, HERO, HIGHLIGHTS, NAV_LINKS, PROJECTS, TECH_STACK, TOOL_LINKS } from './data';
 import ScrollProgress from './ScrollProgress';
 import ArchitectureDiagram from './ArchitectureDiagram';
 import PortfolioDigest from './PortfolioDigest';
@@ -27,54 +30,10 @@ import ReaderDesk from './ReaderDesk';
 import Odds from './Odds';
 import NotFound from './NotFound';
 import ProjectDetail from './ProjectDetail';
-import ProjectVisual from './ProjectVisual';
 import { trackEvent, trackPageView } from './analytics';
 
 const Certifications = lazy(() => import('./Certifications'));
 const GitHubActivity = lazy(() => import('./GitHubActivity'));
-
-const fadeInUp = {
-  hidden: { opacity: 0, y: 24 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.55, ease: [0.16, 1, 0.3, 1] } },
-};
-
-const staggerContainer = {
-  hidden: { opacity: 1 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.09, delayChildren: 0.08 },
-  },
-};
-
-function useNearViewport<T extends HTMLElement>(rootMargin = '650px') {
-  const ref = useRef<T | null>(null);
-  const [isNear, setIsNear] = useState(false);
-
-  useEffect(() => {
-    const node = ref.current;
-    if (!node || isNear) return;
-
-    if (!('IntersectionObserver' in window)) {
-      setIsNear(true);
-      return;
-    }
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsNear(true);
-          observer.disconnect();
-        }
-      },
-      { rootMargin }
-    );
-
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, [isNear, rootMargin]);
-
-  return [ref, isNear] as const;
-}
 
 function SectionShell({
   id,
@@ -95,7 +54,7 @@ function SectionShell({
     <section id={id} className={clsx('site-section', className)}>
       <div className="site-container">
         <div className="section-intro">
-          <p className="section-eyebrow">{eyebrow}</p>
+          {eyebrow && <p className="section-eyebrow">{eyebrow}</p>}
           <h2 className="section-title">{title}</h2>
           {copy && <p className="section-copy">{copy}</p>}
         </div>
@@ -123,12 +82,51 @@ const categoryTone: Record<string, string> = {
   Tools: 'slate',
 };
 
-const projectAccent: Record<string, string> = {
-  Production: 'cyan',
-  Systems: 'amber',
-  Tools: 'blue',
-  'ML/AI': 'violet',
+const projectPresentation = {
+  'scoreboard-configurator': { title: 'Scoreboard Configurator', icon: SlidersHorizontal, summary: 'React and Next.js product previews, admin layout editing, and JSON publishing workflows.' },
+  scorecontroller: { title: 'ScoreController', icon: Smartphone, summary: '.NET MAUI scoreboard control across iOS, Android, Windows, and BLE-connected hardware.' },
+  'provisioning-console': { title: 'Provisioning Operations', icon: Terminal, summary: 'Python tooling for IoT commissioning, guided validation, and persistent job history.' },
+  'production-test-jig': { title: 'Production Test Jig', icon: CircuitBoard, summary: 'Serial validation, firmware programming, and cloud logging for embedded board manufacturing.' },
+  'catan-settlement-optimizer': { title: 'Catan Settlement Optimizer', icon: SlidersHorizontal, summary: 'An interactive decision tool for settlement placement, probability, and resource scarcity.' },
 };
+
+const orderedProjects = ['scoreboard-configurator', 'scorecontroller', 'provisioning-console', 'production-test-jig', 'catan-settlement-optimizer']
+  .map((slug) => PROJECTS.find((project) => project.slug === slug)!)
+  .filter(Boolean);
+
+function PortfolioTools({ onNavigate, onSelect }: { onNavigate: (path: string) => void; onSelect?: () => void }) {
+  return (
+    <details className="portfolio-tools" onKeyDown={(event) => {
+      if (event.key === 'Escape') {
+        event.currentTarget.open = false;
+        event.currentTarget.querySelector('summary')?.focus();
+      }
+    }}>
+      <summary>Tools <ChevronDown size={14} aria-hidden="true" /></summary>
+      <div className="portfolio-tools-panel">
+        <p>Things I use and build</p>
+        {TOOL_LINKS.map((tool) => (
+          <a key={tool.href} href={tool.href} onClick={(event) => {
+            trackEvent({ name: 'Navigation click', props: { target: tool.label } });
+            const menu = event.currentTarget.closest('details');
+            if (menu) menu.open = false;
+            onSelect?.();
+            if (!tool.spa) return;
+            event.preventDefault();
+            onNavigate(tool.href);
+          }}>
+            {tool.label}<ArrowRight size={14} aria-hidden="true" />
+          </a>
+        ))}
+        <a href="/login" onClick={(event) => {
+          event.preventDefault();
+          onSelect?.();
+          onNavigate('/login');
+        }}>Owner sign in<ArrowRight size={14} aria-hidden="true" /></a>
+      </div>
+    </details>
+  );
+}
 
 /** GitHub Pages answers /login as a directory: /login and /login/ must be the same route. */
 function normalizePath(path: string): string {
@@ -144,26 +142,20 @@ export default function App() {
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [projectFilter, setProjectFilter] = useState('All');
+  const [showAllProjects, setShowAllProjects] = useState(false);
   const [contactForm, setContactForm] = useState({ name: '', email: '', message: '' });
   const [contactError, setContactError] = useState<string | null>(null);
   const [contactSuccess, setContactSuccess] = useState(false);
   const [contactLoading, setContactLoading] = useState(false);
   const [athleteImageIndex, setAthleteImageIndex] = useState(0);
   const cursorGlowRef = useRef<HTMLDivElement>(null);
-  const storyRef = useRef<HTMLDivElement>(null);
-  const { scrollYProgress: storyProgress } = useScroll({
-    target: storyRef,
-    offset: ['start end', 'end start'],
-  });
-  const storyY = useTransform(storyProgress, [0, 1], prefersReducedMotion ? [0, 0] : [44, -44]);
 
   const baseUrl = import.meta.env.BASE_URL;
   const portraitImage = `${baseUrl}portrait-1200.webp`;
   const athleteImages = [`${baseUrl}basketball-1200.webp`, `${baseUrl}golf-1200.webp`];
-  const featuredProject = PROJECTS.find((project) => project.featured) ?? PROJECTS[0];
   const projectFilters = ['All', ...Array.from(new Set(PROJECTS.map((project) => project.category)))];
-  const filteredProjects = projectFilter === 'All' ? PROJECTS : PROJECTS.filter((project) => project.category === projectFilter);
-  const supportingProjects = filteredProjects.filter((project) => project.id !== featuredProject.id);
+  const filteredProjects = projectFilter === 'All' ? orderedProjects : orderedProjects.filter((project) => project.category === projectFilter);
+  const visibleProjects = showAllProjects ? filteredProjects : filteredProjects.slice(0, 3);
   const groupedTech = useMemo(
     () =>
       TECH_STACK.reduce((groups, item) => {
@@ -314,11 +306,10 @@ export default function App() {
       <div className="noise-overlay" />
       <div ref={cursorGlowRef} className="cursor-glow hidden lg:block" aria-hidden="true" />
 
-      <div className="min-h-screen overflow-x-hidden text-slate-200 selection:bg-blue-400/25">
-        <nav className={clsx('site-nav', scrolled && 'site-nav--scrolled')}>
+      <div className="portfolio-home min-h-screen text-slate-200 selection:bg-blue-400/25">
+        <nav aria-label="Primary navigation" className={clsx('site-nav', scrolled && 'site-nav--scrolled')}>
           <div className="site-container flex items-center justify-between">
-            <a href="#about" className="brand-lockup" aria-label="PC Peyton Campbell homepage" onClick={() => trackEvent({ name: 'Navigation click', props: { target: 'brand' } })}>
-              <span className="brand-mark">PC</span>
+            <a href="#about" className="brand-lockup" aria-label="Peyton Campbell homepage" onClick={() => trackEvent({ name: 'Navigation click', props: { target: 'brand' } })}>
               <span className="brand-name">Peyton Campbell</span>
             </a>
 
@@ -329,33 +320,7 @@ export default function App() {
                     {link.label}
                   </a>
                 ))}
-                {TOOL_LINKS.map((tool) => (
-                  <a
-                    key={tool.href}
-                    href={tool.href}
-                    onClick={(event) => {
-                      trackEvent({ name: 'Navigation click', props: { target: tool.label } });
-                      // Routing apps are intercepted; the budget dashboard is a separate
-                      // build under /budget/, so it needs the real navigation.
-                      if (!tool.spa) return;
-                      event.preventDefault();
-                      navigate(tool.href);
-                    }}
-                  >
-                    {tool.label}
-                  </a>
-                ))}
-                <a
-                  href="/login"
-                  className="nav-login"
-                  onClick={(event) => {
-                    event.preventDefault();
-                    trackEvent({ name: 'Navigation click', props: { target: 'log in' } });
-                    navigate('/login');
-                  }}
-                >
-                  Log in
-                </a>
+                <PortfolioTools onNavigate={navigate} />
               </div>
               <a href={`${baseUrl}PeytonCampbellResume.pdf`} target="_blank" rel="noopener noreferrer" className="nav-resume" onClick={() => trackEvent({ name: 'Resume click', props: { location: 'nav' } })}>
                 <Download size={16} />
@@ -391,33 +356,10 @@ export default function App() {
                   {link.label}
                 </a>
               ))}
-              {TOOL_LINKS.map((tool) => (
-                <a
-                  key={tool.href}
-                  href={tool.href}
-                  onClick={(event) => {
-                    setIsMobileMenuOpen(false);
-                    trackEvent({ name: 'Navigation click', props: { target: tool.label } });
-                    if (!tool.spa) return;
-                    event.preventDefault();
-                    navigate(tool.href);
-                  }}
-                >
-                  {tool.label}
-                </a>
-              ))}
+              <a href="#contact" onClick={() => setIsMobileMenuOpen(false)}>Contact</a>
+              <PortfolioTools onNavigate={navigate} onSelect={() => setIsMobileMenuOpen(false)} />
               <a href={`${baseUrl}PeytonCampbellResume.pdf`} target="_blank" rel="noopener noreferrer" onClick={() => trackEvent({ name: 'Resume click', props: { location: 'mobile menu' } })}>
                 Resume
-              </a>
-              <a
-                href="/login"
-                onClick={(event) => {
-                  event.preventDefault();
-                  setIsMobileMenuOpen(false);
-                  navigate('/login');
-                }}
-              >
-                Log in
               </a>
             </motion.div>
           )}
@@ -425,185 +367,72 @@ export default function App() {
 
         <main id="main-content">
         <header id="about" className="hero-shell">
-          <div className="hero-aurora" aria-hidden="true" />
-          <div className="site-container hero-grid">
-            <div className="hero-copy">
-              <p className="hero-kicker">Full-stack developer / London, ON</p>
-              <h1>{HERO.headline}</h1>
-              <p className="hero-subtitle">{HERO.subheadline}</p>
-              <div className="hero-actions">
-                <a href="#contact" className="button-primary" onClick={() => trackEvent({ name: 'Contact CTA click', props: { location: 'hero' } })}>
-                  Start a conversation
-                  <Mail size={18} />
-                </a>
-                <a href="#projects" className="button-secondary" onClick={() => trackEvent({ name: 'Projects CTA click', props: { location: 'hero' } })}>
-                  See selected work
-                  <ArrowRight size={18} />
-                </a>
+          <div className="site-container">
+            <div className="hero-grid">
+              <div className="hero-copy">
+                <p className="hero-kicker">Software engineer</p>
+                <h1>{HERO.headline}</h1>
+                <p className="hero-introduction">{HERO.introduction}</p>
+                <p className="hero-subtitle">{HERO.subheadline}</p>
+                <p className="hero-personal">{HERO.personal}</p>
+                <div className="hero-actions">
+                  <a href="#projects" className="button-primary" onClick={() => trackEvent({ name: 'Projects CTA click', props: { location: 'hero' } })}>
+                    Explore my work<ArrowRight size={18} aria-hidden="true" />
+                  </a>
+                  <a href="#contact" className="hero-contact-link" onClick={() => trackEvent({ name: 'Contact CTA click', props: { location: 'hero' } })}>
+                    Get in touch<ArrowRight size={17} aria-hidden="true" />
+                  </a>
+                </div>
               </div>
+              <figure className="hero-aside">
+                <img className="hero-portrait" src={portraitImage} alt="Peyton Campbell" width="1200" height="960" loading="eager" decoding="async" />
+                <figcaption>Currently / OES + Western basketball</figcaption>
+              </figure>
             </div>
-
-            <div className="hero-aside">
-              <div
-                className="hero-portrait"
-                style={{ backgroundImage: `url(${portraitImage})` }}
-                role="img"
-                aria-label="Peyton Campbell"
-              />
-              <motion.div
-                initial={{ opacity: 0, y: 28, scale: 0.96 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{ duration: 0.7, delay: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                className="hero-panel"
-              >
-              <div className="hero-panel-header">
-                <span>Now building</span>
-                <span className="status-pill">Available</span>
-              </div>
-              <div className="hero-panel-main">
-                <p>Primary stack</p>
-                <strong>React / TypeScript / Node / .NET</strong>
-              </div>
-              <div className="hero-panel-list">
-                {BUILDING_NOW.map((item) => (
-                  <div key={item.name}>
-                    <item.icon size={18} />
-                    <span>
-                      <strong>{item.name}</strong>
-                      {item.detail}
-                    </span>
-                  </div>
-                ))}
-              </div>
-              </motion.div>
+            <div className="hero-stack" aria-label="Core technologies">
+              <span>React + TypeScript</span><span>Python + AWS</span><span>C# + .NET</span>
             </div>
           </div>
         </header>
 
-        <SectionShell
-          eyebrow="Selected work"
-          title={
-            <>
-              Products with operational weight.
-            </>
-          }
-          copy="Clearer project stories. Easier technical scanning."
-          id="projects"
-          className="projects-compact"
-        >
-          <div className="featured-work">
-            <article className="featured-case">
-              <div className="featured-copy">
-                <span className="project-kicker">
-                  <Star size={14} />
-                  Featured build
-                </span>
-                <h3>{featuredProject.title}</h3>
-                <p>{featuredProject.description}</p>
-                <div className="tag-row">
-                  {featuredProject.tech.map((tech) => (
-                    <span key={tech}>{tech}</span>
-                  ))}
-                </div>
-                {featuredProject.cta?.url && (
-                  <a href={featuredProject.cta.url} target="_blank" rel="noopener noreferrer" className="button-primary compact">
-                    {featuredProject.cta.label}
-                    <ExternalLink size={16} />
-                  </a>
-                )}
-                <button type="button" className="button-secondary compact detail-button" onClick={() => navigateToProject(featuredProject.slug)}>
-                  Full case study
-                </button>
-              </div>
-              <ProjectVisual type={featuredProject.visual} title={featuredProject.title} />
-              {featuredProject.caseStudy && (
-                <div className="case-study-strip">
-                  <div>
-                    <span>Problem</span>
-                    <p>{featuredProject.caseStudy.problem}</p>
-                  </div>
-                  <div>
-                    <span>Approach</span>
-                    <p>{featuredProject.caseStudy.approach}</p>
-                  </div>
-                  <div>
-                    <span>Outcome</span>
-                    <p>{featuredProject.caseStudy.outcome}</p>
-                  </div>
-                </div>
-              )}
-              <div className="featured-metrics">
-                {featuredProject.metrics?.map((metric) => (
-                  <div key={metric}>
-                    <TechIcon />
-                    <span>{metric}</span>
-                  </div>
-                ))}
-              </div>
-            </article>
-
+        <SectionShell eyebrow="" title="Selected work" id="projects" className="projects-compact portfolio-work">
+          <button type="button" className="all-projects-link" onClick={() => {
+            setShowAllProjects((all) => !all);
+            setProjectFilter('All');
+          }} aria-expanded={showAllProjects}>
+            {showAllProjects ? 'Show selected work' : `See all ${PROJECTS.length} projects`}<ArrowRight size={16} aria-hidden="true" />
+          </button>
+          {showAllProjects && (
             <div className="filter-row" aria-label="Project filters">
               {projectFilters.map((filter) => (
-                <button
-                  key={filter}
-                  type="button"
-                  onClick={() => setProjectFilter(filter)}
-                  className={clsx(projectFilter === filter && 'active')}
-                  aria-pressed={projectFilter === filter}
-                >
+                <button key={filter} type="button" onClick={() => setProjectFilter(filter)} className={clsx(projectFilter === filter && 'active')} aria-pressed={projectFilter === filter}>
                   {filter}
                 </button>
               ))}
             </div>
-
-            <motion.div layout className="project-grid">
-              <AnimatePresence mode="popLayout">
-                {supportingProjects.map((project) => (
-                  <motion.article
-                    layout
-                    key={project.id}
-                    initial={{ opacity: 0, y: 18 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 18 }}
-                    className={clsx('project-card', `tone-${projectAccent[project.category] ?? 'blue'}`)}
-                  >
-                    <div className="project-card-top">
-                      <span>{project.category}</span>
-                      {project.cta?.url && (
-                        <a href={project.cta.url} target="_blank" rel="noopener noreferrer" aria-label={`Open ${project.title}`} className="project-card-link" onClick={() => trackEvent({ name: 'Project external click', props: { project: project.slug } })}>
-                          <ExternalLink size={17} />
-                        </a>
-                      )}
+          )}
+          <div className="work-grid">
+            {visibleProjects.map((project) => {
+              const presentation = projectPresentation[project.slug as keyof typeof projectPresentation];
+              const ProjectIcon = presentation.icon;
+              return (
+                <article key={project.id} className="work-item">
+                  <ProjectIcon className="work-icon" size={27} strokeWidth={1.4} aria-hidden="true" />
+                  <div className="work-item-copy">
+                    <h3>{presentation.title}</h3>
+                    <p>{presentation.summary}</p>
+                    <div className="work-links">
+                      <button type="button" onClick={() => navigateToProject(project.slug)}>
+                        Read case study<ArrowRight size={15} aria-hidden="true" />
+                      </button>
+                      {project.cta && <a href={project.cta.url} target="_blank" rel="noopener noreferrer" aria-label={`Open ${project.title}`} onClick={() => trackEvent({ name: 'Project external click', props: { project: project.slug } })}>
+                        <ExternalLink size={16} aria-hidden="true" />
+                      </a>}
                     </div>
-                    {project.images?.[0] ? (
-                      <figure className="project-card-shot">
-                        <img src={`/${project.images[0].src}`} alt={project.images[0].alt} loading="lazy" />
-                      </figure>
-                    ) : (
-                      <ProjectVisual type={project.visual} title={project.title} />
-                    )}
-                    <h3>{project.title}</h3>
-                    <p className="project-role">{project.role}</p>
-                    <p className="project-description">{project.description}</p>
-                    {project.caseStudy && (
-                      <div className="project-proof">
-                        <span>{project.caseStudy.details[0]}</span>
-                        <p>{project.caseStudy.outcome}</p>
-                      </div>
-                    )}
-                    <div className="project-tech">
-                      {project.tech.slice(0, 5).map((tech) => (
-                        <span key={tech}>{tech}</span>
-                      ))}
-                    </div>
-                    <button type="button" className="project-detail-link" onClick={() => navigateToProject(project.slug)}>
-                      View case study
-                      <ArrowRight size={15} />
-                    </button>
-                  </motion.article>
-                ))}
-              </AnimatePresence>
-            </motion.div>
+                  </div>
+                </article>
+              );
+            })}
           </div>
         </SectionShell>
 
@@ -613,10 +442,10 @@ export default function App() {
           eyebrow="Capabilities"
           title={
             <>
-              A stack built for shipping and operating.
+              What I work with.
             </>
           }
-          copy="The technical surface is grouped around the real systems from the resume: product UI, backend data flows, infrastructure, and hardware-adjacent delivery."
+          copy="The tools behind the work: product interfaces, cloud data flows, and hardware-connected systems."
           className="surface-band capabilities-compact"
         >
           <div className="capability-layout">
@@ -659,7 +488,7 @@ export default function App() {
               Published every weekday before the open.
             </>
           }
-          copy="A local automation refreshes analyst targets, runs the hold/sell call on every holding, and publishes the digest to Supabase at 07:45 ET. This section reads that published row directly - no rebuild, no cache - so what is on screen is this morning's call."
+          copy="A personal project connecting data pipelines, scheduled automation, and a live dashboard. The latest published update is shown below."
           id="desk"
           className="surface-band"
         >
@@ -682,10 +511,10 @@ export default function App() {
           eyebrow="Experience"
           title={
             <>
-              Product delivery in real environments.
+              Where I spend my time.
             </>
           }
-          copy="The work history is framed around release quality, cross-platform systems, and operational clarity."
+          copy="Software engineering at OES. Basketball analytics at Western."
           id="experience"
         >
           <div className="timeline">
@@ -724,7 +553,7 @@ export default function App() {
           </Suspense>
         </div>
 
-        <section id="duality" ref={storyRef} className="story-section">
+        <section id="duality" className="story-section">
           <div className="story-image-wrap">
             <AnimatePresence mode="wait">
               <motion.div
@@ -738,24 +567,24 @@ export default function App() {
               />
             </AnimatePresence>
           </div>
-          <motion.div className="story-copy" style={{ y: storyY }}>
+          <div className="story-copy">
             <p className="section-eyebrow">My story</p>
             <h2>
-              The same habits that travel from the court to the codebase.
+              From the court to the codebase.
             </h2>
             <div className="story-points">
               <article>
                 <ShieldCheck size={22} />
                 <h3>Leadership under pressure</h3>
-                <p>Varsity basketball taught me how to read the floor, communicate clearly, and keep execution steady when the pace changes.</p>
+                <p>I played varsity basketball at Western while studying computer science. I now lead analytics for the men's team, turning performance data into practical guidance for coaches and athletes.</p>
               </article>
               <article>
                 <Sparkles size={22} />
                 <h3>Systems with intent</h3>
-                <p>I bring that same rhythm into engineering: diagnose first, build cleanly, automate the repeatable parts, and keep the team moving.</p>
+                <p>Away from OES, I built Coach AI: a full-stack platform for team schedules, recruiting, scouting, and film review. Basketball keeps giving me useful problems to solve with software.</p>
               </article>
             </div>
-          </motion.div>
+          </div>
         </section>
 
         <SectionShell
@@ -763,10 +592,10 @@ export default function App() {
           eyebrow="Contact"
           title={
             <>
-              Let&apos;s talk game plan.
+              Let&apos;s build something useful.
             </>
           }
-          copy="Based in London, ON. Send a note about product work, full-stack roles, or systems worth building."
+          copy="Open to software engineering roles in Toronto or remotely from Canada. Happy to talk product work, interesting systems, or the Raptors."
           className="contact-section"
         >
           <div className="contact-layout">
@@ -784,16 +613,16 @@ export default function App() {
                   <span>Message</span>
                   <textarea name="message" value={contactForm.message} onChange={handleContactChange} rows={5} />
                 </label>
-                {contactError && <p className="form-message error">Error: {contactError}</p>}
-                {contactSuccess && <p className="form-message success">Sent. I will reply within 24 hours.</p>}
+                {contactError && <p role="alert" className="form-message error">{contactError}</p>}
+                {contactSuccess && <p role="status" className="form-message success">Message sent. Thanks for reaching out.</p>}
                 <button type="submit" className="button-primary" disabled={contactLoading}>
                   <Mail size={18} />
                   {contactLoading ? 'Sending...' : 'Send message'}
                 </button>
                 <p className="contact-fallback">
-                  Prefer email? Reach me through{' '}
-                  <a href="https://www.linkedin.com/in/peyton-campbell/" target="_blank" rel="noopener noreferrer">
-                    LinkedIn
+                  Prefer email?{' '}
+                  <a href="mailto:campbellpeyton042@gmail.com">
+                    campbellpeyton042@gmail.com
                   </a>
                   .
                 </p>
@@ -801,6 +630,7 @@ export default function App() {
             </div>
 
             <aside className="contact-aside">
+              <p className="contact-note">{CONTACT_TRUST[0]}</p>
               <a href="https://github.com/peytoncampbell" target="_blank" rel="noopener noreferrer">
                 <Github size={20} />
                 GitHub

@@ -15,12 +15,9 @@ import {
 } from 'lucide-react';
 
 export const NAV_LINKS = [
-  { label: 'About', href: '#about' },
+  { label: 'Work', href: '#projects' },
   { label: 'Experience', href: '#experience' },
-  { label: 'Projects', href: '#projects' },
-  { label: 'Desk', href: '#desk' },
-  { label: 'My Story', href: '#duality' },
-  { label: 'Contact', href: '#contact' },
+  { label: 'About', href: '#duality' },
 ];
 
 /**
@@ -40,9 +37,11 @@ export const TOOL_LINKS = [
 ];
 
 export const HERO = {
-  headline: 'Full-stack developer for product tools.',
+  headline: 'Peyton Campbell.',
+  introduction: 'I build software that earns its place in the workflow.',
   subheadline:
-    'I own end-to-end delivery across web, mobile, desktop, and internal operations tools for sports technology and IoT products, with hands-on depth in React, Next.js, TypeScript, Python, C#, .NET MAUI, and BLE systems.',
+    'Full-stack developer at OES, building product interfaces, cloud integrations, and automation for sports technology and IoT products.',
+  personal: "Western CS graduate. Former varsity basketball player. Now leading analytics for Western men's basketball.",
   stats: [
     { label: 'Web, mobile, desktop, and internal tooling', icon: Code2 },
     { label: 'React, Next.js, Python, C#, .NET MAUI', icon: Brain },
@@ -145,6 +144,16 @@ export const EXPERIENCE = [
       'Develop React and Next.js product configurator and admin tooling for customizable scoreboard layouts, reusable components, responsive previews, and JSON-based layout publishing workflows.',
       'Build Python tooling for IoT provisioning, embedded production testing, serial protocol validation, firmware programming, and cloud result logging.',
       'Improve product reliability through CI/CD pipelines, automated tests, boot diagnostics, regression testing, live logging, and debugging across frontend, backend, mobile, hardware, and cloud boundaries.',
+    ],
+  },
+  {
+    company: "Western Men's Basketball",
+    location: 'London, ON',
+    title: 'Head of Data Analytics',
+    period: 'Aug 2023 - Present',
+    bullets: [
+      'Validate performance data and build analytics workflows to support coaches and athletes.',
+      'Translate analysis into practical guidance for non-engineering stakeholders.',
     ],
   },
 ];

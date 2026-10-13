@@ -84,7 +84,7 @@ export default function Odds({ onHome }: { onHome: () => void }) {
   const refreshStarted = useRef(0);
   const boardLoad = useRef<{ generation: number; controller: AbortController | null }>({ generation: 0, controller: null });
   const busy = submitting || jobId !== null;
-  const [view, setView] = useState<'markets' | 'coverage' | 'board'>('markets');
+  const [view, setView] = useState<'markets' | 'coverage' | 'board'>('board');
   const [inventoryRevision, setInventoryRevision] = useState(0);
 
   const load = useCallback((budgetMs = 10000, expectedJobId?: string) => {
@@ -187,7 +187,7 @@ export default function Odds({ onHome }: { onHome: () => void }) {
       </header>
 
       <nav aria-label="Odds views" className="flex flex-none gap-1 border-b border-white/10 px-4 py-2">
-        {([['markets', 'All markets'], ['coverage', 'Coverage'], ['board', 'EV & Arb']] as const).map(([key,label]) =>
+        {([['board', 'EV & Arb'], ['markets', 'All markets'], ['coverage', 'Coverage']] as const).map(([key,label]) =>
           <button key={key} onClick={() => setView(key)} aria-current={view === key ? 'page' : undefined}
             className={`rounded-lg px-4 py-2 text-sm font-medium ${view === key ? 'bg-[#8ab4f8]/15 text-[#8ab4f8]' : 'text-white/50 hover:bg-white/5 hover:text-white'}`}>{label}</button>)}
       </nav>

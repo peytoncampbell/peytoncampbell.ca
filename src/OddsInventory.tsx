@@ -155,6 +155,7 @@ export default function OddsInventory({ coverage = false }: { coverage?: boolean
             <button onClick={() => setEvent(null)} className="mb-4 text-sm text-[#8ab4f8]">← Back to events</button>
             <h2 className="text-xl font-semibold">{event.name}</h2>
             <p className="mt-2 text-xs text-white/45">{selectedBook?.name} · {event.competition} · captured {date(event.captured_at)}</p>
+            <p className="mt-2 text-xs text-white/45">{event.sport} · starts {date(event.start)} · {event.phase} · source event {event.source_event_id}</p>
             <p className="mt-2 text-sm text-white/60">{number(event.markets)} offers · {number(event.positions)} supplied selections · {number(event.priced_positions)} priced</p>
             <label className="mb-5 mt-5 grid gap-2 text-xs text-white/50">Search markets or players<input value={marketSearch} className={field} placeholder="Passing yards, player name, total…"
               onChange={e => { setMarketSearch(e.target.value); setMarketPage(0); }} /></label>

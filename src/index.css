@@ -3851,6 +3851,15 @@ html, body { background-color: var(--bg); }
 .portfolio-home :where(a, button, summary, input, textarea):focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
 .detail-page { --font-display: 'DM Serif Display', Georgia, serif; }
 .detail-page h1, .detail-page h2, .detail-page h3 { font-family: var(--font-display); font-weight: 400; }
+.catan-showcase { display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: clamp(2rem, 5vw, 4rem); align-items: center; }
+.catan-showcase-copy h3 { margin: 0 0 1rem; color: var(--text); font-size: clamp(1.8rem, 3vw, 2.4rem); line-height: 1.15; }
+.catan-showcase-copy > p { margin: 0; color: var(--ink-2); font-size: 1rem; line-height: 1.7; max-width: 45ch; }
+.catan-showcase-copy .catan-showcase-stack { margin-top: 1.2rem; color: var(--ink-3); font-size: 0.88rem; }
+.catan-showcase-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem 1.5rem; margin-top: 1.6rem; }
+.catan-showcase-actions .button-primary { min-height: 44px; }
+.catan-showcase-preview { display: block; overflow: hidden; border: 1px solid var(--line-2); border-radius: 12px; transition: border-color 150ms ease; }
+.catan-showcase-preview:hover { border-color: var(--accent); }
+.catan-showcase-preview img { display: block; width: 100%; height: auto; }
 @media (min-width: 1024px) {
   .portfolio-home .mobile-menu-button { display: none; }
 }
@@ -3862,6 +3871,7 @@ html, body { background-color: var(--bg); }
   .work-item:nth-child(3n+2), .work-item:nth-child(3n+3) { padding-left: 1rem; }
 }
 @media (max-width: 767px) {
+  .catan-showcase { grid-template-columns: minmax(0, 1fr); gap: 2rem; }
   .portfolio-home .site-container { width: calc(100% - 2.5rem); }
   .portfolio-home .brand-name { font-size: 1.5rem; }
   .portfolio-home .hero-shell { padding-top: 7rem; }

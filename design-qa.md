@@ -50,3 +50,13 @@ The desktop state is the top of the signed-out portfolio, dark theme, with the T
 No blocking items remain. Real approved screenshots of OES tools would add evidence to the existing case-study pages; their absence predates this refinement. Source-vs-concept copy differences are deliberate corrections to match the resume. Fonts, icon details, and the exact photograph crop are adapted to the existing production assets.
 
 This report records local verification before deployment. No outreach messages or external form submissions were sent.
+
+## Catan homepage update
+
+The public Live Desk section was replaced with a Catan showcase using the existing approved screenshot at `public/project-images/catan-optimizer.png`. The public homepage no longer mounts PortfolioDigest or renders account returns or daily portfolio summaries. Catan was also added to the Tools menu as a normal link to the standalone app.
+
+- Desktop evidence: `C:/Users/campb/output/portfolio-refinement/16-catan-showcase-desktop.png`.
+- Phone evidence: `C:/Users/campb/output/portfolio-refinement/17-catan-showcase-mobile.png`.
+- At 390 CSS pixels, the showcase uses one 335px column; document scroll width and content width both measured 375px, with no horizontal overflow.
+- Try the optimizer opens the working `/catan/` app and its board rankings. How it works opens the existing Catan case study. The card uses the existing serif/body typography, accent, and buttons; its image retains the real app's colors and proportions.
+- TypeScript, resume alignment, site consistency, production build, and whitespace checks passed. Financial-summary visibility on the homepage was checked in the browser and returned false.

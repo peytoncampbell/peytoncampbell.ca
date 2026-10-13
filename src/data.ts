@@ -30,6 +30,7 @@ export const NAV_LINKS = [
  * the page for a blank <NotFound />.
  */
 export const TOOL_LINKS = [
+  { label: 'Catan', href: '/catan/', spa: false },
   { label: 'Stocks', href: '/stocks', spa: true },
   { label: 'My Desk', href: '/mydesk', spa: true },
   { label: 'Odds', href: '/odds', spa: true },

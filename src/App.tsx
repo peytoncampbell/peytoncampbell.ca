@@ -23,7 +23,6 @@ import clsx from 'clsx';
 import { CONTACT_TRUST, EXPERIENCE, HERO, HIGHLIGHTS, NAV_LINKS, PROJECTS, TECH_STACK, TOOL_LINKS } from './data';
 import ScrollProgress from './ScrollProgress';
 import ArchitectureDiagram from './ArchitectureDiagram';
-import PortfolioDigest from './PortfolioDigest';
 import OwnerLogin from './OwnerLogin';
 import OwnerStocks from './OwnerStocks';
 import ReaderDesk from './ReaderDesk';
@@ -482,29 +481,30 @@ export default function App() {
         </SectionShell>
 
         <SectionShell
-          eyebrow="Live desk"
-          title={
-            <>
-              Published every weekday before the open.
-            </>
-          }
-          copy="A personal project connecting data pipelines, scheduled automation, and a live dashboard. The latest published update is shown below."
-          id="desk"
+          eyebrow="Playground"
+          title="Catan Settlement Optimizer."
+          copy="A strategy problem turned into a tool you can play with."
+          id="playground"
           className="surface-band"
         >
-          <PortfolioDigest />
-          <p className="desk-note">
-            <a
-              href="/login"
-              onClick={(event) => {
-                event.preventDefault();
-                navigate('/login');
-              }}
-            >
-              Sign in
-            </a>{' '}
-            for the full book - book value, cost basis and every position.
-          </p>
+          <div className="catan-showcase">
+            <div className="catan-showcase-copy">
+              <h3>Find a stronger opening move.</h3>
+              <p>Explore a board, compare settlement positions, and see how dice probability, resource scarcity, and port access shape the rankings.</p>
+              <p className="catan-showcase-stack">JavaScript / Canvas API / Algorithms</p>
+              <div className="catan-showcase-actions">
+                <a href={`${baseUrl}catan/`} className="button-primary" onClick={() => trackEvent({ name: 'Project external click', props: { project: 'catan-settlement-optimizer', location: 'playground' } })}>
+                  Try the optimizer<ArrowRight size={18} aria-hidden="true" />
+                </a>
+                <button type="button" className="hero-contact-link" onClick={() => navigateToProject('catan-settlement-optimizer')}>
+                  How it works<ArrowRight size={16} aria-hidden="true" />
+                </button>
+              </div>
+            </div>
+            <a href={`${baseUrl}catan/`} className="catan-showcase-preview" aria-label="Open the Catan Settlement Optimizer">
+              <img src={`${baseUrl}project-images/catan-optimizer.png`} alt="Catan board with ranked settlement positions, resource tiles, and port access" width="1440" height="1100" loading="lazy" />
+            </a>
+          </div>
         </SectionShell>
 
         <SectionShell

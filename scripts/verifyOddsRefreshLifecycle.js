@@ -27,9 +27,10 @@ const flush = () => new Promise(resolve => setImmediate(resolve));
 const sameDeps = (a, b) => a && b && a.length === b.length &&
   a.every((value, index) => Object.is(value, b[index]));
 
-function harness(fastBoard = null) {
+function harness(fastBoard = null, continuousBoard = null) {
   const slots = [], effects = [], boardRequests = [], watched = [];
   const deadlines = new Map(); let timerId = 0;
+  const intervals = new Map();
   let cursor = 0, unmounted = false, writesAfterUnmount = 0;
   const hooks = {
     useState(initial) {
@@ -66,6 +67,8 @@ function harness(fastBoard = null) {
     hooks, exports: {}, module: { exports: {} }, AbortController, DOMException, Date,
     setTimeout: fn => { const id = ++timerId; deadlines.set(id, fn); return id; },
     clearTimeout: id => deadlines.delete(id),
+    setInterval: fn => { const id = ++timerId; intervals.set(id, fn); return id; },
+    clearInterval: id => intervals.delete(id),
     config: { AUTH_CONFIGURED: true, SUPABASE_URL: 'https://synthetic.supabase.invalid',
       SUPABASE_ANON_KEY: 'SYNTHETIC-PUBLIC-KEY' },
     require: name => {
@@ -75,6 +78,10 @@ function harness(fastBoard = null) {
       return { jsx: element, jsxs: element, Fragment: 'fragment' };
     },
     fetch: (url, options) => {
+      if (url.includes('/pc_odds_continuous_board?')) {
+        assert.equal(url, 'https://synthetic.supabase.invalid/rest/v1/pc_odds_continuous_board?select=job_id,generated_at,html&id=eq.1&limit=1');
+        return Promise.resolve({ ok: true, json: async () => continuousBoard ? [continuousBoard] : [] });
+      }
       if (url.includes('/pc_odds_fast_board?')) {
         assert.equal(url, 'https://synthetic.supabase.invalid/rest/v1/pc_odds_fast_board?select=job_id,generated_at,html&id=eq.1&limit=1');
         if (fastBoard) return Promise.resolve({ ok: true, json: async () => [fastBoard] });
@@ -119,6 +126,8 @@ function harness(fastBoard = null) {
     for (const slot of slots) slot?.cleanup?.();
   };
   return { render, unmount, boardRequests, watched, expireLoads: () => { for (const fn of [...deadlines.values()]) fn(); },
+    tickAutomatic: () => { for (const fn of [...intervals.values()]) fn(); },
+    setContinuous: value => { continuousBoard = value; },
     get writesAfterUnmount() { return writesAfterUnmount; } };
 }
 
@@ -202,3 +211,18 @@ hangingBoard.expireLoads(); tree = hangingBoard.render();
 assert.equal(find(tree, 'iframe'), null, 'A timed-out final load cannot display the earlier board as this update');
 assert.equal(hangingBoard.boardRequests[1].options.signal.aborted, true, 'The final board GET is aborted at the remaining click deadline');
 hangingBoard.unmount();
+
+// Continuous reads advance without a PIN and cannot roll back or alter a job load.
+const liveJob = '00000000-0000-4000-8000-000000000002';
+const liveHtml = `<meta name="odds-continuous" content="1"><meta name="odds-fast-refresh" content="${liveJob}">LIVE`;
+const automatic = harness({ job_id: job, html: '<meta name="odds-fast-refresh">PIN', generated_at: '2026-10-13T12:00:00Z' },
+  { job_id: liveJob, html: liveHtml, generated_at: '2026-10-13T12:00:15Z' });
+automatic.render(); await flush();
+assert.equal(find(automatic.render(), 'iframe').props.srcDoc, liveHtml);
+automatic.setContinuous({ job_id: liveJob, html: liveHtml+'-NEW', generated_at: '2026-10-13T12:00:30Z' });
+automatic.tickAutomatic(); await flush();
+assert.equal(find(automatic.render(), 'iframe').props.srcDoc, liveHtml+'-NEW', 'Automatic polling displays a newer database publication');
+automatic.setContinuous({ job_id: liveJob, html: liveHtml+'-OLDER', generated_at: '2026-10-13T12:00:20Z' });
+automatic.tickAutomatic(); await flush();
+assert.equal(find(automatic.render(), 'iframe').props.srcDoc, liveHtml+'-NEW', 'A late older database view cannot roll back prices');
+automatic.unmount();

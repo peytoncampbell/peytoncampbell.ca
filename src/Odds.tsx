@@ -31,6 +31,19 @@ type State =
 async function loadRow(signal: AbortSignal, expectedJobId?: string): Promise<State> {
   if (!AUTH_CONFIGURED) return { kind: 'unconfigured' };
   try {
+    // Automatic publications never replace a PIN job's UUID-bound result.
+    const continuous = expectedJobId ? Promise.resolve(null) : fetch(
+      `${SUPABASE_URL}/rest/v1/pc_odds_continuous_board?select=job_id,generated_at,html&id=eq.1&limit=1`,
+      { headers: { apikey: SUPABASE_ANON_KEY as string, Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
+        cache: 'no-store', signal },
+    ).then(async response => {
+      if (!response.ok) return null;
+      const rows = await response.json() as Array<{ job_id: string; generated_at: string; html: string }>;
+      const row = Array.isArray(rows) ? rows[0] : null;
+      return row && typeof row.html === 'string' && Number.isFinite(Date.parse(row.generated_at)) &&
+        row.html.includes('<meta name="odds-continuous" content="1">') &&
+        row.html.includes(`<meta name="odds-fast-refresh" content="${row.job_id}">`) ? row : null;
+    }).catch(() => null);
     const fast = await fetch(
       `${SUPABASE_URL}/rest/v1/pc_odds_fast_board?select=job_id,generated_at,html&id=eq.1&limit=1`,
       { headers: { apikey: SUPABASE_ANON_KEY as string, Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
@@ -39,6 +52,10 @@ async function loadRow(signal: AbortSignal, expectedJobId?: string): Promise<Sta
     if (!fast.ok) throw new Error(`Price board HTTP ${fast.status}`);
     const fastRows = await fast.json() as Array<{ job_id: string; generated_at: string; html: string }>;
     if (!Array.isArray(fastRows)) throw new Error('Invalid price board response.');
+    const live = await continuous;
+    if (live && (!fastRows.length || Date.parse(live.generated_at) > Date.parse(fastRows[0].generated_at))) {
+      return { kind: 'ready', html: live.html, generatedAt: live.generated_at };
+    }
     if (fastRows.length) {
       if (expectedJobId && fastRows[0].job_id !== expectedJobId) throw new Error('Published board belongs to a different refresh.');
       if (typeof fastRows[0].html !== 'string' || !fastRows[0].html.includes('<meta name="odds-fast-refresh"')) {
@@ -87,24 +104,39 @@ export default function Odds({ onHome }: { onHome: () => void }) {
   const [view, setView] = useState<'markets' | 'coverage' | 'board'>('board');
   const [inventoryRevision, setInventoryRevision] = useState(0);
 
-  const load = useCallback((budgetMs = 10000, expectedJobId?: string) => {
+  const load = useCallback((budgetMs = 10000, expectedJobId?: string, background = false) => {
     boardLoad.current.controller?.abort();
     const controller = new AbortController();
     const generation = ++boardLoad.current.generation;
     boardLoad.current.controller = controller;
-    setState({ kind: 'loading' });
+    if (!background) setState({ kind: 'loading' });
     const timer = setTimeout(() => {
       controller.abort();
-      if (mounted.current && generation === boardLoad.current.generation) {
+      if (!background && mounted.current && generation === boardLoad.current.generation) {
         setState({ kind: 'error', message: 'The price board could not be displayed within the refresh deadline. Reload to check the acknowledged publication.' });
       }
     }, Math.max(0, budgetMs));
     void loadRow(controller.signal, expectedJobId).then(result => {
-      if (mounted.current && !controller.signal.aborted && generation === boardLoad.current.generation) setState(result);
+      if (mounted.current && !controller.signal.aborted && generation === boardLoad.current.generation) {
+        setState(previous => {
+          if (background && result.kind !== 'ready') return previous;
+          if (background && previous.kind === 'ready' && result.kind === 'ready' &&
+              Date.parse(result.generatedAt) <= Date.parse(previous.generatedAt)) return previous;
+          return result;
+        });
+      }
     }).finally(() => clearTimeout(timer));
   }, []);
 
   useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    if (busy || refreshOpen || view !== 'board') return;
+    const timer = setInterval(() => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
+      load(10000, undefined, true);
+    }, 15000);
+    return () => clearInterval(timer);
+  }, [busy, refreshOpen, view, load]);
   useEffect(() => {
     mounted.current = true;
     return () => { mounted.current = false; boardLoad.current.controller?.abort(); };
@@ -167,7 +199,7 @@ export default function Odds({ onHome }: { onHome: () => void }) {
         <span className="ml-auto flex items-center gap-3">
           {state.kind === 'ready' && view === 'board' && (
             <span className="hidden text-xs text-white/40 sm:inline">
-              published {new Date(state.generatedAt).toLocaleString()}
+              Live · published {new Date(state.generatedAt).toLocaleString()}
             </span>
           )}
           <button
@@ -224,9 +256,10 @@ export default function Odds({ onHome }: { onHome: () => void }) {
             className="rounded px-2 py-1 text-white/60 hover:text-white">✕</button>
         </div>
         <p className="mb-4 text-sm leading-relaxed text-white/60">
-          Refresh direct prices for cached games starting within 72 hours. The request has a 60-second deadline, including queue time.
+          Direct books collect continuously for games starting within 72 hours. This rebuilds the board from the latest checked database prices.
+          The request has a 60-second deadline, including queue time.
           Fresh, compatible markets produce provisional EV and arb estimates. These assume matching settlement across books.
-          Slow, blocked or unfinished sources appear as coverage gaps. No Odds API credits are used.
+          The board also updates automatically. Slow, blocked or unfinished sources appear as coverage gaps. No Odds API credits are used.
           All markets is a separate historical catalogue. Price refreshes are limited to once per minute.
         </p>
         <form onSubmit={event => { void requestRefresh(event); }}>

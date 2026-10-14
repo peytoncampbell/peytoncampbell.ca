@@ -90,3 +90,91 @@ for (const [configuration, error] of [
 ]) await assert.rejects(() => harness(configuration).loadNativeBoard(signal), error);
 await assert.rejects(() => harness({ boardHtml: nativeHtml }).loadNativeBoard(aborted.signal), { name: 'AbortError' });
 console.log('Odds inventory passed: exact prices/lines, hash/size, game identity/counts, location and aborted requests.');
+
+// Published row keys contain a changing manifest hash. A new capture must keep
+// an unambiguous native game selection and use that capture's new object/key.
+const inventoryCode = transformSync(readFileSync(new URL('../src/OddsInventory.tsx', import.meta.url), 'utf8'),
+  { loader: 'tsx', format: 'cjs', jsx: 'automatic' }).code;
+const uiContext = { exports: {}, module: { exports: {} }, require: name => {
+  assert.ok(['react','react/jsx-runtime','./oddsInventoryData'].includes(name)); return {};
+} };
+uiContext.exports = uiContext.module.exports;
+vm.runInNewContext(inventoryCode, uiContext);
+const previous = { key: 'old-manifest-event', book: 'betmgm_ca_on', source_event_id: '6:43582', sport: 'Football', object: 'old-object' };
+const next = { ...previous, key: 'new-manifest-event', object: 'new-object' };
+const update = uiContext.module.exports.updatedEvent;
+assert.equal(update([next], previous), next, 'A changed manifest keeps the native game and switches to its current object');
+assert.equal(update([next,{ ...next, key: 'ambiguous-manifest' }], previous), null, 'Ambiguous source identities cannot preserve a selected game');
+assert.equal(update([{ ...next, book: 'betrivers_ca_on' }], previous), null);
+assert.equal(update([{ ...next, sport: 'Basketball' }], previous), null);
+assert.equal(update([{ ...next, source_event_id: 'different-event' }], previous), null);
+assert.equal(update([{ ...next, source_event_id: undefined }], { ...previous, source_event_id: undefined }), null);
+console.log('Inventory UI passed: automatic captures preserve only a unique native game identity.');
+
+// Exercise pagination through the actual component when an automatic capture
+// replaces a selected game's 90 matching offers with only two.
+const sourceBook = { key: 'betrivers_ca_on', name: 'BetRivers', counts: {}, warnings: [] };
+const oldGame = { key: 'old-hash:event', book: sourceBook.key, source_event_id: 'event', sport: 'Football',
+  name: 'Home v Away', competition: 'NFL', object: 'old-object', markets: 90, positions: 90 };
+const newGame = { ...oldGame, key: 'new-hash:event', object: 'new-object', markets: 2, positions: 2 };
+let inventory = { snapshot_id: 'old', events: [oldGame], books: [sourceBook], totals: { events: 1, markets: 90, positions: 90 } };
+let cursor = 0;
+const slots = [], effects = [];
+const sameDeps = (a,b) => a && b && a.length === b.length && a.every((v,i) => Object.is(v,b[i]));
+const hooks = {
+  useState(value) {
+    const i = cursor++; if (!(i in slots)) slots[i] = value;
+    return [slots[i], next => { slots[i] = typeof next === 'function' ? next(slots[i]) : next; }];
+  },
+  useRef(value) { const i = cursor++; if (!(i in slots)) slots[i] = { current: value }; return slots[i]; },
+  useMemo(fn) { cursor++; return fn(); },
+  useEffect(fn, deps) {
+    const i = cursor++, old = slots[i]; if (old && sameDeps(old.deps,deps)) return;
+    const next = { deps }; slots[i] = next;
+    effects.push(() => { old?.cleanup?.(); next.cleanup = fn(); });
+  },
+};
+const jsx = (type, props, key) => ({ type, props: props ?? {}, key });
+const componentContext = { exports: {}, module: { exports: {} }, AbortController, require: name => {
+  if (name === 'react') return hooks;
+  if (name === 'react/jsx-runtime') return { jsx, jsxs: jsx, Fragment: 'fragment' };
+  assert.equal(name, './oddsInventoryData');
+  return { loadInventory: async () => inventory,
+    loadMarkets: async (_catalogue, game) => Array.from({ length: game.markets }, (_,i) => ({
+      id: String(i), name: `Winner ${i}`, kind: 'straight', variant: '', native_context: '{}', selections: [],
+    })) };
+} };
+componentContext.exports = componentContext.module.exports;
+vm.runInNewContext(inventoryCode, componentContext);
+const render = (revision = 0) => {
+  cursor = 0; const tree = componentContext.module.exports.default({ revision });
+  while (effects.length) effects.shift()(); return tree;
+};
+function nodes(tree) {
+  if (Array.isArray(tree)) return tree.flatMap(nodes);
+  if (!tree || typeof tree !== 'object') return [];
+  return [tree, ...nodes(tree.props?.children)];
+}
+const find = (tree, predicate) => nodes(tree).find(predicate);
+const button = (tree, name) => find(tree, n => n.type === 'button' && n.props.children === name);
+const cardCount = tree => nodes(tree).filter(n => typeof n.type === 'function' && n.type.name === 'MarketCard').length;
+const settle = async (revision = 0) => {
+  for (let i = 0; i < 4; i++) { render(revision); await new Promise(resolve => setImmediate(resolve)); }
+  return render(revision);
+};
+let tree = await settle();
+find(tree, n => n.type === 'button' && nodes(n.props.children).some(child => child.props?.children === oldGame.name)).props.onClick();
+tree = await settle();
+find(tree, n => n.type === 'input' && n.props.placeholder.startsWith('Passing yards')).props.onChange({ target: { value: 'Winner' } });
+tree = await settle();
+for (let i = 0; i < 2; i++) { button(tree, 'Next markets').props.onClick(); tree = await settle(); }
+assert.equal(cardCount(tree), 30);
+assert.ok(nodes(tree).some(n => n.type === 'span' && JSON.stringify(n.props.children) === '[3," / ",3]'));
+inventory = { ...inventory, snapshot_id: 'new', events: [newGame] };
+tree = await settle(1);
+assert.equal(cardCount(tree), 2, 'A shrinking capture still displays every matching offer');
+assert.equal(find(tree, n => n.type === 'input' && n.props.placeholder.startsWith('Passing yards')).props.value, 'Winner');
+assert.equal(button(tree, 'Previous markets').props.disabled, true);
+assert.equal(button(tree, 'Next markets').props.disabled, true);
+assert.ok(nodes(tree).some(n => n.type === 'h2' && n.props.children === oldGame.name));
+console.log('Inventory pagination passed: a replacement capture clamps the page while retaining the game and search.');

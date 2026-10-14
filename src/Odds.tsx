@@ -28,6 +28,9 @@ type State =
   | { kind: 'error'; message: string }
   | { kind: 'ready'; html: string; generatedAt: string };
 
+const AUTO_UPDATE_MS = 5 * 60 * 1000;
+const EXPIRY_RETRY_MS = 15000;
+
 async function loadRow(signal: AbortSignal, expectedJobId?: string): Promise<State> {
   if (!AUTH_CONFIGURED) return { kind: 'unconfigured' };
   try {
@@ -103,6 +106,7 @@ export default function Odds({ onHome }: { onHome: () => void }) {
   const busy = submitting || jobId !== null;
   const [view, setView] = useState<'markets' | 'coverage' | 'board'>('board');
   const [inventoryRevision, setInventoryRevision] = useState(0);
+  const [inventoryAutoRevision, setInventoryAutoRevision] = useState(0);
 
   const load = useCallback((budgetMs = 10000, expectedJobId?: string, background = false) => {
     boardLoad.current.controller?.abort();
@@ -130,13 +134,35 @@ export default function Odds({ onHome }: { onHome: () => void }) {
 
   useEffect(() => { load(); }, [load]);
   useEffect(() => {
-    if (busy || refreshOpen || view !== 'board') return;
-    const timer = setInterval(() => {
+    if (busy || refreshOpen) return;
+    const update = () => {
       if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
       load(10000, undefined, true);
-    }, 15000);
-    return () => clearInterval(timer);
-  }, [busy, refreshOpen, view, load]);
+      setInventoryAutoRevision(value => value + 1);
+    };
+    const timer = setInterval(update, AUTO_UPDATE_MS);
+    const onVisible = () => { if (document.visibilityState === 'visible') update(); };
+    if (typeof document !== 'undefined') document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      clearInterval(timer);
+      if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [busy, refreshOpen, load]);
+  useEffect(() => {
+    if (busy || refreshOpen || view !== 'board' || state.kind !== 'ready') return;
+    const expiry = Number(state.html.match(/(?:[,;])\s*(?:END|DIRECT_END)\s*=\s*([0-9]+(?:\.[0-9]+)?)/)?.[1]);
+    if (!Number.isFinite(expiry) || expiry <= 0) return;
+    const update = () => {
+      if (typeof document === 'undefined' || document.visibilityState !== 'hidden') load(10000, undefined, true);
+    };
+    let retry: ReturnType<typeof setInterval> | undefined;
+    const timer = setTimeout(() => {
+      update();
+      // Retain the original expiry and retry if the source has no newer board.
+      retry = setInterval(update, EXPIRY_RETRY_MS);
+    }, Math.max(EXPIRY_RETRY_MS, Math.min(AUTO_UPDATE_MS, expiry * 1000 - Date.now() - EXPIRY_RETRY_MS)));
+    return () => { clearTimeout(timer); if (retry !== undefined) clearInterval(retry); };
+  }, [busy, refreshOpen, view, state, load]);
   useEffect(() => {
     mounted.current = true;
     return () => { mounted.current = false; boardLoad.current.controller?.abort(); };
@@ -187,44 +213,51 @@ export default function Odds({ onHome }: { onHome: () => void }) {
   };
 
   return (
-    <div className="fixed inset-0 flex flex-col bg-[#0f1115] text-white">
-      <header className="flex h-12 flex-none items-center gap-3 border-b border-white/10 px-4">
+    <div className="fixed inset-0 flex flex-col bg-[#f5f5f7] text-[#1d1d1f]" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
+      <header className="flex-none border-b border-[#e5e5ea] bg-white/80 backdrop-blur-xl">
+      <div className="mx-auto flex h-16 w-full max-w-[1120px] items-center gap-3 px-4 sm:px-6">
         <button
           onClick={onHome}
-          className="text-sm text-white/60 transition-colors hover:text-white"
+          aria-label="Back to peytoncampbell.ca"
+          className="flex min-h-10 items-center text-xs text-[#6e6e73] transition-colors hover:text-[#1d1d1f] focus-visible:outline-blue-500"
         >
           &larr; <span className="hidden sm:inline">peytoncampbell.ca</span>
         </button>
-        <span className="text-sm font-semibold tracking-wide text-white/90">Odds</span>
-        <span className="ml-auto flex items-center gap-3">
+        <span className="text-lg font-semibold tracking-[-0.05em]">Odds<span className="text-[#0071e3]">.</span></span>
+        <span className="ml-auto flex items-center gap-2 sm:gap-3">
+          <span title="Checks every five minutes and before displayed prices expire" className="hidden items-center gap-1.5 rounded-full bg-[#edf8f0] px-3 py-1.5 text-[11px] font-medium text-[#157f47] sm:inline-flex">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#157f47]" />Auto · 5 min
+          </span>
           {state.kind === 'ready' && view === 'board' && (
-            <span className="hidden text-xs text-white/40 sm:inline">
-              Live · published {new Date(state.generatedAt).toLocaleString()}
+            <span className="hidden text-[11px] text-[#6e6e73] lg:inline">
+              Published {new Date(state.generatedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
             </span>
           )}
           <button
             onClick={() => { load(); setInventoryRevision(value => value + 1); }}
-            className="rounded-md bg-white/10 px-3 py-1 text-xs font-medium text-white/80 transition-colors hover:bg-white/20"
+            title="Load the latest published board"
+            className="min-h-9 rounded-full border border-[#e5e5ea] bg-white px-3.5 text-xs font-medium text-[#4c4c52] transition-colors hover:bg-[#f5f5f7] focus-visible:outline-blue-500"
           >
             Reload
           </button>
           <button
             onClick={() => setRefreshOpen(true)}
             aria-haspopup="dialog"
-            className="rounded-md bg-[#8ab4f8] px-3 py-1 text-xs font-semibold text-[#0b1020] transition-colors hover:bg-[#aecbfa]"
+            className="min-h-9 rounded-full bg-[#0071e3] px-4 text-xs font-medium text-white transition-colors hover:bg-[#0077ed] focus-visible:outline-blue-500"
           >
             {busy ? 'Refreshing…' : 'Refresh'}
           </button>
         </span>
+      </div>
       </header>
 
-      <nav aria-label="Odds views" className="flex flex-none gap-1 border-b border-white/10 px-4 py-2">
+      <nav aria-label="Odds views" className="mx-auto flex w-full max-w-[1120px] flex-none gap-1 px-4 pt-4 sm:px-6">
         {([['board', 'EV & Arb'], ['markets', 'All markets'], ['coverage', 'Coverage']] as const).map(([key,label]) =>
           <button key={key} onClick={() => setView(key)} aria-current={view === key ? 'page' : undefined}
-            className={`rounded-lg px-4 py-2 text-sm font-medium ${view === key ? 'bg-[#8ab4f8]/15 text-[#8ab4f8]' : 'text-white/50 hover:bg-white/5 hover:text-white'}`}>{label}</button>)}
+            className={`min-h-10 rounded-full px-4 text-xs font-medium transition-colors focus-visible:outline-blue-500 ${view === key ? 'bg-[#e4effd] text-[#0066c9]' : 'text-[#6e6e73] hover:bg-[#eaeaf0] hover:text-[#1d1d1f]'}`}>{label}</button>)}
       </nav>
       <main className="min-h-0 flex-1">
-        {view !== 'board' ? <OddsInventory key={inventoryRevision} coverage={view === 'coverage'} /> : <>
+        {view !== 'board' ? <OddsInventory key={inventoryRevision} coverage={view === 'coverage'} revision={inventoryAutoRevision} /> : <>
         {state.kind === 'ready' ? (
           <iframe
             title="Odds board"
@@ -234,7 +267,7 @@ export default function Odds({ onHome }: { onHome: () => void }) {
           />
         ) : (
           <div className="flex h-full items-center justify-center px-6">
-            <p className="max-w-sm text-center text-sm leading-relaxed text-white/50">
+            <p role={state.kind === 'error' ? 'alert' : 'status'} className="max-w-sm rounded-2xl border border-[#e5e5ea] bg-white px-8 py-7 text-center text-sm leading-relaxed text-[#6e6e73]">
               {state.kind === 'loading' && 'Loading the board…'}
               {state.kind === 'unconfigured' &&
                 'This build is missing its Supabase URL or anon key, so the board cannot load.'}
@@ -249,40 +282,38 @@ export default function Odds({ onHome }: { onHome: () => void }) {
       <dialog ref={dialog} onCancel={() => setRefreshOpen(false)}
         onClose={() => { setRefreshOpen(false); setPin(''); }}
         aria-labelledby="odds-refresh-title"
-        className="w-[calc(100%_-_2rem)] max-w-sm rounded-xl border border-white/15 bg-[#171a21] p-5 text-white shadow-2xl backdrop:bg-black/70">
+        className="w-[calc(100%_-_2rem)] max-w-sm rounded-3xl border border-[#e5e5ea] bg-white p-6 text-[#1d1d1f] shadow-2xl backdrop:bg-black/25 backdrop:backdrop-blur-sm">
         <div className="mb-3 flex items-center justify-between gap-3">
-          <h2 id="odds-refresh-title" className="text-lg font-semibold">Refresh odds</h2>
+          <h2 id="odds-refresh-title" className="text-xl font-semibold tracking-tight">Refresh odds</h2>
           <button type="button" onClick={() => setRefreshOpen(false)} aria-label="Close refresh"
-            className="rounded px-2 py-1 text-white/60 hover:text-white">✕</button>
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-[#f5f5f7] text-sm text-[#6e6e73] hover:text-[#1d1d1f]">✕</button>
         </div>
-        <p className="mb-4 text-sm leading-relaxed text-white/60">
-          Direct books collect continuously for games starting within 72 hours. This rebuilds the board from the latest checked database prices.
-          The request has a 60-second deadline, including queue time.
-          Fresh, compatible markets produce provisional EV and arb estimates. These assume matching settlement across books.
-          The board also updates automatically. Slow, blocked or unfinished sources appear as coverage gaps. No Odds API credits are used.
-          All markets is a separate historical catalogue. Price refreshes are limited to once per minute.
+        <p className="mb-5 text-[13px] leading-relaxed text-[#6e6e73]">
+          Recalculate EV and arbitrage from the latest database prices. The board also updates automatically.
+          Provisional estimates assume matching settlement across books. No Odds API credits are used.
+          Requests have a 60-second limit and are available once per minute.
         </p>
         <form onSubmit={event => { void requestRefresh(event); }}>
           <label htmlFor="odds-refresh-pin" className="mb-2 block text-sm font-medium">Refresh PIN</label>
           <input id="odds-refresh-pin" type="password" inputMode="numeric" autoComplete="off"
             minLength={6} maxLength={10} pattern="[0-9]{6,10}" required autoFocus disabled={busy}
             value={pin} onChange={event => setPin(event.target.value)}
-            className="mb-3 w-full rounded-lg border border-white/20 bg-black/20 px-3 py-2 text-lg tracking-widest outline-none focus:border-[#8ab4f8] disabled:opacity-50" />
+            className="mb-4 w-full rounded-xl border border-[#d5d5dc] bg-[#fafafa] px-4 py-3 text-lg tracking-widest outline-none focus:border-[#0071e3] focus:ring-2 focus:ring-blue-100 disabled:opacity-50" />
           <button type="submit" disabled={busy || !/^\d{6,10}$/.test(pin)}
-            className="w-full rounded-lg bg-[#8ab4f8] px-4 py-2 text-sm font-semibold text-[#0b1020] disabled:opacity-40">
+            className="w-full rounded-full bg-[#0071e3] px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-[#0077ed] disabled:opacity-40">
             {busy ? 'Refreshing…' : 'Refresh board'}
           </button>
         </form>
-        <div aria-live="polite" className="mt-4 text-sm leading-relaxed text-white/70">
+        <div aria-live="polite" className="mt-4 text-sm leading-relaxed text-[#606066]">
           {refreshError || refresh?.message || ''}
           {refresh?.state === 'complete' && typeof refresh.details?.credits_spent === 'number' && (
-            <p className="mt-1 text-xs text-white/50">{refresh.details.credits_spent} Odds API credits used.</p>
+            <p className="mt-2 text-xs text-[#6e6e73]">{refresh.details.credits_spent} Odds API credits used.</p>
           )}
           {refresh?.state === 'complete' && typeof refresh.details?.selections === 'number' && (
-            <p className="mt-1 text-xs text-amber-100/70">{refresh.details.selections.toLocaleString()} selections captured · {refresh.details.edges ?? 0} provisional EV · {refresh.details.arbs ?? 0} provisional arb.</p>
+            <p className="mt-1 text-xs text-[#6e6e73]">{refresh.details.selections.toLocaleString()} selections captured · {refresh.details.edges ?? 0} provisional EV · {refresh.details.arbs ?? 0} provisional arb.</p>
           )}
           {!!refresh?.retry_after_seconds && (
-            <p className="mt-1 text-xs text-white/50">Try again in {Math.ceil(refresh.retry_after_seconds / 60)} min.</p>
+            <p className="mt-1 text-xs text-[#6e6e73]">Try again in {Math.ceil(refresh.retry_after_seconds / 60)} min.</p>
           )}
         </div>
       </dialog>

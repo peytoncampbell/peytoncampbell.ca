@@ -65,9 +65,9 @@ function harness(fastBoard = null, continuousBoard = null) {
   const element = (type, props, key) => ({ type, props: props ?? {}, key });
   const context = {
     hooks, exports: {}, module: { exports: {} }, AbortController, DOMException, Date,
-    setTimeout: fn => { const id = ++timerId; deadlines.set(id, fn); return id; },
+    setTimeout: (fn, ms) => { const id = ++timerId; deadlines.set(id, { fn, ms }); return id; },
     clearTimeout: id => deadlines.delete(id),
-    setInterval: fn => { const id = ++timerId; intervals.set(id, fn); return id; },
+    setInterval: (fn, ms) => { const id = ++timerId; intervals.set(id, { fn, ms }); return id; },
     clearInterval: id => intervals.delete(id),
     config: { AUTH_CONFIGURED: true, SUPABASE_URL: 'https://synthetic.supabase.invalid',
       SUPABASE_ANON_KEY: 'SYNTHETIC-PUBLIC-KEY' },
@@ -125,8 +125,10 @@ function harness(fastBoard = null, continuousBoard = null) {
     unmounted = true;
     for (const slot of slots) slot?.cleanup?.();
   };
-  return { render, unmount, boardRequests, watched, expireLoads: () => { for (const fn of [...deadlines.values()]) fn(); },
-    tickAutomatic: () => { for (const fn of [...intervals.values()]) fn(); },
+  return { render, unmount, boardRequests, watched, expireLoads: () => { for (const timer of [...deadlines.values()]) timer.fn(); },
+    tickAutomatic: () => { for (const timer of [...intervals.values()]) timer.fn(); },
+    intervalDurations: () => [...intervals.values()].map(timer => timer.ms),
+    timeoutDurations: () => [...deadlines.values()].map(timer => timer.ms),
     setContinuous: value => { continuousBoard = value; },
     get writesAfterUnmount() { return writesAfterUnmount; } };
 }
@@ -219,6 +221,7 @@ const automatic = harness({ job_id: job, html: '<meta name="odds-fast-refresh">P
   { job_id: liveJob, html: liveHtml, generated_at: '2026-10-13T12:00:15Z' });
 automatic.render(); await flush();
 assert.equal(find(automatic.render(), 'iframe').props.srcDoc, liveHtml);
+assert.deepEqual(automatic.intervalDurations(), [300000], 'Routine updates run every five minutes');
 automatic.setContinuous({ job_id: liveJob, html: liveHtml+'-NEW', generated_at: '2026-10-13T12:00:30Z' });
 automatic.tickAutomatic(); await flush();
 assert.equal(find(automatic.render(), 'iframe').props.srcDoc, liveHtml+'-NEW', 'Automatic polling displays a newer database publication');
@@ -226,3 +229,18 @@ automatic.setContinuous({ job_id: liveJob, html: liveHtml+'-OLDER', generated_at
 automatic.tickAutomatic(); await flush();
 assert.equal(find(automatic.render(), 'iframe').props.srcDoc, liveHtml+'-NEW', 'A late older database view cannot roll back prices');
 automatic.unmount();
+
+// Two-minute money-path expiry must never become a five-minute fresh clock.
+const sourceEnd = Date.now()/1000 + 45;
+const expiringHtml = `${liveHtml}<script>var GEN = ${sourceEnd-120}, END = ${sourceEnd};</script>`;
+const expiring = harness(null, { job_id: liveJob, html: expiringHtml, generated_at: '2026-10-13T12:00:15Z' });
+expiring.render(); await flush(); expiring.render();
+assert.deepEqual(expiring.intervalDurations(), [300000]);
+assert.ok(expiring.timeoutDurations().some(ms => ms >= 15000 && ms < 45000), 'The next read starts before the supplied quote expiry');
+expiring.expireLoads(); await flush(); expiring.render();
+assert.ok(expiring.intervalDurations().includes(15000), 'An unchanged publication is retried without extending its source clocks');
+assert.equal(find(expiring.render(), 'iframe').props.srcDoc, expiringHtml);
+expiring.unmount();
+assert.deepEqual(expiring.intervalDurations(), [], 'Automatic and expiry retry timers stop on unmount');
+assert.deepEqual(expiring.timeoutDurations(), [], 'The pending expiry timeout stops on unmount');
+console.log('Automatic UI updates passed: five-minute cadence, early expiry reads and original-clock preservation.');

@@ -100,6 +100,11 @@ const uiContext = { exports: {}, module: { exports: {} }, require: name => {
 } };
 uiContext.exports = uiContext.module.exports;
 vm.runInNewContext(inventoryCode, uiContext);
+for (const [raw, shown] of [['2.650','2.65'], ['3.000','3'], ['10','10'], ['-3.500','-3.5'],
+  ['0.000','0'], ['1.714285714000','1.714285714'],
+  ['2.05000000000000000000000000100','2.050000000000000000000000001'], [null,'\u2014']]) {
+  assert.equal(uiContext.module.exports.trimDecimal(raw), shown, 'Display trimming preserves every nonzero source digit');
+}
 const previous = { key: 'old-manifest-event', book: 'betmgm_ca_on', source_event_id: '6:43582', sport: 'Football', object: 'old-object' };
 const next = { ...previous, key: 'new-manifest-event', object: 'new-object' };
 const update = uiContext.module.exports.updatedEvent;

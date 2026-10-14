@@ -6,6 +6,11 @@ const number = (value = 0) => value.toLocaleString();
 const date = (value: string | null) => value ? new Date(value).toLocaleString() : 'Source time unavailable';
 const field = 'min-w-0 rounded-lg border border-[#d5d5dc] bg-white px-3 py-2.5 text-sm text-[#1d1d1f] outline-none focus:border-[#0071e3]';
 
+export function trimDecimal(value: string | null | undefined): string {
+  if (value == null) return '\u2014';
+  return /^[+-]?\d+\.\d+$/.test(value) ? value.replace(/0+$/, '').replace(/\.$/, '') : value;
+}
+
 function eventIdentity(event: InventoryEvent | null): string | null {
   if (!event || [event.book, event.source_event_id, event.sport].some(value => typeof value !== 'string' || !value)) return null;
   return JSON.stringify([event.book, event.source_event_id, event.sport]);
@@ -24,21 +29,21 @@ function Selection({ row }: { row: InventorySelection }) {
     <div className="min-w-0">
       <p className="break-words text-sm text-[#1d1d1f]">{row.subject && !row.label.includes(row.subject) ? `${row.subject} · ${row.label}` : row.label}</p>
       <p className="mt-1 text-xs text-[#6e6e73]">
-        {row.point !== null && <span className="mr-2">Line {row.point}</span>}
+        {row.point !== null && <span className="mr-2">Line {trimDecimal(row.point)}</span>}
         {!row.pricing_verified ? 'Pricing unverified' : row.available ? 'Offered at capture' : 'Unavailable at capture'}
       </p>
       {!!row.legs.length && <ul className="mt-2 space-y-1 text-xs text-[#606066]">{row.legs.map((leg,index) =>
-        <li key={index}>{leg.market && `${leg.market} · `}{leg.selection || leg.native_reference}{leg.point !== undefined && leg.point !== null && ` · line ${leg.point}`}
+        <li key={index}>{leg.market && `${leg.market} · `}{leg.selection || leg.native_reference}{leg.point !== undefined && leg.point !== null && ` · line ${trimDecimal(leg.point)}`}
           <span className="ml-1 text-[#6e6e73]">{leg.operations.map(p => p[1]).join(' → ')}</span></li>)}</ul>}
       <details className="mt-1 text-[11px] text-[#6e6e73]"><summary className="cursor-pointer">Source details</summary>
         <p className="mt-1 break-all">Selection {row.id} · captured {date(row.captured_at)}</p>
-        {row.offered_price !== null && <p className="mt-1 break-all">Feed price {row.price ?? '—'} · {row.pricing_verified ? 'verified offered price' : 'unverified offered field'} {row.offered_price}</p>}
+        {row.offered_price !== null && <p className="mt-1 break-all">Feed price {trimDecimal(row.price)} · {row.pricing_verified ? 'verified offered price' : 'unverified offered field'} {trimDecimal(row.offered_price)}</p>}
         {row.pricing_warning && <p className="mt-1">{row.pricing_warning}</p>}
         <pre className="mt-2 max-h-48 overflow-y-auto whitespace-pre-wrap break-all">{row.native_context}</pre>
         {row.native_legs && <pre className="mt-2 max-h-48 overflow-y-auto whitespace-pre-wrap break-all">{row.native_legs}</pre>}
       </details>
     </div>
-    <div className="max-w-[10rem] text-right"><p className={`break-all font-mono text-lg font-semibold ${row.available && row.pricing_verified ? 'text-[#1d1d1f]' : 'text-[#6e6e73]'}`}>{price ?? '—'}</p>
+    <div className="max-w-[10rem] text-right"><p className={`break-all font-mono text-lg font-semibold ${row.available && row.pricing_verified ? 'text-[#1d1d1f]' : 'text-[#6e6e73]'}`}>{trimDecimal(price)}</p>
       <p className="text-[10px] uppercase tracking-wide text-[#6e6e73]">{row.pricing_verified ? 'Decimal odds' : 'Unverified feed quote'}</p></div>
   </div>;
 }
@@ -57,7 +62,7 @@ function MarketCard({ market: m }: { market: InventoryMarket }) {
     <summary className="cursor-pointer py-4 text-sm font-semibold">{m.name}
       {scope && <span className="ml-2 text-xs text-[#0071e3]">{scope}</span>}
       {subjects.length === 1 && !m.name.includes(subjects[0]) && <span className="ml-2 text-xs text-[#0071e3]">{subjects[0]}</span>}
-      {!!lines.length && <span className="ml-2 text-xs font-normal text-[#606066]">Line {lines.slice(0,4).join(' / ')}{lines.length > 4 && ` · ${lines.length} line values`}</span>}
+      {!!lines.length && <span className="ml-2 text-xs font-normal text-[#606066]">Line {lines.slice(0,4).map(trimDecimal).join(' / ')}{lines.length > 4 && ` · ${lines.length} line values`}</span>}
       <span className="ml-2 text-xs font-normal text-[#6e6e73]">{m.selections.length} selections{m.kind === 'combined' ? ' · prebuilt' : ''}</span></summary>
     {open && <div className="pb-2"><details className="mb-2 text-xs text-[#6e6e73]"><summary className="cursor-pointer">Native market contract</summary>
       <pre className="mt-2 max-h-64 overflow-y-auto whitespace-pre-wrap break-all text-[11px]">{m.native_context}</pre></details>

@@ -2,16 +2,16 @@ const baseUrl = import.meta.env.BASE_URL
 
 export const profile = {
   name: 'Peyton Campbell',
-  role: 'Full-stack software developer at OES',
-  location: 'London, Ontario',
+  role: 'Product engineer in Toronto',
+  location: 'Toronto, Ontario',
   email: 'campbellpeyton042@gmail.com',
-  eyebrow: 'Full-stack developer · London, Ontario',
+  eyebrow: 'Product engineer · Toronto, Ontario',
   headline: 'I build software that earns its place in the workflow.',
   headlineLead: 'I build software that ',
   headlineEmphasis: 'earns its place',
   headlineTail: ' in the workflow.',
   subhead:
-    'Product interfaces, cross-platform apps, and internal tools for sports technology and IoT.',
+    'Founder of Coach AIST. Junior Software Developer at OES. I build product interfaces, cross-platform apps, and the tools that connect them.',
   secondary: "Off the clock, you'll find me here.",
   primaryCta: 'View selected work',
   secondaryCta: 'Cast a line',
@@ -24,14 +24,14 @@ export const profile = {
   linkedin: 'https://www.linkedin.com/in/peyton-campbell/',
   resume: `${baseUrl}Peyton-Campbell-Resume.pdf`,
   contactNote:
-    'Best fit: full-stack product roles, internal tools, sports tech, IoT, and automation.',
+    'Best fit: product engineering roles, internal tools, sports tech, IoT, and automation.',
 } as const
 
 export const sectionCopy = {
   workDek:
     'Five projects across product interfaces, connected hardware, and the tools in between.',
   experienceDek:
-    'Building product software in London, Ontario — and staying close to the game.',
+    'Building product software in Toronto — and staying close to the game.',
   contactDek:
     'The best way to reach me is email. I’m open to conversations about product work, internal tools, and teams building close to hardware.',
 } as const
@@ -116,21 +116,12 @@ export interface ExperienceEntry {
 export const experience: ExperienceEntry[] = [
   {
     company: 'OES',
-    title: 'Full Stack Software Developer',
+    title: 'Junior Software Developer',
     period: 'Aug 2025 — Present',
     bullets: [
       'Build and modernize product interfaces across web and cross-platform apps.',
       'Connect scoreboard hardware, APIs, and operator workflows.',
       'Automate production testing and validation with Python.',
-    ],
-  },
-  {
-    company: "Western Men's Basketball",
-    title: 'Head of Data Analytics',
-    period: 'Aug 2023 — Present',
-    bullets: [
-      'Lead analytics for the men’s basketball program.',
-      'Build reporting and preparation tools for coaches.',
     ],
   },
 ]
@@ -149,11 +140,12 @@ export const education = [
 ] as const
 
 export const facts = [
-  { label: 'Based', value: 'London, Ontario' },
-  { label: 'Day job', value: 'Full-stack at OES' },
+  { label: 'Based', value: 'Toronto, Ontario' },
+  { label: 'Day job', value: 'Junior Software Developer at OES' },
+  { label: 'Building', value: 'Coach AIST' },
   { label: 'Education', value: 'BSc Computer Science, Western University' },
   { label: 'Before', value: 'Varsity basketball player' },
-  { label: 'Also', value: "Analytics for Western men's basketball" },
+  { label: 'Previously', value: "Basketball analytics, Western" },
 ] as const
 
 export const offTheClock = {

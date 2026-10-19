@@ -306,7 +306,7 @@ function SiteFooter() {
         <p>
           <span>© {new Date().getFullYear()} Peyton Campbell</span>
           <span className="footer-dot" aria-hidden="true" />
-          <span>London, Ontario</span>
+          <span>Toronto, Ontario</span>
         </p>
         <a href="#top">
           Back to the dock <span aria-hidden="true">↑</span>

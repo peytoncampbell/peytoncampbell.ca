@@ -2,11 +2,11 @@
 
 ![Peyton Campbell profile landing page](landing-preview.jpg)
 
-The profile site for Peyton Campbell, a full-stack software developer in London,
-Ontario. The landing page is built around the existing **Off the Dock** lake
-diorama: a stylized piece of Jessups Island on Lake Nipissing at first light,
-ambient and interactive in the hero, then a focused, full-screen play mode when
-you choose to cast a line.
+The profile site for Peyton Campbell, a product engineer in Toronto, founder of
+Coach AIST and a Junior Software Developer at OES. The landing page is built
+around the existing **Off the Dock** lake diorama: a stylized piece of Jessups
+Island on Lake Nipissing at first light, ambient and interactive in the hero,
+then a focused, full-screen play mode when you choose to cast a line.
 
 The profile is the primary experience. The dock is the second layer. The scene
 is a personal interpretation of a family cottage, not a survey or an exact map;
@@ -37,7 +37,7 @@ leaving it does not change the scroll position or browser history.
 | Hero | Full-viewport ambient dock scene, name/navigation, positioning statement, résumé link, two calls to action. |
 | About | Short editorial introduction plus location, current role, education, basketball background, and tool focus. |
 | Selected work | Five projects in an asymmetric editorial index: configurator, ScoreController, provisioning console, Python test jig, and Catan optimizer. Internal OES work is labelled as such rather than linked to a dead URL. |
-| Experience | Compact timeline for OES and Western Men's Basketball, followed by Western University and Fanshawe College. |
+| Experience | Compact timeline for OES, followed by Western University and Fanshawe College. Earlier basketball background appears in About and Off the clock. |
 | Off the clock | Basketball, fishing, Catan, small interactive projects, and the reason the dock exists. The page includes a short dedication to the family cottage on Jessups Island. |
 | Contact | Direct email, GitHub, LinkedIn, résumé download, and a short “best fit” note. No form. |
 | Footer | Copyright, location, and a link back to the dock. |

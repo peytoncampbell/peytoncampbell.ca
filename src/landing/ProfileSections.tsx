@@ -64,24 +64,11 @@ function AboutSection() {
           aria-label="Download Peyton Campbell's resume as a PDF"
         >
           <span className="resume-card-copy">
-            <span className="resume-card-kicker">Résumé · PDF</span>
-            <span className="resume-card-title">The short version.</span>
-            <span className="resume-card-meta">Product engineering · OES · Coach AIST · Toronto</span>
+            <span className="resume-card-title">Résumé</span>
+            <span className="resume-card-meta">Product engineer · Toronto</span>
           </span>
-
-          <span className="resume-card-art" aria-hidden="true">
-            <span className="resume-paper resume-paper-back" />
-            <span className="resume-paper resume-paper-front">
-              <span className="resume-paper-initial">PC</span>
-              <span className="resume-paper-rule is-long" />
-              <span className="resume-paper-rule" />
-              <span className="resume-paper-rule is-short" />
-            </span>
-            <span className="resume-seal">PDF</span>
-          </span>
-
           <span className="resume-card-cta">
-            Download résumé <span aria-hidden="true">↓</span>
+            Download PDF <span aria-hidden="true">↓</span>
           </span>
         </a>
       </div>

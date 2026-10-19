@@ -2120,62 +2120,30 @@
   }
 }
 
-
 /* ------------------------------------------------------------------ */
 /* Resume card                                                         */
 /* ------------------------------------------------------------------ */
 
 .resume-card {
-  position: relative;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) clamp(150px, 18vw, 210px) auto;
+  display: flex;
   align-items: center;
-  gap: clamp(20px, 4vw, 54px);
+  justify-content: space-between;
+  gap: 24px;
   margin-top: clamp(42px, 6vw, 82px);
-  padding: clamp(24px, 3.4vw, 38px) clamp(22px, 4vw, 44px);
-  overflow: hidden;
-  border: 1px solid rgba(255, 240, 210, 0.26);
-  border-radius: 3px;
-  color: #fff4e0;
-  background:
-    radial-gradient(circle at 88% 4%, rgba(255, 221, 158, 0.32), transparent 30%),
-    linear-gradient(112deg, #7f2b18 0%, #bd4721 48%, #df8737 100%);
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.3);
+  padding: 24px 28px;
+  border-radius: 2px;
+  background: #b94722;
+  color: #fff6e6;
   text-decoration: none;
-  isolation: isolate;
-  transition: transform 220ms var(--ease-out), box-shadow 220ms var(--ease-out);
-}
-
-.resume-card::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background:
-    repeating-linear-gradient(90deg, transparent 0 78px, rgba(255, 240, 210, 0.045) 78px 79px),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 36%);
-  pointer-events: none;
-}
-
-.resume-card::after {
-  content: "";
-  position: absolute;
-  right: -52px;
-  bottom: -92px;
-  width: 260px;
-  height: 260px;
-  border: 1px solid rgba(255, 240, 210, 0.18);
-  border-radius: 50%;
-  pointer-events: none;
+  transition: background 160ms ease;
 }
 
 .resume-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 30px 76px rgba(0, 0, 0, 0.36);
+  background: #a63e1d;
 }
 
 .resume-card:focus-visible {
-  outline: 2px solid #f5ca82;
+  outline: 2px solid #f3d39a;
   outline-offset: 4px;
 }
 
@@ -2183,202 +2151,52 @@
   display: flex;
   min-width: 0;
   flex-direction: column;
-}
-
-.resume-card-kicker {
-  color: rgba(255, 245, 226, 0.76);
-  font-family: var(--font-mono);
-  font-size: 9px;
-  letter-spacing: 0.17em;
-  text-transform: uppercase;
+  gap: 4px;
 }
 
 .resume-card-title {
-  display: block;
-  margin-top: 10px;
-  color: #fff7e8;
+  color: #fff6e6;
   font-family: var(--font-display);
-  font-size: clamp(2rem, 3.4vw, 3.15rem);
+  font-size: clamp(2rem, 3vw, 2.7rem);
   font-weight: 400;
-  letter-spacing: -0.035em;
-  line-height: 0.96;
+  letter-spacing: -0.03em;
+  line-height: 1;
 }
 
 .resume-card-meta {
-  display: block;
-  margin-top: 16px;
-  color: rgba(255, 245, 226, 0.76);
+  color: #ffe5c1;
   font-family: var(--font-ui);
-  font-size: 12px;
-  line-height: 1.5;
-}
-
-.resume-card-art {
-  position: relative;
-  display: block;
-  width: 100%;
-  max-width: 210px;
-  height: 154px;
-  justify-self: center;
-}
-
-.resume-paper {
-  position: absolute;
-  display: block;
-  width: 112px;
-  height: 144px;
-  border: 1px solid rgba(92, 35, 17, 0.2);
-  border-radius: 2px;
-  background: #f4e8cf;
-  box-shadow: 0 12px 30px rgba(54, 17, 6, 0.24);
-}
-
-.resume-paper-back {
-  top: 7px;
-  left: 62px;
-  background: #ead7b6;
-  transform: rotate(7deg);
-}
-
-.resume-paper-front {
-  top: 0;
-  left: 27px;
-  padding: 16px 14px;
-  transform: rotate(-5deg);
-  transition: transform 220ms var(--ease-out);
-}
-
-.resume-paper-initial {
-  display: block;
-  color: #7f2b18;
-  font-family: var(--font-display);
-  font-size: 30px;
-  line-height: 0.9;
-  letter-spacing: -0.06em;
-}
-
-.resume-paper-rule {
-  display: block;
-  width: 70%;
-  height: 2px;
-  margin-top: 10px;
-  background: rgba(91, 34, 18, 0.28);
-}
-
-.resume-paper-rule.is-long {
-  width: 100%;
-  margin-top: 18px;
-  background: rgba(91, 34, 18, 0.45);
-}
-
-.resume-paper-rule.is-short {
-  width: 48%;
-}
-
-.resume-seal {
-  position: absolute;
-  right: 4px;
-  bottom: 8px;
-  display: grid;
-  width: 48px;
-  height: 48px;
-  place-items: center;
-  border: 1px solid rgba(91, 34, 18, 0.28);
-  border-radius: 50%;
-  background: #f3c471;
-  color: #652510;
-  font-family: var(--font-mono);
-  font-size: 9px;
-  letter-spacing: 0.09em;
-  transform: rotate(7deg);
-  box-shadow: 0 8px 18px rgba(54, 17, 6, 0.23);
+  font-size: 13px;
+  line-height: 1.4;
 }
 
 .resume-card-cta {
   display: inline-flex;
+  min-height: 44px;
+  flex: 0 0 auto;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  min-height: 44px;
+  gap: 8px;
   padding: 0 16px;
-  border: 1px solid rgba(95, 33, 15, 0.16);
   border-radius: 2px;
-  background: #fff1d5;
-  color: #5c2412;
+  background: #fff2dd;
+  color: #642714;
   font-family: var(--font-ui);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   white-space: nowrap;
-  transition: background 180ms ease, transform 180ms ease;
 }
 
 .resume-card-cta span {
   font-size: 14px;
 }
 
-.resume-card:hover .resume-card-cta {
-  background: #fff8e9;
-  transform: translateY(-1px);
-}
-
-.resume-card:hover .resume-paper-front {
-  transform: rotate(-2deg) translateY(-3px);
-}
-
-@media (max-width: 980px) {
+@media (max-width: 600px) {
   .resume-card {
-    grid-template-columns: minmax(0, 1fr) 160px;
-  }
-
-  .resume-card-art {
-    height: 138px;
-  }
-
-  .resume-paper {
-    width: 96px;
-    height: 126px;
-  }
-
-  .resume-paper-back {
-    left: 49px;
-  }
-
-  .resume-paper-front {
-    left: 19px;
-    padding: 13px 11px;
-  }
-
-  .resume-paper-initial {
-    font-size: 26px;
-  }
-
-  .resume-seal {
-    right: -1px;
-    width: 42px;
-    height: 42px;
-  }
-
-  .resume-card-cta {
-    grid-column: 1 / -1;
-    justify-self: start;
-  }
-}
-
-@media (max-width: 660px) {
-  .resume-card {
-    display: flex;
+    align-items: stretch;
     flex-direction: column;
-    align-items: flex-start;
-    gap: 22px;
-    padding: 24px 20px;
-  }
-
-  .resume-card-art {
-    display: none;
-  }
-
-  .resume-card-title {
-    font-size: clamp(2rem, 10vw, 2.7rem);
+    gap: 20px;
+    padding: 22px;
   }
 
   .resume-card-cta {
@@ -2387,13 +2205,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .resume-card,
-  .resume-card-cta,
-  .resume-paper-front {
+  .resume-card {
     transition: none;
-  }
-
-  .resume-card:hover {
-    transform: none;
   }
 }

@@ -1,5 +1,4 @@
 import * as THREE from 'three'
-import { WATER_Y } from './world'
 
 export type LineMode = 'stowed' | 'flying' | 'water' | 'taut'
 
@@ -23,16 +22,6 @@ export interface SplashSlot {
   seed: number
 }
 
-export interface PelletSlot {
-  active: boolean
-  x: number
-  y: number
-  z: number
-  age: number
-  life: number
-  landed: boolean
-}
-
 export interface FishJump {
   fishId: string | null
   age: number
@@ -45,7 +34,6 @@ export interface FishJump {
 
 const MAX_RIPPLES = 40
 const MAX_SPLASHES = 6
-const MAX_PELLETS = 28
 
 const makeRipples = (): RippleSlot[] =>
   Array.from({ length: MAX_RIPPLES }, () => ({
@@ -73,8 +61,6 @@ export const runtime = {
   reelHeld: false,
   interestedFishId: null as string | null,
   hookedFishId: null as string | null,
-  feedingUntil: 0,
-  feedPoint: new THREE.Vector3(6, WATER_Y, 3),
   ripples: makeRipples(),
   splashes: Array.from({ length: MAX_SPLASHES }, (_, i) => ({
     active: false,
@@ -85,15 +71,6 @@ export const runtime = {
     power: 1,
     seed: i * 17.31,
   })) as SplashSlot[],
-  pellets: Array.from({ length: MAX_PELLETS }, () => ({
-    active: false,
-    x: 0,
-    y: 0,
-    z: 0,
-    age: 0,
-    life: 8,
-    landed: false,
-  })) as PelletSlot[],
   jump: {
     fishId: null,
     age: 0,
@@ -109,7 +86,6 @@ export const runtime = {
 
 let rippleCursor = 0
 let splashCursor = 0
-let pelletCursor = 0
 
 export function spawnRipple(
   x: number,
@@ -157,31 +133,6 @@ export function spawnSplash(x: number, z: number, power = 1): void {
   slot.power = power
   slot.seed = Math.random() * 1000
   spawnRipple(x, z, 1.2 + power * 0.9, 2.4, 0.55 + power * 0.2)
-}
-
-export function tossPellets(x: number, z: number): void {
-  for (let i = 0; i < 11; i += 1) {
-    const slot = runtime.pellets[pelletCursor]
-    pelletCursor = (pelletCursor + 1) % runtime.pellets.length
-    if (!slot) continue
-    const angle = Math.random() * Math.PI * 2
-    const distance = Math.random() * 1.4
-    slot.active = true
-    slot.x = x + Math.cos(angle) * distance
-    slot.z = z + Math.sin(angle) * distance
-    slot.y = 0.45 + Math.random() * 0.65
-    slot.age = 0
-    slot.life = 7 + Math.random() * 3
-    slot.landed = false
-  }
-  runtime.feedPoint.set(x, WATER_Y, z)
-  runtime.feedingUntil = performance.now() / 1000 + 9
-  spawnRipple(x, z, 2.2, 2.8, 0.8)
-  spawnSplash(x, z, 0.4)
-}
-
-export function clearPellets(): void {
-  for (const pellet of runtime.pellets) pellet.active = false
 }
 
 export function resetFishingRuntime(): void {

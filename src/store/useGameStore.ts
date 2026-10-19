@@ -131,8 +131,8 @@ interface GameStore {
   photoMode: boolean
   journalOpen: boolean
   helpOpen: boolean
+  settingsOpen: boolean
   onboardingOpen: boolean
-  feedMode: boolean
   cinematic: boolean
   hookedFishId: string | null
   selectedFishId: string | null
@@ -157,9 +157,9 @@ interface GameStore {
   setJournalOpen: (open: boolean) => void
   toggleJournal: () => void
   setHelpOpen: (open: boolean) => void
+  setSettingsOpen: (open: boolean) => void
   setOnboardingOpen: (open: boolean) => void
   completeOnboarding: () => void
-  setFeedMode: (on: boolean) => void
   toggleCinematic: () => void
   setHookedFishId: (id: string | null) => void
   selectFish: (id: string | null) => void
@@ -195,8 +195,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
   photoMode: false,
   journalOpen: false,
   helpOpen: false,
+  settingsOpen: false,
   onboardingOpen: onboardingNeeded(),
-  feedMode: false,
   cinematic: false,
   hookedFishId: null,
   selectedFishId: null,
@@ -268,9 +268,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
         photoMode: true,
         journalOpen: false,
         helpOpen: false,
+        settingsOpen: false,
         selectedFishId: null,
         catchCard: null,
-        feedMode: false,
       })
     } else {
       set({ photoMode: false })
@@ -279,9 +279,16 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   togglePhotoMode: () => get().setPhotoMode(!get().photoMode),
 
-  setJournalOpen: (journalOpen) => set({ journalOpen, helpOpen: false }),
-  toggleJournal: () => set((state) => ({ journalOpen: !state.journalOpen, helpOpen: false })),
-  setHelpOpen: (helpOpen) => set({ helpOpen, journalOpen: false }),
+  setJournalOpen: (journalOpen) => set({ journalOpen, helpOpen: false, settingsOpen: false }),
+  toggleJournal: () =>
+    set((state) => ({
+      journalOpen: !state.journalOpen,
+      helpOpen: false,
+      settingsOpen: false,
+    })),
+  setHelpOpen: (helpOpen) => set({ helpOpen, journalOpen: false, settingsOpen: false }),
+  setSettingsOpen: (settingsOpen) =>
+    set({ settingsOpen, journalOpen: false, helpOpen: false }),
   setOnboardingOpen: (onboardingOpen) => set({ onboardingOpen }),
   completeOnboarding: () => {
     set({ onboardingOpen: false })
@@ -291,7 +298,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
       // Ignore storage failures.
     }
   },
-  setFeedMode: (feedMode) => set({ feedMode }),
   toggleCinematic: () => set((state) => ({ cinematic: !state.cinematic })),
   setHookedFishId: (hookedFishId) => set({ hookedFishId }),
 

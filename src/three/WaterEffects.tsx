@@ -194,77 +194,6 @@ export function SplashField() {
   )
 }
 
-export function PelletField() {
-  const meshRef = useRef<THREE.InstancedMesh>(null)
-  const assets = useMemo(() => {
-    const geometry = new THREE.IcosahedronGeometry(1, 0)
-    const material = new THREE.MeshStandardMaterial({
-      color: '#9a7c4a',
-      roughness: 0.96,
-      metalness: 0,
-      flatShading: true,
-    })
-    return { geometry, material }
-  }, [])
-
-  useEffect(() => {
-    return () => {
-      assets.geometry.dispose()
-      assets.material.dispose()
-    }
-  }, [assets])
-
-  useFrame((state, rawDelta) => {
-    const mesh = meshRef.current
-    if (!mesh) return
-    const dt = Math.min(rawDelta, 0.05)
-    const time = state.clock.elapsedTime
-    for (let i = 0; i < runtime.pellets.length; i += 1) {
-      const pellet = runtime.pellets[i]!
-      if (!pellet.active) {
-        dummy.position.set(0, -20, 0)
-        dummy.scale.setScalar(0)
-        dummy.updateMatrix()
-        mesh.setMatrixAt(i, dummy.matrix)
-        continue
-      }
-      pellet.age += dt
-      const surface = waterSurface(pellet.x, pellet.z, time)
-      if (pellet.age > pellet.life) {
-        pellet.active = false
-        dummy.scale.setScalar(0)
-      } else if (!pellet.landed) {
-        pellet.y -= dt * (0.9 + pellet.age * 1.3)
-        if (pellet.y <= surface + 0.02) {
-          pellet.y = surface + 0.02
-          pellet.landed = true
-          spawnRipple(pellet.x, pellet.z, 0.5, 1.5, 0.5)
-        }
-        dummy.position.set(pellet.x, pellet.y, pellet.z)
-        dummy.scale.setScalar(0.035)
-      } else {
-        pellet.y = surface + 0.02
-        dummy.position.set(pellet.x, pellet.y, pellet.z)
-        const remaining = Math.min(1, (pellet.life - pellet.age) / 1.4)
-        dummy.scale.setScalar(0.035 * remaining)
-      }
-      dummy.rotation.set(pellet.age * 0.6, pellet.age * 0.4, 0)
-      dummy.updateMatrix()
-      mesh.setMatrixAt(i, dummy.matrix)
-    }
-    mesh.instanceMatrix.needsUpdate = true
-  })
-
-  return (
-    <instancedMesh
-      ref={meshRef}
-      args={[assets.geometry, assets.material, runtime.pellets.length]}
-      frustumCulled={false}
-      renderOrder={3}
-    />
-  )
-}
-
 export function AmbientRipples() {
   const nextRipple = useRef(3)
   useFrame((state) => {
@@ -283,7 +212,6 @@ export function WaterEffects() {
     <>
       <RippleField />
       <SplashField />
-      <PelletField />
       <AmbientRipples />
     </>
   )

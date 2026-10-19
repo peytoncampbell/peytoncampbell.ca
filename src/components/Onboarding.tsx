@@ -6,55 +6,21 @@ import { IconArrow, IconClose, IconCompass, IconHook } from './Icons'
 
 const STEPS = [
   {
-    kicker: 'One · The place',
-    title: 'Sit a while.',
-    body: 'A small island at first light. A weathered dock, a warm rod, and nowhere else to be.',
-    hint: 'Drag to look around. Scroll or pinch to move closer.',
-  },
-  {
-    kicker: 'Two · The cast',
+    kicker: 'One · The cast',
     title: 'Send a line.',
-    body: 'Hold anywhere on the water — or press Space — to charge a cast. Release, and let the bobber find its spot.',
-    hint: 'Aim left or right while you hold. The channel has its own currents.',
+    body: 'Hold on the water or press Space. Release to cast.',
+    hint: 'Aim left or right while you charge. Drag to look around.',
   },
   {
-    kicker: 'Three · The residents',
+    kicker: 'Two · The reel',
     title: 'Let it go.',
-    body: 'When the bobber dips, hold to reel. Ease off when the line tightens. Every fish here has a name; every catch goes home.',
-    hint: 'Click any fish in the water to meet them. Their profiles live in your journal.',
+    body: 'When the bobber dips, hold to set the hook. Ease off when the line tightens.',
+    hint: 'Every fish goes back. The journal remembers it.',
   },
 ]
 
 function Illustration({ step }: { step: number }) {
   if (step === 0) {
-    return (
-      <svg viewBox="0 0 360 220" fill="none" className="onboard-art">
-        <defs>
-          <linearGradient id="onboard-sky" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor="#d8b786" stopOpacity="0.24" />
-            <stop offset="1" stopColor="#d8b786" stopOpacity="0" />
-          </linearGradient>
-        </defs>
-        <rect x="0" y="0" width="360" height="220" fill="url(#onboard-sky)" />
-        <circle cx="266" cy="82" r="27" fill="#e7b879" opacity="0.55" />
-        <circle cx="266" cy="82" r="39" stroke="#e7b879" strokeOpacity="0.2" />
-        <path d="M0 142c30-8 51 5 79 1s39-11 69-4 38 9 68 3 50-9 74-2 44 7 70-2v82H0Z" fill="#47665d" opacity="0.3" />
-        <path d="M0 157c30-5 58 4 88 0s47-7 78-1 42 8 73 1 49-6 77 0 30 4 44 1v62H0Z" fill="#253f3d" opacity="0.55" />
-        <path d="M142 220V161h93v59" fill="#6d6654" opacity="0.7" />
-        <path d="M145 168h87M145 177h87M145 186h87M145 195h87M145 204h87M145 213h87" stroke="#9e947e" strokeOpacity="0.25" />
-        <path d="M148 175h79" stroke="#a69a82" strokeOpacity="0.3" />
-        <g fill="#1c2a27">
-          <circle cx="171" cy="151" r="6" />
-          <path d="M165 158h12v18h-12zM163 176h7v26h-7zM172 176h7v19h-7z" />
-          <path d="M176 160l34 22" stroke="#1c2a27" strokeWidth="2" />
-        </g>
-        <path d="M209 182c20-3 31 1 43-2" stroke="#d7c9aa" strokeWidth="1" strokeDasharray="2 4" opacity="0.5" />
-        <ellipse cx="258" cy="183" rx="23" ry="4" stroke="#d7c9aa" strokeOpacity="0.22" />
-        <ellipse cx="258" cy="183" rx="40" ry="7" stroke="#d7c9aa" strokeOpacity="0.1" />
-      </svg>
-    )
-  }
-  if (step === 1) {
     return (
       <svg viewBox="0 0 360 220" fill="none" className="onboard-art">
         <circle cx="288" cy="58" r="22" fill="#e7b879" opacity="0.4" />
@@ -174,7 +140,7 @@ export function Onboarding() {
               )}
               <button ref={primaryRef} type="button" className="primary-btn" onClick={next}>
                 {step === STEPS.length - 1 ? (
-                  <>Sit down <IconCompass size={15} /></>
+                  <>Start fishing <IconCompass size={15} /></>
                 ) : (
                   <>Next <IconArrow size={15} /></>
                 )}

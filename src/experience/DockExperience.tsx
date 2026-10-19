@@ -21,7 +21,6 @@ import {
   releaseCast,
   releaseCaughtFish,
   setCastAim,
-  tossPelletsAt,
 } from '../game/fishingEngine'
 import { sceneBridge } from '../game/sceneBridge'
 import { QUALITY_ORDER, TIME_ORDER, WEATHER_ORDER } from '../game/types'
@@ -31,6 +30,7 @@ import { Journal } from '../components/Journal'
 import { CatchCard } from '../components/CatchCard'
 import { FishProfileCard } from '../components/FishProfileCard'
 import { HelpSheet } from '../components/HelpSheet'
+import { SettingsSheet } from '../components/SettingsSheet'
 import { Onboarding } from '../components/Onboarding'
 import { PhotoBar } from '../components/PhotoBar'
 import { Toasts } from '../components/Toasts'
@@ -256,7 +256,7 @@ export default function DockExperience({
     if (store.photoMode) store.setPhotoMode(false)
     if (store.journalOpen) store.setJournalOpen(false)
     if (store.helpOpen) store.setHelpOpen(false)
-    if (store.feedMode) store.setFeedMode(false)
+    if (store.settingsOpen) store.setSettingsOpen(false)
     if (store.selectedFishId) store.selectFish(null)
     if (store.cinematic) store.toggleCinematic()
     setInteracting(false)
@@ -319,6 +319,7 @@ export default function DockExperience({
     const blocked =
       store.onboardingOpen ||
       store.helpOpen ||
+      store.settingsOpen ||
       store.journalOpen ||
       Boolean(store.catchCard)
 
@@ -341,11 +342,6 @@ export default function DockExperience({
 
     if (store.photoMode) {
       gesture.current.action = 'orbit'
-      return
-    }
-
-    if (store.feedMode) {
-      gesture.current.action = 'tap'
       return
     }
 
@@ -482,27 +478,18 @@ export default function DockExperience({
       event.clientY - gesture.current.startY,
     )
     const store = useGameStore.getState()
-    const rect = event.currentTarget.getBoundingClientRect()
 
     if (action === 'charging') {
       releaseCast()
     } else if (action === 'reeling') {
       endReelHold()
     } else if (totalMove < 7 && duration < 650) {
-      if (store.feedMode) {
-        const point = sceneBridge.pickWater(event.clientX, event.clientY, rect)
-        if (point) tossPelletsAt(point)
-      } else if (!store.photoMode) {
-        const fishId = sceneBridge.pickFish(event.clientX, event.clientY, rect)
-        if (fishId) {
-          store.selectFish(fishId)
-        } else if (action === 'armed' && store.phase === 'idle') {
-          beginCastCharge()
-          quickCastTimer.current = window.setTimeout(() => {
-            releaseCast()
-            quickCastTimer.current = null
-          }, 280)
-        }
+      if (!store.photoMode && action === 'armed' && store.phase === 'idle') {
+        beginCastCharge()
+        quickCastTimer.current = window.setTimeout(() => {
+          releaseCast()
+          quickCastTimer.current = null
+        }, 280)
       }
     }
 
@@ -532,14 +519,14 @@ export default function DockExperience({
         } else if (store.catchCard) {
           event.preventDefault()
           releaseCaughtFish()
+        } else if (store.settingsOpen) {
+          store.setSettingsOpen(false)
         } else if (store.helpOpen) {
           store.setHelpOpen(false)
         } else if (store.journalOpen) {
           store.setJournalOpen(false)
         } else if (store.selectedFishId) {
           store.selectFish(null)
-        } else if (store.feedMode) {
-          store.setFeedMode(false)
         } else if (!store.onboardingOpen) {
           event.preventDefault()
           onExit()
@@ -548,7 +535,8 @@ export default function DockExperience({
       }
 
       if (store.onboardingOpen) return
-      const overlayOpen = store.helpOpen || store.journalOpen || Boolean(store.catchCard)
+      const overlayOpen =
+        store.helpOpen || store.settingsOpen || store.journalOpen || Boolean(store.catchCard)
       if (overlayOpen) return
 
       if (event.key === ' ' || event.key === 'Spacebar') {
@@ -564,14 +552,6 @@ export default function DockExperience({
         return
       }
 
-      if (event.key === 'f' || event.key === 'F') {
-        if (store.photoMode || store.catchCard) return
-        event.preventDefault()
-        const next = !store.feedMode
-        store.setFeedMode(next)
-        if (next) store.notify('Bait ready. Click the water to scatter pellets.', 'quiet')
-        return
-      }
       if (event.key === 'c' || event.key === 'C') {
         if (store.helpOpen || store.catchCard) return
         store.toggleCinematic()
@@ -748,6 +728,7 @@ export default function DockExperience({
           <CatchCard />
           <FishProfileCard />
           <HelpSheet />
+          <SettingsSheet />
           <PhotoBar />
           <Onboarding />
           <Toasts />

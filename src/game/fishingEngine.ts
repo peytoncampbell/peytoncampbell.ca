@@ -2,7 +2,7 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { audio } from '../audio/audio'
 import { fishBridge } from './fishBridge'
-import { runtime, spawnRipple, spawnSplash, tossPellets } from './runtime'
+import { runtime, spawnRipple, spawnSplash } from './runtime'
 import { useGameStore } from '../store/useGameStore'
 import { ANGLER_POSITION, DOCK, WATER_Y, clampWaterPoint, waterSurface } from './world'
 
@@ -264,16 +264,6 @@ export function endReelHold(): void {
   audio.setReel(false)
 }
 
-export function tossPelletsAt(point: THREE.Vector3): void {
-  const store = useGameStore.getState()
-  if (store.phase === 'casting' || store.phase === 'catch' || store.phase === 'caught') return
-  tempPoint.copy(point)
-  tossPellets(tempPoint.x, tempPoint.z)
-  store.setFeedMode(false)
-  store.notify('A little cloud of bait drifts down.', 'quiet')
-  audio.playSplash(0.22)
-}
-
 export function releaseCaughtFish(): void {
   const store = useGameStore.getState()
   if (store.phase !== 'caught') return
@@ -292,7 +282,6 @@ export function endFishingSession(): void {
   const store = useGameStore.getState()
   resetLine()
   store.closeCatchCard()
-  store.setFeedMode(false)
   setPhase('idle')
 }
 

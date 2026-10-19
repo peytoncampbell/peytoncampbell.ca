@@ -114,7 +114,7 @@ export function Journal() {
           {filtered.length === 0 && (
             <div className="journal-empty">
               <p>No one here yet.</p>
-              <span>Cast a line, or click a fish in the water to say hello.</span>
+              <span>Cast a line. The residents will find their way here.</span>
             </div>
           )}
           {filtered.map((fish) => {

@@ -66,12 +66,17 @@ require touching the layout components.
 `DockExperience` instance is reused — there is no second canvas and no forked
 fishing engine.
 
-- The game HUD, fishing loop, fish profiles, feeding, journal, onboard intro,
-  help, photo mode, weather, time, quality, sound, and catch-and-release all
-  remain available.
+- The game HUD, fishing loop, fish profiles, journal, onboarding, help, settings,
+  photo mode, weather, time, quality, sound, and catch-and-release all remain
+  available.
+- The persistent chrome is deliberately small: **Journal, Photo, Settings, Help**
+  in the top right, and one contextual action strip at the bottom. There are no
+  always-on shortcut hints or secondary bait controls.
+- Onboarding is two steps: cast, then reel and release. Everything else is in
+  Help and Settings.
 - **Back to profile** (top left) or **Escape** leaves Play mode. Escape closes a
-  modal/panel first, so an open journal, catch card, help sheet, or photo mode
-  closes before the profile is revealed.
+  modal/panel first, so an open journal, settings sheet, catch card, help sheet,
+  or photo mode closes before the profile is revealed.
 - The game layer traps keyboard focus while active and restores focus to the
   control that opened it on exit.
 - Page scrolling is locked only while Play mode is open. Leaving Play mode
@@ -90,7 +95,6 @@ Fishing controls once inside Play mode:
 | Scroll / pinch | Zoom |
 | Hold **Space** or the action button | Charge a cast; release to cast. Hold while waiting to reel in. |
 | Hold **Space** while a fish is on | Reel; ease off before the line snaps |
-| **F** | Toggle bait, then click the water |
 | **J** | Field journal |
 | **P** | Photo mode (PNG export) |
 | **C** | Cinematic orbit |
@@ -98,6 +102,9 @@ Fishing controls once inside Play mode:
 | **M** / **Q** | Sound / quality |
 | **?** | Help and shortcuts |
 | **Esc** | Close the current panel, then return to the profile |
+
+Sound, time, weather, quality, and reduced motion live in the **Settings** sheet.
+The scene and comfort choices save automatically.
 
 ## WebGL, JavaScript, and reduced motion
 
@@ -265,9 +272,9 @@ app builds to `dist/`.
   380 ms on the test machine; the 3D chunk is requested only after the window
   load event, at about 600 ms. No Three.js/modulepreload request is emitted in
   the initial HTML.
-- Browser QA covered the full cast → bite → reel → catch → release flow, fish
-  profile picking, feeding, journal persistence, clicking Back/Escape out of
-  play, mobile 390×844 play mode, no-WebGL poster fallback, JavaScript-disabled
-  fallback, normal wheel scrolling, and CTA scrolling.
+- Browser QA covered the full cast → bite → reel → catch → release flow, journal
+  profiles, settings changes, clicking Back/Escape out of play, mobile 390×844
+  play mode, no-WebGL poster fallback, JavaScript-disabled fallback, normal wheel
+  scrolling, and CTA scrolling.
 - Only an upstream `THREE.Clock` deprecation warning appears in the console; no
   application errors, failed requests, or external resource calls are expected.

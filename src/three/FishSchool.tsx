@@ -235,7 +235,6 @@ export function FishSchool() {
     const interested = runtime.interestedFishId
     const hooked = runtime.hookedFishId
     const fishing = phase === 'waiting' || phase === 'bite' || phase === 'reeling'
-    const feeding = performance.now() / 1000 < runtime.feedingUntil
 
     if (time > nextWake.current) {
       nextWake.current = time + 2.2 + Math.random() * 3.5
@@ -330,18 +329,6 @@ export function FishSchool() {
           speed = 0.82
           targetDepth = 0.24 + Math.sin(time * 4.8) * 0.05
           special = true
-        }
-
-        if (feeding && !special) {
-          const dx = runtime.feedPoint.x - agent.x
-          const dz = runtime.feedPoint.z - agent.z
-          const dist = Math.hypot(dx, dz)
-          if (dist < 13) {
-            desiredX += (dx / (dist || 1)) * 0.7
-            desiredZ += (dz / (dist || 1)) * 0.7
-            speed += 0.1
-            targetDepth = Math.min(targetDepth, 0.5)
-          }
         }
 
         if (!special && species.behavior.schooling > 0.4) {

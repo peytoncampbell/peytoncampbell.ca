@@ -123,6 +123,11 @@ interface GameStore {
   castPower: number
   tension: number
   reelProgress: number
+  reelGameActive: boolean
+  reelBar: number
+  reelFish: number
+  reelZone: number
+  reelInZone: boolean
   timeOfDay: TimeOfDay
   weather: Weather
   quality: Quality
@@ -143,6 +148,13 @@ interface GameStore {
 
   setPhase: (phase: Phase) => void
   setMeters: (meters: { castPower?: number; tension?: number; reelProgress?: number }) => void
+  setReelGame: (game: {
+    active: boolean
+    bar: number
+    fish: number
+    zone: number
+    inZone: boolean
+  }) => void
   setTimeOfDay: (time: TimeOfDay) => void
   cycleTime: () => void
   setWeather: (weather: Weather) => void
@@ -187,6 +199,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
   castPower: 0,
   tension: 0,
   reelProgress: 0,
+  reelGameActive: false,
+  reelBar: 0.5,
+  reelFish: 0.5,
+  reelZone: 0.26,
+  reelInZone: false,
   timeOfDay: settings.timeOfDay,
   weather: settings.weather,
   quality: settings.quality,
@@ -213,6 +230,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
       tension: tension ?? state.tension,
       reelProgress: reelProgress ?? state.reelProgress,
     })),
+
+  setReelGame: ({ active, bar, fish, zone, inZone }) =>
+    set({
+      reelGameActive: active,
+      reelBar: bar,
+      reelFish: fish,
+      reelZone: zone,
+      reelInZone: inZone,
+    }),
 
   setTimeOfDay: (timeOfDay) => {
     set({ timeOfDay })

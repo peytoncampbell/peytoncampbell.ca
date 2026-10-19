@@ -26,8 +26,15 @@ interface EngineState {
   reelHeld: boolean
   retrieving: boolean
   reelProgress: number
-  tension: number
-  fightSeed: number
+  reelBar: number
+  reelBarVelocity: number
+  reelFish: number
+  reelFishVelocity: number
+  reelFishTarget: number
+  reelNextTarget: number
+  reelZone: number
+  reelInZone: boolean
+  tension: number
   reelStart: THREE.Vector3
   catchT: number
   catchResolved: boolean
@@ -54,8 +61,15 @@ const engine: EngineState = {
   reelHeld: false,
   retrieving: false,
   reelProgress: 0,
-  tension: 0,
-  fightSeed: 0,
+  reelBar: 0.5,
+  reelBarVelocity: 0,
+  reelFish: 0.5,
+  reelFishVelocity: 0,
+  reelFishTarget: 0.5,
+  reelNextTarget: 0,
+  reelZone: 0.26,
+  reelInZone: false,
+  tension: 0,
   reelStart: new THREE.Vector3(),
   catchT: 0,
   catchResolved: false,
@@ -87,6 +101,13 @@ function syncMeters(force = false): void {
     castPower: engine.power,
     tension: engine.tension,
     reelProgress: engine.reelProgress,
+  })
+  store.setReelGame({
+    active: store.phase === 'reeling' && !engine.retrieving,
+    bar: engine.reelBar,
+    fish: engine.reelFish,
+    zone: engine.reelZone,
+    inZone: engine.reelInZone,
   })
   runtime.castPower = engine.power
   runtime.tension = engine.tension
@@ -134,8 +155,15 @@ function resetLine(): void {
   engine.power = 0
   engine.reelHeld = false
   engine.retrieving = false
-  engine.tension = 0
   engine.reelProgress = 0
+  engine.reelBar = 0.5
+  engine.reelBarVelocity = 0
+  engine.reelFish = 0.5
+  engine.reelFishVelocity = 0
+  engine.reelFishTarget = 0.5
+  engine.reelNextTarget = 0
+  engine.reelInZone = false
+  engine.tension = 0
   engine.hookedId = null
   engine.biteFishId = null
   engine.catchT = 0
@@ -224,16 +252,23 @@ export function beginReelHold(): void {
   if (store.phase === 'bite') {
     engine.reelHeld = true
     engine.tension = Math.max(engine.tension, 0.06)
-    engine.reelProgress = 0
+    engine.reelProgress = 0.5
+    engine.reelBar = 0.5
+    engine.reelBarVelocity = 0
+    engine.reelFish = 0.35 + Math.random() * 0.3
+    engine.reelFishVelocity = 0
+    engine.reelFishTarget = engine.reelFish
+    engine.reelNextTarget = performance.now() / 1000 + 0.7
+    engine.reelZone = 0.32
+    engine.reelInZone = false
     engine.reelStart.copy(runtime.bobber)
     engine.hookedId = runtime.hookedFishId
-    engine.retrieving = false
-    engine.fightSeed = Math.random() * 10
+    engine.retrieving = false
     runtime.reelHeld = true
     runtime.lineMode = 'taut'
     audio.setReel(true)
     setPhase('reeling')
-    store.setMeters({ tension: engine.tension, reelProgress: 0 })
+    syncMeters(true)
     return
   }
   if (store.phase === 'reeling') {
@@ -283,28 +318,6 @@ export function endFishingSession(): void {
   resetLine()
   store.closeCatchCard()
   setPhase('idle')
-}
-
-function snapLine(): void {
-  const store = useGameStore.getState()
-  store.recordSnap()
-  store.notify('The line went slack — it snapped.', 'warn')
-  audio.playSnap()
-  audio.setReel(false)
-  audio.setTension(0)
-  engine.tension = 0
-  engine.reelProgress = 0
-  engine.reelHeld = false
-  engine.hookedId = null
-  engine.snappedT = 0
-  runtime.reelHeld = false
-  runtime.hookedFishId = null
-  runtime.interestedFishId = null
-  runtime.lineMode = 'stowed'
-  runtime.bobberVisible = false
-  store.setHookedFishId(null)
-  store.setMeters({ tension: 0, reelProgress: 0 })
-  setPhase('snapped')
 }
 
 function resolveMissedBite(): void {
@@ -437,25 +450,64 @@ export function FishingSystem() {
           break
         }
 
-        const struggle =
-          0.5 +
-          Math.sin(time * 3.1 + engine.fightSeed) * 0.3 +
-          Math.sin(time * 5.7 + engine.fightSeed * 2) * 0.2
-        engine.reelProgress += engine.reelHeld ? dt * (0.2 - engine.tension * 0.03) : -dt * 0.006
-        if (engine.reelHeld) {
-          engine.tension += dt * (0.21 + struggle * 0.19 + engine.reelProgress * 0.11)
-        } else {
-          engine.tension -= dt * 0.46
+        const barAcceleration = engine.reelHeld ? 1.5 : -1
+        engine.reelBarVelocity = THREE.MathUtils.clamp(
+          engine.reelBarVelocity + barAcceleration * dt,
+          -0.85,
+          0.85,
+        )
+        engine.reelBarVelocity *= Math.pow(0.25, dt)
+        engine.reelBar += engine.reelBarVelocity * dt
+
+        const halfZone = engine.reelZone / 2
+        if (engine.reelBar < halfZone) {
+          engine.reelBar = halfZone
+          engine.reelBarVelocity = 0
+        } else if (engine.reelBar > 1 - halfZone) {
+          engine.reelBar = 1 - halfZone
+          engine.reelBarVelocity = 0
         }
-        engine.tension = THREE.MathUtils.clamp(engine.tension, 0, 1.08)
-        engine.reelProgress = THREE.MathUtils.clamp(engine.reelProgress, 0, 1)
+
+        if (now > engine.reelNextTarget) {
+          engine.reelFishTarget = 0.12 + Math.random() * 0.76
+          engine.reelNextTarget = now + 1.1 + Math.random() * 1.2
+        }
+        const fishPull = THREE.MathUtils.clamp(
+          (engine.reelFishTarget - engine.reelFish) * 1.1,
+          -0.4,
+          0.4,
+        )
+        engine.reelFishVelocity = THREE.MathUtils.damp(
+          engine.reelFishVelocity,
+          fishPull,
+          2.4,
+          dt,
+        )
+        engine.reelFish = THREE.MathUtils.clamp(
+          engine.reelFish + engine.reelFishVelocity * dt,
+          0.08,
+          0.92,
+        )
+        engine.reelInZone = Math.abs(engine.reelBar - engine.reelFish) <= halfZone
+        engine.reelProgress = THREE.MathUtils.clamp(
+          engine.reelProgress + dt * (engine.reelInZone ? 0.3 : -0.08),
+          0,
+          1,
+        )
+        engine.tension = THREE.MathUtils.clamp(
+          0.25 + Math.abs(engine.reelBar - engine.reelFish) * 0.65 + (engine.reelHeld ? 0.08 : 0),
+          0,
+          0.92,
+        )
         runtime.tension = engine.tension
         runtime.reelProgress = engine.reelProgress
         audio.setTension(engine.tension)
         syncMeters()
 
-        if (engine.tension >= 1) {
-          snapLine()
+        if (engine.reelProgress <= 0) {
+          resetLine()
+          setPhase('idle')
+          store.notify('It slipped off. Keep the fish in the green.', 'quiet')
           break
         }
 

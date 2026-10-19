@@ -4,7 +4,7 @@ import { sceneBridge } from '../game/sceneBridge'
 import { IconClose, IconReset, IconWaves } from './Icons'
 
 const SHORTCUTS: Array<[string, string]> = [
-  ['Space', 'Hold to cast · hold to reel'],
+  ['Space', 'Hold to cast; hold to raise the green bar, release to drop'],
   ['C', 'Cinematic orbit'],
   ['P', 'Photo mode'],
   ['J', 'Field journal'],

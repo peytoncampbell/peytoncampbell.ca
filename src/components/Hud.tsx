@@ -23,7 +23,8 @@ interface PhaseCopy {
 
 function usePhaseCopy(): PhaseCopy {
   const phase = useGameStore((store) => store.phase) as Phase
-  const tension = useGameStore((store) => store.tension)
+  const reelGameActive = useGameStore((store) => store.reelGameActive)
+  const reelInZone = useGameStore((store) => store.reelInZone)
 
   switch (phase) {
     case 'charging':
@@ -35,11 +36,14 @@ function usePhaseCopy(): PhaseCopy {
     case 'bite':
       return { state: 'Bite.', action: 'Set the hook', attention: true }
     case 'reeling':
-      return {
-        state: tension > 0.82 ? 'Ease off.' : tension > 0.58 ? 'The line is tight.' : 'Bring it in.',
-        action: 'Hold to reel',
-        attention: tension > 0.82,
+      if (reelGameActive) {
+        return {
+          state: 'Hold to raise. Release to drop.',
+          action: 'Hold to raise',
+          attention: !reelInZone,
+        }
       }
+      return { state: 'Bringing the line in.', action: 'Hold to reel in', attention: false }
     case 'catch':
       return { state: 'Landing…', action: 'Landing', attention: true }
     case 'caught':
@@ -57,8 +61,12 @@ export function Hud() {
   const weather = useGameStore((state) => state.weather)
   const phase = useGameStore((state) => state.phase) as Phase
   const castPower = useGameStore((state) => state.castPower)
-  const tension = useGameStore((state) => state.tension)
   const reelProgress = useGameStore((state) => state.reelProgress)
+  const reelGameActive = useGameStore((state) => state.reelGameActive)
+  const reelBar = useGameStore((state) => state.reelBar)
+  const reelFish = useGameStore((state) => state.reelFish)
+  const reelZone = useGameStore((state) => state.reelZone)
+  const reelInZone = useGameStore((state) => state.reelInZone)
   const cinematic = useGameStore((state) => state.cinematic)
   const photoMode = useGameStore((state) => state.photoMode)
   const journalOpen = useGameStore((state) => state.journalOpen)
@@ -202,107 +210,118 @@ export function Hud() {
       )}
 
       {!cinematic && !photoMode && !overlayOpen && (
-        <section className="action-strip" aria-label="Fishing action">
-          <p
-            className={`action-state ${copy.attention ? 'is-alert' : ''}`}
-            aria-live="polite"
-          >
-            {copy.state}
-          </p>
-          <MeterStack
-            phase={phase}
-            castPower={castPower}
-            tension={tension}
-            reelProgress={reelProgress}
-          />
-          <button
-            type="button"
-            className={`primary-action ${pressing ? 'is-pressing' : ''} ${copy.attention ? 'is-attention' : ''}`}
-            data-phase={phase}
-            onPointerDown={onHoldDown}
-            onPointerUp={onHoldUp}
-            onPointerCancel={onHoldUp}
-            onLostPointerCapture={onHoldUp}
-            onContextMenu={(event) => event.preventDefault()}
-            onKeyDown={onHoldKeyDown}
-            onKeyUp={onHoldKeyUp}
-            disabled={disabledAction}
-            aria-label={copy.action}
-            aria-keyshortcuts="Space"
-          >
-            {copy.action}
-          </button>
+        <section
+          className={`action-strip ${reelGameActive ? 'is-reel-game' : ''}`}
+          aria-label="Fishing action"
+        >
+          {reelGameActive && (
+            <ReelGame
+              bar={reelBar}
+              fish={reelFish}
+              zone={reelZone}
+              progress={reelProgress}
+              inZone={reelInZone}
+            />
+          )}
+          <div className="action-main">
+            <p
+              className={`action-state ${copy.attention ? 'is-alert' : ''}`}
+              aria-live={reelGameActive ? 'off' : 'polite'}
+            >
+              {copy.state}
+            </p>
+            {!reelGameActive && <MeterStack phase={phase} castPower={castPower} />}
+            <button
+              type="button"
+              className={`primary-action ${pressing ? 'is-pressing' : ''} ${copy.attention ? 'is-attention' : ''}`}
+              data-phase={phase}
+              onPointerDown={onHoldDown}
+              onPointerUp={onHoldUp}
+              onPointerCancel={onHoldUp}
+              onLostPointerCapture={onHoldUp}
+              onContextMenu={(event) => event.preventDefault()}
+              onKeyDown={onHoldKeyDown}
+              onKeyUp={onHoldKeyUp}
+              disabled={disabledAction}
+              aria-label={
+                reelGameActive
+                  ? 'Hold to raise the green bar. Release to lower it.'
+                  : copy.action
+              }
+              aria-keyshortcuts="Space"
+            >
+              {copy.action}
+            </button>
+          </div>
         </section>
       )}
     </div>
   )
 }
 
-function MeterStack({
-  phase,
-  castPower,
-  tension,
-  reelProgress,
-}: {
-  phase: Phase
-  castPower: number
-  tension: number
-  reelProgress: number
-}) {
+function MeterStack({ phase, castPower }: { phase: Phase; castPower: number }) {
   const showPower = phase === 'charging' || (phase === 'casting' && castPower > 0.01)
-  const showTension = phase === 'reeling' && tension > 0.001
-  const tone = tension > 0.82 ? 'danger' : tension > 0.58 ? 'warning' : 'safe'
 
-  if (!showPower && !showTension) return null
+  if (!showPower) return null
 
   return (
     <div className="action-meter">
-      {showPower && (
-        <div className="action-meter-row">
-          <div className="action-meter-heading">
-            <span>Cast power</span>
-            <span>{Math.round(castPower * 100)}%</span>
-          </div>
-          <div
-            className="action-meter-track"
-            role="progressbar"
-            aria-label="Cast power"
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-valuenow={Math.round(castPower * 100)}
-          >
-            <span className="action-meter-fill power" style={{ width: `${castPower * 100}%` }} />
-          </div>
+      <div className="action-meter-row">
+        <div className="action-meter-heading">
+          <span>Cast power</span>
+          <span>{Math.round(castPower * 100)}%</span>
         </div>
-      )}
-      {showTension && (
-        <div className="action-meter-row">
-          <div className="action-meter-heading">
-            <span>Line tension</span>
-            <span className={`action-tension ${tone}`}>
-              {tone === 'danger' ? 'Ease off' : tone === 'warning' ? 'Tight' : 'Steady'}
-            </span>
-          </div>
-          <div
-            className="action-meter-track tension-track"
-            role="meter"
-            aria-label="Line tension"
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-valuenow={Math.min(100, Math.round(tension * 100))}
-          >
-            <span className="action-meter-safe" aria-hidden="true" />
-            <span
-              className={`action-meter-fill tension ${tone}`}
-              style={{ width: `${Math.min(100, tension * 100)}%` }}
-            />
-            <span className="action-meter-threshold" aria-hidden="true" />
-          </div>
-          <div className="action-meter-progress" aria-hidden="true">
-            <span style={{ width: `${Math.min(100, reelProgress * 100)}%` }} />
-          </div>
+        <div
+          className="action-meter-track"
+          role="progressbar"
+          aria-label="Cast power"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={Math.round(castPower * 100)}
+        >
+          <span className="action-meter-fill power" style={{ width: `${castPower * 100}%` }} />
         </div>
-      )}
+      </div>
+    </div>
+  )
+}
+
+function ReelGame({
+  bar,
+  fish,
+  zone,
+  progress,
+  inZone,
+}: {
+  bar: number
+  fish: number
+  zone: number
+  progress: number
+  inZone: boolean
+}) {
+  const zoneBottom = (bar - zone / 2) * 100
+
+  return (
+    <div className={`reel-game ${inZone ? 'is-aligned' : ''}`}>
+      <div
+        className="reel-track"
+        role="img"
+        aria-label="Fishing mini-game. Keep the fish inside the green bar."
+      >
+        <span
+          className="reel-zone"
+          style={{ bottom: `${zoneBottom}%`, height: `${zone * 100}%` }}
+        />
+        <span className="reel-fish" style={{ bottom: `${fish * 100}%` }}>
+          <svg viewBox="0 0 26 14" aria-hidden="true">
+            <path d="M2 7c3.4-4 8.8-4.4 13.2-.4L21 3.2v7.6l-5.8-3.4C10.8 11.4 5.4 11 2 7Z" />
+            <circle cx="7" cy="6.3" r="1" />
+          </svg>
+        </span>
+        <span className="reel-progress" aria-hidden="true">
+          <span style={{ height: `${Math.max(0, Math.min(1, progress)) * 100}%` }} />
+        </span>
+      </div>
     </div>
   )
 }

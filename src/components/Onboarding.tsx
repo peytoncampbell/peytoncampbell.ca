@@ -14,7 +14,7 @@ const STEPS = [
   {
     kicker: 'Two · The reel',
     title: 'Let it go.',
-    body: 'When the bobber dips, hold to set the hook. Ease off when the line tightens.',
+    body: 'When the bobber dips, hold to set the hook. Keep the fish inside the green bar: hold to raise it, release to drop.',
     hint: 'Every fish goes back. The journal remembers it.',
   },
 ]

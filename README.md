@@ -197,20 +197,27 @@ The live site, `https://peytoncampbell.ca/`, is served by GitHub Pages from the
 5. There are no server routes, API endpoints, environment variables, or runtime
    services to configure. The app also builds standalone to `dist/`.
 
-The overlay preserves the existing docs subpages and hashed assets. The old
+The overlay preserves the existing docs subpages and their legacy assets. The old
 `/projects`, `/stocks`, `/odds`, `/catan`, and similar deployments remain
 available under their own paths; only the root document and the new app assets
-change.
+change. Do not clear `docs/` before overlaying `dist/` unless those legacy pages
+are intentionally retired too.
 
 `vercel.json` also points at `"docs"`, so a Vercel build would publish the same
 GitHub Pages output rather than the raw `dist/` directory.
 
-### Integration note
+### Repository layout
 
-The repository also retains the previous flat `src/` app from the newer
-portfolio work. The Off the Dock app is applied on top, and `tsconfig.json`
-includes only this app's source so the older flat files do not interfere with
-its strict build.
+The current source is limited to the application under `src/`:
+
+```text
+src/App.tsx, main.tsx, styles.css
+src/audio, components, experience, game, hooks, landing, store, three, utils
+```
+
+The older flat stock/portfolio source, its verifier scripts, and its duplicate
+public assets were removed during the cleanup. The legacy pages under `docs/`
+remain as static content, and the old source is recoverable from git history.
 
 ## Tradeoffs
 
@@ -261,9 +268,9 @@ and audio are generated in code. Fonts use the system stacks (Iowan Old
 Style/Palatino/Georgia and Avenir Next/Segoe UI/system UI); no webfont is
 downloaded.
 
-The previous portfolio at this root was archived in the git branch
-`archive/portfolio-2026-10-19`. The `docs/` deployment was left untouched; this
-app builds to `dist/`.
+The previous portfolio source was archived in git history and the branch
+`archive/portfolio-2026-10-19`. Its legacy static pages remain under selected
+`docs/` subpaths; the docs root is the current Off the Dock build.
 
 ## Verification notes
 

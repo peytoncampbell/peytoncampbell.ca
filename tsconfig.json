@@ -17,24 +17,7 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedIndexedAccess": false,
     "forceConsistentCasingInFileNames": true,
-    "types": ["vite/client"],
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["./src/*"]
-    }
+    "types": ["vite/client"]
   },
-  "include": [
-    "src/App.tsx",
-    "src/main.tsx",
-    "src/vite-env.d.ts",
-    "src/audio",
-    "src/components",
-    "src/experience",
-    "src/game",
-    "src/hooks",
-    "src/landing",
-    "src/store",
-    "src/three",
-    "src/utils"
-  ]
+  "include": ["src"]
 }

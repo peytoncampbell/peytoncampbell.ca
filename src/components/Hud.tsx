@@ -279,7 +279,7 @@ function MeterStack({
         <div className="action-meter-row">
           <div className="action-meter-heading">
             <span>Line tension</span>
-            <span className={`tension-readout ${tone}`}>
+            <span className={`action-tension ${tone}`}>
               {tone === 'danger' ? 'Ease off' : tone === 'warning' ? 'Tight' : 'Steady'}
             </span>
           </div>

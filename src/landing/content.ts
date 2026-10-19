@@ -3,6 +3,7 @@ const baseUrl = import.meta.env.BASE_URL
 export const profile = {
   name: 'Peyton Campbell',
   role: 'Product engineer in Toronto',
+  portrait: `${baseUrl}portrait-1200.webp`,
   location: 'Toronto, Ontario',
   email: 'campbellpeyton042@gmail.com',
   eyebrow: 'Product engineer · Toronto, Ontario',

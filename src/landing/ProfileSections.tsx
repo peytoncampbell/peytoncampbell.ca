@@ -39,6 +39,16 @@ function AboutSection() {
           </div>
 
           <div className="about-side">
+            <figure className="about-portrait">
+              <img
+                src={profile.portrait}
+                alt="Peyton Campbell"
+                width={1200}
+                height={1800}
+                loading="lazy"
+                decoding="async"
+              />
+            </figure>
             <dl className="facts">
               {facts.map((fact) => (
                 <div key={fact.label}>

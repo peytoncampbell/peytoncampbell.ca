@@ -63,12 +63,10 @@ function AboutSection() {
           download="Peyton-Campbell-Resume.pdf"
           aria-label="Download Peyton Campbell's resume as a PDF"
         >
-          <span className="resume-card-copy">
-            <span className="resume-card-title">Résumé</span>
-            <span className="resume-card-meta">Product engineer · Toronto</span>
-          </span>
-          <span className="resume-card-cta">
-            Download PDF <span aria-hidden="true">↓</span>
+          <span className="resume-card-title">Résumé</span>
+          <span className="resume-card-action" aria-hidden="true">
+            <span className="resume-card-format">PDF</span>
+            <span className="resume-card-arrow">↓</span>
           </span>
         </a>
       </div>

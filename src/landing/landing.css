@@ -1434,6 +1434,18 @@
   line-height: 1.7;
 }
 
+.off-dedication {
+  max-width: 46ch;
+  margin-top: 18px;
+  padding-left: 14px;
+  border-left: 1px solid var(--accent-line);
+  color: var(--ink-faint);
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-style: italic;
+  line-height: 1.55;
+}
+
 .interest-list {
   display: flex;
   flex-wrap: wrap;

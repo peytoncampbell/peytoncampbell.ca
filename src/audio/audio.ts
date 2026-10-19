@@ -18,7 +18,7 @@ class LakeAudio {
   private paused = false
   private started = false
   private weather: Weather = 'calm'
-  private time: TimeOfDay = 'golden'
+  private time: TimeOfDay = 'blue'
 
   get isStarted(): boolean {
     return this.started

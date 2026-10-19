@@ -170,7 +170,7 @@ export function Water() {
   }, [segments])
 
   const uniforms = useMemo(() => {
-    const initial = PALETTES.golden
+    const initial = PALETTES.blue
     return {
       uTime: { value: 0 },
       uAlpha: { value: initial.waterAlpha },

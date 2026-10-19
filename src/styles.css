@@ -25,11 +25,11 @@
 }
 
 .app[data-time="blue"] {
-  --accent: #dcb7a1;
-  --accent-soft: rgba(220, 183, 161, 0.15);
-  --accent-line: rgba(220, 183, 161, 0.38);
-  --teal: #a2bac4;
-  --glass-bg: linear-gradient(145deg, rgba(25, 35, 41, 0.64), rgba(9, 16, 20, 0.6));
+  --accent: #d9d4bf;
+  --accent-soft: rgba(217, 212, 191, 0.15);
+  --accent-line: rgba(217, 212, 191, 0.38);
+  --teal: #91aaa2;
+  --glass-bg: linear-gradient(145deg, rgba(23, 36, 37, 0.66), rgba(8, 17, 18, 0.62));
 }
 
 .app[data-time="night"] {

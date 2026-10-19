@@ -53,8 +53,7 @@ function buildTrees(): TreeData[] {
     const y = terrainHeight(x, z)
     if (y < 0.35) continue
     if (Math.abs(x) < 3.4 && z > -8.5) continue
-    if (Math.hypot(x + 9.4, z - 20.9) < 4.6) continue
-    if (Math.hypot(x + 16.3, z + 4.4) < 3.0) continue
+    if (Math.hypot(x + 8.2, z + 10.4) < 4.5) continue
     trees.push({
       x,
       z,
@@ -71,7 +70,7 @@ function buildTrees(): TreeData[] {
     const z = 22.1 + rng() * 1.7
     const y = terrainHeight(x, z)
     if (y < 0.4) continue
-    if (Math.hypot(x + 9.4, z - 20.9) < 4.2) continue
+    if (Math.hypot(x + 8.2, z + 10.4) < 4.5) continue
     trees.push({
       x,
       z,
@@ -88,12 +87,30 @@ function buildTrees(): TreeData[] {
     const z = -13 + rng() * 13
     const y = terrainHeight(x, z)
     if (y < 0.4) continue
-    if (Math.hypot(x + 16.4, z + 4.4) < 3.4) continue
     trees.push({
       x,
       z,
       y,
       scale: 0.7 + rng() * 0.7,
+      rotation: rng() * Math.PI * 2,
+      hue: rng(),
+    })
+  }
+
+  // Fill the visible cottage shore so the island reads as continuous forest,
+  // not a diorama with a handful of specimen trees.
+  for (let i = 0; i < 34; i += 1) {
+    const x = -19.5 + rng() * 39
+    const z = -17.5 + rng() * 11.5
+    const y = terrainHeight(x, z)
+    if (y < 0.3) continue
+    if (Math.abs(x) < 3.6 && z > -8.8) continue
+    if (Math.hypot(x + 8.2, z + 10.4) < 4.5) continue
+    trees.push({
+      x,
+      z,
+      y,
+      scale: 0.72 + rng() * 0.95,
       rotation: rng() * Math.PI * 2,
       hue: rng(),
     })
@@ -110,7 +127,7 @@ export function Pines() {
   const assets = useMemo(() => {
     const trunkGeo = new THREE.CylinderGeometry(0.16, 0.23, 1, 5)
     trunkGeo.translate(0, 0.5, 0)
-    const trunkMat = new THREE.MeshStandardMaterial({ color: '#4b3c2e', roughness: 1, flatShading: true })
+    const trunkMat = new THREE.MeshStandardMaterial({ color: '#3b2f25', roughness: 1, flatShading: true })
     const foliageGeo = new THREE.ConeGeometry(1, 1, 7)
     foliageGeo.translate(0, 0.5, 0)
     const foliageMat = new THREE.MeshStandardMaterial({
@@ -135,7 +152,7 @@ export function Pines() {
     const trunks = trunkRef.current
     const foliage = foliageRef.current
     if (!trunks || !foliage) return
-    const foliageColors = ['#3f5137', '#4b5f40', '#37482f', '#526444', '#2e402c', '#596744']
+    const foliageColors = ['#20352a', '#2a4435', '#192d24', '#324c3b', '#1f392d', '#3a523f']
     let foliageIndex = 0
 
     trees.forEach((tree, index) => {
@@ -189,6 +206,134 @@ export function Pines() {
       <instancedMesh
         ref={foliageRef}
         args={[assets.foliageGeo, assets.foliageMat, trees.length * 3]}
+        castShadow={quality !== 'low'}
+        receiveShadow
+        frustumCulled={false}
+      />
+    </group>
+  )
+}
+
+/* ------------------------------------------------------------------ */
+/* Birches                                                             */
+/* ------------------------------------------------------------------ */
+
+interface BirchData {
+  x: number
+  z: number
+  y: number
+  scale: number
+  rotation: number
+  hue: number
+}
+
+function buildBirches(): BirchData[] {
+  const rng = mulberry32(0xb17c)
+  const birches: BirchData[] = []
+  for (let i = 0; i < 22; i += 1) {
+    const x = -17 + rng() * 34
+    const z = -14.5 + rng() * 8.8
+    const y = terrainHeight(x, z)
+    if (y < 0.35) continue
+    if (Math.abs(x) < 3.2 && z > -8.8) continue
+    if (Math.hypot(x + 8.2, z + 10.4) < 4.5) continue
+    birches.push({
+      x,
+      z,
+      y,
+      scale: 0.72 + rng() * 0.7,
+      rotation: rng() * Math.PI * 2,
+      hue: rng(),
+    })
+  }
+  return birches
+}
+
+export function Birches() {
+  const quality = useGameStore((state) => state.quality)
+  const birches = useMemo(buildBirches, [])
+  const trunkRef = useRef<THREE.InstancedMesh>(null)
+  const leafRef = useRef<THREE.InstancedMesh>(null)
+  const assets = useMemo(() => {
+    const trunkGeo = new THREE.CylinderGeometry(0.055, 0.085, 1, 5)
+    trunkGeo.translate(0, 0.5, 0)
+    const trunkMat = new THREE.MeshStandardMaterial({
+      color: '#b7b4a6',
+      roughness: 0.9,
+      flatShading: true,
+    })
+    const leafGeo = new THREE.IcosahedronGeometry(1, 0)
+    const leafMat = new THREE.MeshStandardMaterial({
+      color: '#ffffff',
+      roughness: 0.94,
+      flatShading: true,
+    })
+    return { trunkGeo, trunkMat, leafGeo, leafMat }
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      assets.trunkGeo.dispose()
+      assets.trunkMat.dispose()
+      assets.leafGeo.dispose()
+      assets.leafMat.dispose()
+    }
+  }, [assets])
+
+  useLayoutEffect(() => {
+    const trunks = trunkRef.current
+    const leaves = leafRef.current
+    if (!trunks || !leaves) return
+    const leafColors = ['#8a996d', '#788a60', '#99a577', '#6d8057']
+    let leafIndex = 0
+    birches.forEach((tree, index) => {
+      const height = 3.1 * tree.scale
+      dummy.position.set(tree.x, tree.y, tree.z)
+      dummy.rotation.set(0, tree.rotation, 0)
+      dummy.scale.set(tree.scale, height, tree.scale)
+      dummy.updateMatrix()
+      trunks.setMatrixAt(index, dummy.matrix)
+
+      for (let tier = 0; tier < 3; tier += 1) {
+        const angle = tree.rotation + tier * 2.1
+        dummy.position.set(
+          tree.x + Math.cos(angle) * 0.52 * tree.scale,
+          tree.y + (2.15 + tier * 0.55) * tree.scale,
+          tree.z + Math.sin(angle) * 0.48 * tree.scale,
+        )
+        dummy.rotation.set(tree.hue * 0.4, angle, tree.rotation * 0.2)
+        dummy.scale.set(
+          (0.72 + tree.hue * 0.3) * tree.scale,
+          (0.8 + (tier % 2) * 0.25) * tree.scale,
+          (0.68 + (1 - tree.hue) * 0.25) * tree.scale,
+        )
+        dummy.updateMatrix()
+        leaves.setMatrixAt(leafIndex, dummy.matrix)
+        tint.set(leafColors[Math.floor(tree.hue * 3 + tier) % leafColors.length] ?? '#71845a')
+        tint.offsetHSL(0, 0.02, (tree.hue - 0.5) * 0.05)
+        leaves.setColorAt(leafIndex, tint)
+        leafIndex += 1
+      }
+    })
+    trunks.instanceMatrix.needsUpdate = true
+    leaves.instanceMatrix.needsUpdate = true
+    if (leaves.instanceColor) leaves.instanceColor.needsUpdate = true
+    trunks.computeBoundingSphere()
+    leaves.computeBoundingSphere()
+  }, [birches])
+
+  return (
+    <group>
+      <instancedMesh
+        ref={trunkRef}
+        args={[assets.trunkGeo, assets.trunkMat, birches.length]}
+        castShadow={quality !== 'low'}
+        receiveShadow
+        frustumCulled={false}
+      />
+      <instancedMesh
+        ref={leafRef}
+        args={[assets.leafGeo, assets.leafMat, birches.length * 3]}
         castShadow={quality !== 'low'}
         receiveShadow
         frustumCulled={false}
@@ -298,7 +443,7 @@ export function Rocks() {
       dummy.scale.set(rock.scale * 1.15, rock.scale * 0.7, rock.scale)
       dummy.updateMatrix()
       mesh.setMatrixAt(index, dummy.matrix)
-      tint.set(rock.wet ? '#4f584f' : '#67665a')
+      tint.set(rock.wet ? '#4b544f' : rock.hue > 0.62 ? '#7d7567' : '#6a685f')
       tint.offsetHSL(0.01, 0.03, (rock.hue - 0.5) * 0.12)
       mesh.setColorAt(index, tint)
     })
@@ -336,13 +481,10 @@ interface ReedData {
 function buildReeds(): ReedData[] {
   const rng = mulberry32(0xbeed)
   const reeds: ReedData[] = []
-  for (let cluster = 0; cluster < 22; cluster += 1) {
-    const side = rng() < 0.5
-    const xCenter = side
-      ? -18.5 + rng() * 12
-      : 6.5 + rng() * 12
-    const zCenter = shoreZ(xCenter) + (rng() * 2.7 - 1.45)
-    const count = 10 + Math.floor(rng() * 9)
+  for (let cluster = 0; cluster < 9; cluster += 1) {
+    const xCenter = -16.5 + rng() * 13.5
+    const zCenter = shoreZ(xCenter) + (rng() * 1.8 + 0.35)
+    const count = 8 + Math.floor(rng() * 7)
     for (let i = 0; i < count; i += 1) {
       const x = xCenter + (rng() - 0.5) * 2.4
       const z = zCenter + (rng() - 0.5) * 1.8
@@ -359,7 +501,7 @@ function buildReeds(): ReedData[] {
       })
     }
   }
-  for (let cluster = 0; cluster < 9; cluster += 1) {
+  for (let cluster = 0; cluster < 3; cluster += 1) {
     const xCenter = -18 + rng() * 36
     const zCenter = 19.4 + rng() * 2.6
     for (let i = 0; i < 9; i += 1) {
@@ -468,9 +610,8 @@ interface LilyData {
 function buildLilies(): LilyData[] {
   const rng = mulberry32(0x117)
   const clusters = [
-    { x: LILY_POSITION.x, z: LILY_POSITION.z, count: 14 },
-    { x: -7.2, z: 2.2, count: 10 },
-    { x: 10.4, z: 6.8, count: 7 },
+    { x: LILY_POSITION.x, z: LILY_POSITION.z, count: 9 },
+    { x: -7.2, z: 2.2, count: 5 },
   ]
   const lilies: LilyData[] = []
   for (const cluster of clusters) {
@@ -814,15 +955,15 @@ export function ShoreDetails() {
   const stones = useMemo(() => {
     const rng = mulberry32(0x570ae)
     const list: Array<{ x: number; z: number; y: number; scale: number; rotation: number }> = []
-    for (let i = 0; i < 17; i += 1) {
-      const t = i / 16
-      const x = -0.8 - t * 8.4 + Math.sin(t * 5.4) * 0.7
-      const z = -5.4 - t * 7.2 + Math.cos(t * 4.1) * 0.4
+    for (let i = 0; i < 13; i += 1) {
+      const t = i / 12
+      const x = -0.55 - t * 6.35 + Math.sin(t * 5.2) * 0.34
+      const z = -4.9 - t * 2.55 + Math.cos(t * 3.8) * 0.3
       list.push({
         x,
         z,
         y: terrainHeight(x, z),
-        scale: 0.22 + rng() * 0.22,
+        scale: 0.24 + rng() * 0.2,
         rotation: rng() * Math.PI,
       })
     }
@@ -831,7 +972,7 @@ export function ShoreDetails() {
   const stonesRef = useRef<THREE.InstancedMesh>(null)
   const assets = useMemo(() => {
     const geo = new THREE.DodecahedronGeometry(1, 0)
-    const mat = new THREE.MeshStandardMaterial({ color: '#7a7464', roughness: 1, flatShading: true })
+    const mat = new THREE.MeshStandardMaterial({ color: '#777062', roughness: 1, flatShading: true })
     return { geo, mat }
   }, [])
 
@@ -877,72 +1018,3 @@ export function ShoreDetails() {
     </group>
   )
 }
-
-/* ------------------------------------------------------------------ */
-/* A small tent camp on the west bank                                  */
-/* ------------------------------------------------------------------ */
-
-export function Campsite() {
-  const base = useMemo(() => {
-    const x = -16.3
-    const z = -4.4
-    return { x, z, y: terrainHeight(x, z) }
-  }, [])
-  const backPanel = useMemo(() => {
-    const shape = new THREE.Shape()
-    shape.moveTo(-0.93, 0)
-    shape.lineTo(0.93, 0)
-    shape.lineTo(0, 1.16)
-    shape.closePath()
-    const geometry = new THREE.ShapeGeometry(shape)
-    geometry.computeVertexNormals()
-    return geometry
-  }, [])
-  useEffect(() => {
-    return () => backPanel.dispose()
-  }, [backPanel])
-
-  return (
-    <group position={[base.x, base.y, base.z]} rotation={[0, 0.86, 0]}>
-      <mesh position={[0.52, 0.56, 0]} rotation={[0, 0, -0.62]} castShadow receiveShadow>
-        <boxGeometry args={[0.055, 1.28, 2.15]} />
-        <meshStandardMaterial color="#8d7b54" roughness={0.94} flatShading side={THREE.DoubleSide} />
-      </mesh>
-      <mesh position={[-0.52, 0.56, 0]} rotation={[0, 0, 0.62]} castShadow receiveShadow>
-        <boxGeometry args={[0.055, 1.28, 2.15]} />
-        <meshStandardMaterial color="#82714e" roughness={0.94} flatShading side={THREE.DoubleSide} />
-      </mesh>
-      <mesh position={[0, 1.09, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow>
-        <cylinderGeometry args={[0.035, 0.035, 2.2, 5]} />
-        <meshStandardMaterial color="#5f5038" roughness={0.9} flatShading />
-      </mesh>
-      <mesh geometry={backPanel} position={[0, 0.02, -1.08]} castShadow>
-        <meshStandardMaterial color="#6c5d41" roughness={0.96} side={THREE.DoubleSide} flatShading />
-      </mesh>
-      <mesh position={[0.48, 0.3, 1.05]} rotation={[0.12, 0.3, -0.25]} castShadow>
-        <boxGeometry args={[0.72, 0.55, 0.035]} />
-        <meshStandardMaterial color="#a08b5e" roughness={0.94} side={THREE.DoubleSide} flatShading />
-      </mesh>
-      <mesh position={[0, 0.14, 0.15]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[1.45, 1.9]} />
-        <meshStandardMaterial color="#5d5442" roughness={1} flatShading />
-      </mesh>
-      <mesh position={[0, 0.3, -0.15]}>
-        <sphereGeometry args={[0.07, 6, 5]} />
-        <meshStandardMaterial color="#ffc377" emissive="#ff9a3d" emissiveIntensity={0.7} roughness={0.3} />
-      </mesh>
-      <pointLight position={[0, 0.45, -0.15]} color="#ffab5b" intensity={0.45} distance={4.5} decay={2} />
-      <group position={[1.35, 0.22, 0.8]} rotation={[0, 0.5, 0]}>
-        <mesh castShadow>
-          <cylinderGeometry args={[0.22, 0.28, 0.42, 6]} />
-          <meshStandardMaterial color="#62513a" roughness={1} flatShading />
-        </mesh>
-      </group>
-      <mesh position={[-1.3, 0.08, 0.7]} rotation={[0, 0.7, Math.PI / 2]} castShadow>
-        <cylinderGeometry args={[0.1, 0.14, 1.1, 5]} />
-        <meshStandardMaterial color="#5d4a35" roughness={1} flatShading />
-      </mesh>
-    </group>
-  )
-}
-

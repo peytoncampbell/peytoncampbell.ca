@@ -1,4 +1,4 @@
-﻿export type SpeciesId =
+export type SpeciesId =
   | 'bluegill'
   | 'bass'
   | 'perch'
@@ -72,23 +72,23 @@ export const SPECIES: Record<SpeciesId, Species> = {
   },
   bass: {
     id: 'bass',
-    name: 'Largemouth bass',
-    latin: 'Micropterus salmoides',
-    blurb: 'The old boss of the bay. Slow to commit, impossible to forget once it takes the bait.',
+    name: 'Smallmouth bass',
+    latin: 'Micropterus dolomieu',
+    blurb: 'A bronze-shouldered scrapper that patrols the granite points and makes you work for every cast.',
     rarity: 'common',
     palette: {
-      back: '#2f4433',
-      mid: '#6b7f54',
-      belly: '#d6caa5',
-      fin: '#6c7650',
-      accent: '#1e2c21',
+      back: '#37422c',
+      mid: '#7c7448',
+      belly: '#d8c69d',
+      fin: '#7e6a45',
+      accent: '#242d1f',
     },
-    body: { length: 1.13, height: 0.57, width: 0.33, tail: 0.48 },
-    pattern: 'stripe',
-    lengthRange: [32, 55],
+    body: { length: 1.08, height: 0.5, width: 0.34, tail: 0.48 },
+    pattern: 'bars',
+    lengthRange: [28, 50],
     weightK: 16,
-    bait: 'crayfish',
-    behavior: { speed: 0.48, depth: [0.45, 1.3], schooling: 0.15, boldness: 0.5 },
+    bait: 'minnow',
+    behavior: { speed: 0.44, depth: [0.4, 1.25], schooling: 0.12, boldness: 0.45 },
   },
   perch: {
     id: 'perch',
@@ -154,7 +154,7 @@ export const SPECIES: Record<SpeciesId, Species> = {
     id: 'catfish',
     name: 'Channel catfish',
     latin: 'Ictalurus punctatus',
-    blurb: 'A patient, whiskered bottom-dweller that knows every seam and shadow of the bay.',
+    blurb: 'A patient, whiskered bottom-dweller that knows every seam and shadow of the channel.',
     rarity: 'uncommon',
     palette: {
       back: '#384447',
@@ -174,7 +174,7 @@ export const SPECIES: Record<SpeciesId, Species> = {
     id: 'golden',
     name: 'Golden trout',
     latin: 'Oncorhynchus aguabonita',
-    blurb: 'A rumour made of light. The old-timers say it appears only when the lake is completely still.',
+    blurb: 'A rumour made of light. The family swears it appears only when the lake is completely still.',
     rarity: 'rare',
     palette: {
       back: '#9a652f',

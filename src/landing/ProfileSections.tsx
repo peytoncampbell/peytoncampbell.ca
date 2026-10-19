@@ -204,6 +204,7 @@ function OffTheClockSection({ canPlay, onPlay }: { canPlay: boolean; onPlay: () 
           </h2>
           <blockquote className="off-quote">{offTheClock.quote}</blockquote>
           <p className="off-body">{offTheClock.body}</p>
+          <p className="off-dedication">{offTheClock.dedication}</p>
           <ul className="interest-list" aria-label="Interests">
             {offTheClock.interests.map((interest) => (
               <li key={interest}>{interest}</li>
@@ -217,7 +218,7 @@ function OffTheClockSection({ canPlay, onPlay }: { canPlay: boolean; onPlay: () 
             <span />
             <span />
           </div>
-          <p className="off-aside-label">Stillwater Bay</p>
+          <p className="off-aside-label">Jessups Island</p>
           <p className="off-aside-copy">
             {offTheClock.aside}
           </p>

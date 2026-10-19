@@ -79,7 +79,7 @@ const skyFragmentShader = /* glsl */ `
 export function SkyDome() {
   const materialRef = useRef<THREE.ShaderMaterial>(null)
   const uniforms = useMemo(() => {
-    const initial = PALETTES.golden
+    const initial = PALETTES.blue
     return {
       uTop: { value: initial.skyTop.clone() },
       uMid: { value: initial.skyMid.clone() },
@@ -150,14 +150,14 @@ export function EnvironmentRig() {
   const fogRef = useRef<THREE.FogExp2>(null)
 
   const fog = useMemo(() => {
-    const created = new THREE.FogExp2(PALETTES.golden.fog.getHex(), PALETTES.golden.fogDensity)
+    const created = new THREE.FogExp2(PALETTES.blue.fog.getHex(), PALETTES.blue.fogDensity)
     fogRef.current = created
     return created
   }, [])
 
   useEffect(() => {
     scene.fog = fog
-    scene.background = PALETTES.golden.fog.clone()
+    scene.background = PALETTES.blue.fog.clone()
     return () => {
       scene.fog = null
       scene.background = null
@@ -264,7 +264,7 @@ export function EnvironmentRig() {
       />
       <pointLight
         ref={windowRef}
-        position={[CABIN_POSITION.x - 0.9, 2.1, CABIN_POSITION.z - 1.6]}        color="#ffb15c"
+        position={[CABIN_POSITION.x + 1.2, 1.9, CABIN_POSITION.z + 2.8]}        color="#ffb15c"
         intensity={0.2}
         distance={11}
         decay={2}

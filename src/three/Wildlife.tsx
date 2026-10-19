@@ -635,7 +635,8 @@ export function MistBanks() {
     const store = useGameStore.getState()
     const palette = PALETTES[store.timeOfDay]
     const dt = Math.min(delta, 0.05)
-    const target = store.weather === 'mist' ? 1 : store.weather === 'rain' ? 0.28 : 0
+    const ambientDawn = store.timeOfDay === 'blue' && store.weather === 'calm' ? 0.3 : 0
+    const target = store.weather === 'mist' ? 1 : store.weather === 'rain' ? 0.28 : ambientDawn
     material.opacity = THREE.MathUtils.damp(material.opacity, target, 1.1, dt)
     material.color.lerp(palette.fog, 1 - Math.exp(-1.3 * dt))
     const group = groupRef.current

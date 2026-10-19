@@ -6,15 +6,15 @@ import { shoreZ, terrainHeight } from '../game/world'
 import { useGameStore } from '../store/useGameStore'
 import { PALETTES } from './palette'
 
-const cSand = new THREE.Color('#a39574')
-const cWetSand = new THREE.Color('#807a5e')
-const cBedShallow = new THREE.Color('#7c8566')
-const cBedDeep = new THREE.Color('#2f4b45')
-const cGrass = new THREE.Color('#596143')
-const cGrassDark = new THREE.Color('#3f4a33')
-const cForest = new THREE.Color('#35422f')
-const cRock = new THREE.Color('#66645a')
-const cMoss = new THREE.Color('#4f5b3c')
+const cSand = new THREE.Color('#968f7e')
+const cWetSand = new THREE.Color('#585d57')
+const cBedShallow = new THREE.Color('#596756')
+const cBedDeep = new THREE.Color('#1d3834')
+const cGrass = new THREE.Color('#43553f')
+const cGrassDark = new THREE.Color('#2c4030')
+const cForest = new THREE.Color('#203124')
+const cRock = new THREE.Color('#6c6a60')
+const cMoss = new THREE.Color('#4a5a3f')
 const tempColor = new THREE.Color()
 
 function terrainColor(x: number, y: number, z: number, out: THREE.Color): THREE.Color {
@@ -92,7 +92,7 @@ export function Terrain() {
       flatShading: true,
     })
     const causticTime = { value: 0 }
-    const causticColor = { value: PALETTES.golden.waterCaustic.clone() }
+    const causticColor = { value: PALETTES.blue.waterCaustic.clone() }
     const causticStrength = { value: 0.34 }
     mat.onBeforeCompile = (shader) => {
       shader.uniforms.uCausticTime = causticTime
@@ -149,7 +149,7 @@ export function Terrain() {
     if (timeUniform) timeUniform.value = state.clock.elapsedTime
     if (colorUniform) colorUniform.value.lerp(palette.waterCaustic, 1 - Math.exp(-1.4 * Math.min(delta, 0.05)))
     if (strengthUniform) {
-      const target = useGameStore.getState().timeOfDay === 'night' ? 0.16 : 0.34
+      const target = useGameStore.getState().timeOfDay === 'night' ? 0.12 : 0.26
       strengthUniform.value = THREE.MathUtils.damp(strengthUniform.value, target, 1.4, Math.min(delta, 0.05))
     }
   })

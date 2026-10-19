@@ -44,7 +44,7 @@ function defaultQuality(): Quality {
 
 function loadSettings(): Settings {
   const fallback: Settings = {
-    timeOfDay: 'golden',
+    timeOfDay: 'blue',
     weather: 'calm',
     quality: defaultQuality(),
     soundOn: true,
@@ -221,7 +221,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   cycleTime: () => {
     const current = get().timeOfDay
-    const next = TIME_ORDER[(TIME_ORDER.indexOf(current) + 1) % TIME_ORDER.length] ?? 'golden'
+    const next = TIME_ORDER[(TIME_ORDER.indexOf(current) + 1) % TIME_ORDER.length] ?? 'blue'
     get().setTimeOfDay(next)
   },
 

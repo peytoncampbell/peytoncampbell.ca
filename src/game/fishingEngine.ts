@@ -284,7 +284,7 @@ export function releaseCaughtFish(): void {
   store.closeCatchCard()
   resetLine()
   setPhase('idle')
-  store.notify('Back she goes. The bay keeps its own.', 'quiet')
+  store.notify('Back she goes. The lake keeps its own.', 'quiet')
 }
 
 /** Puts the rod away when the player returns to the profile. */

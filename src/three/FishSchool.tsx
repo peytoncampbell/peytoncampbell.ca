@@ -24,34 +24,37 @@ interface Home {
 }
 
 const HOMES: Record<string, Home[]> = {
+  // Fish hold to structure: the dock shadow, the granite points,
+  // the one weedy cove, and the deeper channel seam.
   bluegill: [
-    { x: 2.8, z: 4.2, radius: 3.2 },
-    { x: -4.8, z: 6.2, radius: 3.0 },
-    { x: 8.2, z: 7.0, radius: 3.2 },
+    { x: 2.8, z: 3.8, radius: 2.7 },
+    { x: -7.6, z: 1.2, radius: 2.6 },
+    { x: 7.8, z: 5.4, radius: 2.5 },
   ],
   perch: [
-    { x: -1.8, z: 3.2, radius: 3.6 },
-    { x: 5.2, z: 5.2, radius: 3.8 },
-    { x: -7.4, z: 7.4, radius: 3.2 },
+    { x: -1.8, z: 2.8, radius: 3.2 },
+    { x: 5.2, z: 3.4, radius: 3.2 },
+    { x: -7.0, z: 3.4, radius: 2.6 },
   ],
   bass: [
-    { x: 1.2, z: 9.5, radius: 4.0 },
-    { x: -6.2, z: 9.0, radius: 3.4 },
-    { x: 10.2, z: 12.2, radius: 3.2 },
+    { x: 8.6, z: 3.0, radius: 3.0 },
+    { x: -9.6, z: 1.6, radius: 2.8 },
+    { x: 2.8, z: 8.6, radius: 3.0 },
   ],
   walleye: [
-    { x: -1.0, z: 12.4, radius: 4.5 },
-    { x: 9.2, z: 16.0, radius: 3.4 },
+    { x: -1.2, z: 10.2, radius: 4.0 },
+    { x: 8.0, z: 12.6, radius: 3.4 },
+    { x: -9.2, z: 8.0, radius: 3.0 },
   ],
   pike: [
-    { x: 10.8, z: 4.2, radius: 3.4 },
-    { x: -11.6, z: 5.8, radius: 3.6 },
+    { x: 9.8, z: 1.8, radius: 3.0 },
+    { x: -9.8, z: 0.4, radius: 3.2 },
   ],
   catfish: [
-    { x: -4.6, z: 2.8, radius: 4.0 },
-    { x: 3.2, z: 12.0, radius: 3.8 },
+    { x: -3.4, z: 7.2, radius: 3.8 },
+    { x: 3.6, z: 12.0, radius: 3.2 },
   ],
-  golden: [{ x: 10.6, z: 6.8, radius: 2.6 }],
+  golden: [{ x: -12.0, z: 5.0, radius: 2.2 }],
 }
 
 interface FishAgent {
@@ -221,7 +224,14 @@ export function FishSchool() {
     const time = state.clock.elapsedTime
     const store = useGameStore.getState()
     const phase = store.phase
-    const activity = store.timeOfDay === 'night' ? 0.72 : store.weather === 'rain' ? 0.86 : 1
+    const activity =
+      store.timeOfDay === 'night'
+        ? 0.7
+        : store.timeOfDay === 'blue'
+          ? 1.04
+          : store.weather === 'rain'
+            ? 0.9
+            : 1
     const interested = runtime.interestedFishId
     const hooked = runtime.hookedFishId
     const fishing = phase === 'waiting' || phase === 'bite' || phase === 'reeling'
@@ -291,6 +301,8 @@ export function FishSchool() {
         }
 
         let speed = species.behavior.speed * activity
+        if (species.id === 'walleye') speed *= store.timeOfDay === 'blue' || store.timeOfDay === 'night' ? 1.25 : 0.82
+        else if (species.id === 'pike' && store.timeOfDay === 'blue') speed *= 1.12
         let targetDepth = agent.depthBase + Math.sin(time * 0.3 + agent.phase) * 0.08
         let special = false
 

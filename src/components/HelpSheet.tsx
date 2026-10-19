@@ -11,7 +11,7 @@ const SHORTCUTS: Array<[string, string]> = [
   ['C', 'Cinematic orbit'],
   ['P', 'Photo mode'],
   ['J', 'Field journal'],
-  ['T', 'Cycle golden hour / blue hour / night'],
+  ['T', 'Cycle first light / late afternoon / night'],
   ['W', 'Cycle calm / rain / mist'],
   ['M', 'Mute or enable sound'],
   ['Drag', 'Orbit the camera'],
@@ -59,7 +59,7 @@ export function HelpSheet() {
             <p className="eyebrow">Field notes</p>
             <h2 id="help-title">How to sit still</h2>
             <p className="help-sub">
-              {WEATHER_LABEL[weather]} · {timeOfDay === 'golden' ? 'Golden hour' : timeOfDay === 'blue' ? 'Blue hour' : 'Night'} · {QUALITY_LABEL[quality]} quality
+              {WEATHER_LABEL[weather]} · {timeOfDay === 'golden' ? 'Late afternoon' : timeOfDay === 'blue' ? 'First light' : 'Night'} · {QUALITY_LABEL[quality]} quality
             </p>
           </div>
           <button
@@ -145,8 +145,8 @@ export function HelpSheet() {
               sound is generated in code — no external models, textures, or paid assets.
             </p>
             <p className="credit-line">
-              <IconWaves size={14} /> Stillwater Bay is fictional. The fish are not real, but they
-              do remember you.
+              <IconWaves size={14} /> Jessups Island, Lake Nipissing. The fish are not real, but
+              they do remember you.
             </p>
             <div className="help-actions">
               <button

@@ -8,14 +8,14 @@ const STEPS = [
   {
     kicker: 'One · The place',
     title: 'Sit a while.',
-    body: 'A small lake at the end of the day. A weathered dock, a warm rod, and nowhere else to be.',
+    body: 'A small island at first light. A weathered dock, a warm rod, and nowhere else to be.',
     hint: 'Drag to look around. Scroll or pinch to move closer.',
   },
   {
     kicker: 'Two · The cast',
     title: 'Send a line.',
     body: 'Hold anywhere on the water — or press Space — to charge a cast. Release, and let the bobber find its spot.',
-    hint: 'Aim left or right while you hold. The bay has its own currents.',
+    hint: 'Aim left or right while you hold. The channel has its own currents.',
   },
   {
     kicker: 'Three · The residents',
@@ -186,8 +186,8 @@ export function Onboarding() {
         <div className="onboarding-visual">
           <Illustration step={step} />
           <div className="onboarding-caption">
-            <span>Stillwater Bay</span>
-            <span>Golden hour</span>
+            <span>Jessups Island</span>
+            <span>First light</span>
           </div>
         </div>
       </div>

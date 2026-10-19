@@ -28,7 +28,7 @@ export const DOCK_POSTS: ReadonlyArray<{ x: number; z: number; radius: number; h
 
 export const LANTERN_POSITION = new THREE.Vector3(1.39, DOCK.deckTop, 4.15)
 export const ROWBOAT_POSITION = new THREE.Vector3(-4.8, 0, 6.0)
-export const CABIN_POSITION = new THREE.Vector3(-9.4, 0, 20.9)
+export const CABIN_POSITION = new THREE.Vector3(-8.2, 0, -10.4)
 export const LILY_POSITION = new THREE.Vector3(7.4, 0, 1.6)
 
 /** The shoreline meanders gently; every other system samples this same curve. */
@@ -141,6 +141,12 @@ export const FORM_ROCKS: ReadonlyArray<{ x: number; z: number; scale: number; ro
   { x: 2.4, z: 12.6, scale: 0.5, rotation: 1.0, wet: true },
   { x: -3.7, z: 8.4, scale: 0.32, rotation: 2.0, wet: true },
   { x: 11.7, z: 10.2, scale: 0.5, rotation: 0.5, wet: true },
+  { x: -12.4, z: -6.4, scale: 1.35, rotation: 0.4, wet: true },
+  { x: 6.2, z: -6.2, scale: 1.1, rotation: 2.2, wet: true },
+  { x: -3.4, z: -6.2, scale: 0.7, rotation: 1.3, wet: true },
+  { x: 14.6, z: -5.4, scale: 1.4, rotation: 2.8, wet: false },
+  { x: -18.6, z: -6.8, scale: 1.5, rotation: 1.1, wet: false },
+  { x: 9.4, z: -5.3, scale: 0.85, rotation: 2.4, wet: true },
 ]
 
 export const clampWaterPoint = (point: THREE.Vector3): THREE.Vector3 => {

@@ -48,12 +48,12 @@ export interface TimeMeta {
 }
 
 export const TIME_META: Record<TimeOfDay, TimeMeta> = {
-  golden: { label: 'Golden hour', short: 'Golden', clock: '6:42 PM' },
-  blue: { label: 'Blue hour', short: 'Blue', clock: '8:07 PM' },
+  golden: { label: 'Late afternoon', short: 'Afternoon', clock: '4:48 PM' },
+  blue: { label: 'First light', short: 'First light', clock: '6:12 AM' },
   night: { label: 'Night', short: 'Night', clock: '10:28 PM' },
 }
 
-export const TIME_ORDER: TimeOfDay[] = ['golden', 'blue', 'night']
+export const TIME_ORDER: TimeOfDay[] = ['blue', 'golden', 'night']
 export const WEATHER_ORDER: Weather[] = ['calm', 'rain', 'mist']
 export const WEATHER_LABEL: Record<Weather, string> = {
   calm: 'Calm',

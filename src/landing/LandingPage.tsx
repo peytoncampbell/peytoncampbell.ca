@@ -65,7 +65,7 @@ function PlayFallback({ onExit }: { onExit: () => void }) {
         <span aria-hidden="true">←</span> Back to profile
       </button>
       <div className="play-fallback-copy">
-        <p className="eyebrow">Stillwater Bay</p>
+        <p className="eyebrow">Jessups Island</p>
         <p>Opening the dock…</p>
       </div>
     </div>
@@ -323,7 +323,7 @@ export default function LandingPage() {
 
             <aside className="hero-aside" aria-label="Interactive dock">
               <span className={`live-dot ${canPlay ? 'is-live' : ''}`} aria-hidden="true" />
-              <p>{canPlay ? 'The dock is live' : 'Stillwater Bay, still'}</p>
+              <p>{canPlay ? 'The dock is live' : 'Jessups Island, still'}</p>
               <span>{canPlay ? 'Drag to look · Cast a line' : 'Static poster'}</span>
             </aside>
           </div>

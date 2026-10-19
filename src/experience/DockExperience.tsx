@@ -709,8 +709,8 @@ export default function DockExperience({
         role={playMode ? 'application' : 'img'}
         aria-label={
           playMode
-            ? 'Off the Dock — an interactive lake diorama'
-            : 'Illustration of an angler seated on a weathered dock at Stillwater Bay'
+            ? 'Off the Dock — an interactive lake diorama at Jessups Island'
+            : 'Illustration of an angler seated on a weathered dock at Jessups Island on Lake Nipissing'
         }
         tabIndex={playMode ? 0 : -1}
         onPointerDown={onPointerDown}

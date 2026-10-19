@@ -4,10 +4,13 @@
 
 The profile site for Peyton Campbell, a full-stack software developer in London,
 Ontario. The landing page is built around the existing **Off the Dock** lake
-diorama: ambient and interactive in the hero, then a focused, full-screen play
-mode when you choose to cast a line.
+diorama: a stylized piece of Jessups Island on Lake Nipissing at first light,
+ambient and interactive in the hero, then a focused, full-screen play mode when
+you choose to cast a line.
 
-The profile is the primary experience. The dock is the second layer.
+The profile is the primary experience. The dock is the second layer. The scene
+is a personal interpretation of a family cottage, not a survey or an exact map;
+no coordinates or private property details are published.
 
 ## Run it
 
@@ -35,7 +38,7 @@ leaving it does not change the scroll position or browser history.
 | About | Short editorial introduction plus location, current role, education, basketball background, and tool focus. |
 | Selected work | Five projects in an asymmetric editorial index: configurator, ScoreController, provisioning console, Python test jig, and Catan optimizer. Internal OES work is labelled as such rather than linked to a dead URL. |
 | Experience | Compact timeline for OES and Western Men's Basketball, followed by Western University and Fanshawe College. |
-| Off the clock | Basketball, fishing, Catan, small interactive projects, and the reason the dock exists. |
+| Off the clock | Basketball, fishing, Catan, small interactive projects, and the reason the dock exists. The page includes a short dedication to the family cottage on Jessups Island. |
 | Contact | Direct email, GitHub, LinkedIn, résumé download, and a short “best fit” note. No form. |
 | Footer | Copyright, location, and a link back to the dock. |
 
@@ -91,7 +94,7 @@ Fishing controls once inside Play mode:
 | **J** | Field journal |
 | **P** | Photo mode (PNG export) |
 | **C** | Cinematic orbit |
-| **T** / **W** | Time of day / weather |
+| **T** / **W** | Time of day / weather (first light, late afternoon, night; calm, rain, mist) |
 | **M** / **Q** | Sound / quality |
 | **?** | Help and shortcuts |
 | **Esc** | Close the current panel, then return to the profile |

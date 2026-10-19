@@ -52,7 +52,7 @@ export function Journal() {
       >
         <header className="journal-head">
           <div>
-            <p className="eyebrow">Stillwater Bay</p>
+            <p className="eyebrow">Jessups Island · Lake Nipissing</p>
             <h2 id="journal-title">Field journal</h2>
             <p className="journal-sub">
               {residents.length} residents · {met} met · {caught} caught &amp; released

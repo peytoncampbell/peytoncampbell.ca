@@ -22,16 +22,28 @@ export function Rowboat() {
     bowRingGeo.rotateY(Math.PI / 2)
 
     const hullMat = new THREE.MeshStandardMaterial({
-      color: '#5e4c36',
-      roughness: 0.94,
+      color: '#b6bab4',
+      roughness: 0.46,
+      metalness: 0.38,
       flatShading: true,
       side: THREE.DoubleSide,
     })
-    const rimMat = new THREE.MeshStandardMaterial({ color: '#3d3023', roughness: 0.9, flatShading: true })
-    const innerMat = new THREE.MeshStandardMaterial({ color: '#24221d', roughness: 1, flatShading: true })
-    const plankMat = new THREE.MeshStandardMaterial({ color: '#806646', roughness: 0.9, flatShading: true })
-    const oarMat = new THREE.MeshStandardMaterial({ color: '#8d724c', roughness: 0.86, flatShading: true })
-    const metalMat = new THREE.MeshStandardMaterial({ color: '#6d6c64', roughness: 0.45, metalness: 0.65 })
+    const rimMat = new THREE.MeshStandardMaterial({
+      color: '#5d6461',
+      roughness: 0.52,
+      metalness: 0.3,
+      flatShading: true,
+    })
+    const innerMat = new THREE.MeshStandardMaterial({ color: '#8b9188', roughness: 0.9, flatShading: true })
+    const plankMat = new THREE.MeshStandardMaterial({ color: '#6d5a41', roughness: 0.9, flatShading: true })
+    const oarMat = new THREE.MeshStandardMaterial({ color: '#7c6b50', roughness: 0.86, flatShading: true })
+    const metalMat = new THREE.MeshStandardMaterial({ color: '#3f4746', roughness: 0.45, metalness: 0.65 })
+    const outboardMat = new THREE.MeshStandardMaterial({
+      color: '#303737',
+      roughness: 0.4,
+      metalness: 0.35,
+      flatShading: true,
+    })
 
     const ropeGeometry = new THREE.BufferGeometry()
     ropeGeometry.setAttribute(
@@ -57,6 +69,7 @@ export function Rowboat() {
       plankMat,
       oarMat,
       metalMat,
+      outboardMat,
       ropeGeometry,
       ropeMaterial,
       ropeObject,
@@ -75,6 +88,7 @@ export function Rowboat() {
       assets.plankMat.dispose()
       assets.oarMat.dispose()
       assets.metalMat.dispose()
+      assets.outboardMat.dispose()
       assets.ropeGeometry.dispose()
       assets.ropeMaterial.dispose()
     }
@@ -166,6 +180,28 @@ export function Rowboat() {
         </mesh>
         <mesh geometry={assets.bowRingGeo} material={assets.metalMat} position={[0, 0.12, 1.93]} />
         <object3D ref={bowRef} position={[0, 0.16, 2.0]} />
+
+        {/* A small tiller outboard, the way a lake boat actually waits at the dock. */}
+        <group position={[0, 0.24, -1.74]} rotation={[0.05, 0, 0]}>
+          <mesh material={assets.outboardMat} castShadow>
+            <boxGeometry args={[0.34, 0.4, 0.4]} />
+          </mesh>
+          <mesh material={assets.outboardMat} position={[0, 0.24, -0.01]} castShadow>
+            <boxGeometry args={[0.38, 0.07, 0.44]} />
+          </mesh>
+          <mesh material={assets.metalMat} position={[0, 0.49, 0.02]}>
+            <cylinderGeometry args={[0.035, 0.045, 0.2, 6]} />
+          </mesh>
+          <mesh material={assets.outboardMat} position={[0, -0.33, 0]} castShadow>
+            <cylinderGeometry args={[0.05, 0.065, 0.64, 6]} />
+          </mesh>
+          <mesh material={assets.outboardMat} position={[0, -0.69, 0.02]} rotation={[0, 0, Math.PI / 2]} castShadow>
+            <boxGeometry args={[0.3, 0.18, 0.08]} />
+          </mesh>
+          <mesh material={assets.outboardMat} position={[0, -0.7, -0.18]} rotation={[0.2, 0, 0]}>
+            <boxGeometry args={[0.16, 0.32, 0.04]} />
+          </mesh>
+        </group>
 
         <mesh material={assets.hullMat} position={[0, -0.31, 0]} scale={[0.55, 0.2, 1.55]}>
           <boxGeometry args={[1, 1, 1]} />

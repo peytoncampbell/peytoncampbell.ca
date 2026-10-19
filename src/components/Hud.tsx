@@ -125,7 +125,7 @@ function usePhaseCopy(): {
     case 'idle':
     default:
       return {
-        title: 'The bay is holding its breath.',
+        title: 'The channel is holding its breath.',
         body: 'Hold anywhere on the water — or press Space — to charge a cast.',
         action: 'Hold to cast',
         actionHint: 'or press Space',
@@ -267,7 +267,7 @@ export function Hud() {
           <p className="brand-eyebrow">A quiet lake study</p>
           <h1>Off the Dock</h1>
           <p className="brand-meta">
-            <span>Stillwater Bay</span>
+            <span>Jessups Island</span>
             <span className="meta-dot" />
             <span>{meta.label}</span>
             <span className="meta-dot" />

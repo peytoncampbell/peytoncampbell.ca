@@ -387,19 +387,23 @@ function FoldedJacket() {
     <group position={[1.08, DOCK.deckTop + 0.02, 3.12]} rotation={[0, -0.35, 0.04]}>
       <mesh position={[0, 0.055, 0]} castShadow receiveShadow>
         <boxGeometry args={[0.54, 0.09, 0.42]} />
-        <meshStandardMaterial color="#9a7440" roughness={0.98} flatShading />
+        <meshStandardMaterial color="#b95532" roughness={0.92} flatShading />
       </mesh>
       <mesh position={[0.02, 0.115, 0.02]} rotation={[0, 0.12, 0.02]} castShadow>
         <boxGeometry args={[0.49, 0.07, 0.36]} />
-        <meshStandardMaterial color="#a98146" roughness={0.98} flatShading />
+        <meshStandardMaterial color="#cf6b3c" roughness={0.92} flatShading />
       </mesh>
       <mesh position={[-0.2, 0.075, 0.05]} rotation={[0.2, 0.2, -0.1]}>
         <boxGeometry args={[0.16, 0.055, 0.34]} />
-        <meshStandardMaterial color="#8a6739" roughness={0.98} flatShading />
+        <meshStandardMaterial color="#9d472b" roughness={0.92} flatShading />
       </mesh>
       <mesh position={[0.22, 0.145, -0.09]} rotation={[0, 0.22, 0.02]}>
         <boxGeometry args={[0.18, 0.035, 0.2]} />
-        <meshStandardMaterial color="#b18b4d" roughness={0.98} flatShading />
+        <meshStandardMaterial color="#d47a47" roughness={0.92} flatShading />
+      </mesh>
+      <mesh position={[0, 0.105, 0]} rotation={[0, 0, 0.02]}>
+        <boxGeometry args={[0.46, 0.018, 0.08]} />
+        <meshStandardMaterial color="#34322c" roughness={0.98} flatShading />
       </mesh>
     </group>
   )

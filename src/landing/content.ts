@@ -162,6 +162,8 @@ export const offTheClock = {
     'A small interactive detour. A place to think about systems, patience, and better tools.',
   body:
     'I played varsity basketball at Western and still spend time around the game. Fishing, Catan, and small interactive projects all ask the same question: what makes this system worth spending time with?',
+  dedication:
+    "The dock is based on my grandparents' cottage on Jessups Island, Lake Nipissing.",
   aside:
     'The dock is a small, living thing. Drag to look around, or step into the full experience.',
   interests: ['Basketball', 'Fishing', 'Catan', 'Small interactive things'],

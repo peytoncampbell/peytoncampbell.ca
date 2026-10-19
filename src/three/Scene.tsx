@@ -6,7 +6,7 @@ import { Angler } from './Angler'
 import { FishSchool } from './FishSchool'
 import { Cabin } from './Cabin'
 import { Rowboat } from './Rowboat'
-import { DistantHills, DriftLeaves, LilyPads, Pines, Reeds, Rocks, ShoreDetails, Campsite } from './Shoreline'
+import { DistantHills, DriftLeaves, LilyPads, Pines, Birches, Reeds, Rocks, ShoreDetails } from './Shoreline'
 import { ShoreLife } from './Wildlife'
 import { Weather } from './Weather'
 import { FishingRig } from './FishingRig'
@@ -25,12 +25,12 @@ export function Scene() {
       <Water />
       <DistantHills />
       <Pines />
+      <Birches />
       <Rocks />
       <Reeds />
       <LilyPads />
       <DriftLeaves />
       <ShoreDetails />
-      <Campsite />
       <Cabin />
       <Rowboat />
       <Dock />

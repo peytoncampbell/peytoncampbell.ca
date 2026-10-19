@@ -35,6 +35,7 @@ function AboutSection() {
               {profile.aboutLead}
             </h2>
             <p className="about-secondary">{profile.aboutSecondary}</p>
+            <p className="about-personal">{profile.aboutPersonal}</p>
           </div>
 
           <div className="about-side">
@@ -46,14 +47,6 @@ function AboutSection() {
                 </div>
               ))}
             </dl>
-            <div className="focus-row">
-              <span className="focus-label">Tools in the room</span>
-              <ul className="focus-list" aria-label="Areas of focus">
-                {profile.focus.map((item) => (
-                  <li key={item}>{item}</li>
-                ))}
-              </ul>
-            </div>
           </div>
         </div>
 

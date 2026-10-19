@@ -879,6 +879,18 @@
   line-height: 1.7;
 }
 
+.about-personal {
+  max-width: 44ch;
+  margin-top: 22px;
+  padding-left: 14px;
+  border-left: 1px solid var(--accent-line);
+  color: var(--cream-dim);
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-style: italic;
+  line-height: 1.45;
+}
+
 .about-side {
   padding-top: 7px;
 }
@@ -908,42 +920,6 @@
   color: var(--cream);
   font-size: 12px;
   line-height: 1.5;
-}
-
-.focus-row {
-  margin-top: 38px;
-  padding-top: 18px;
-  border-top: 1px solid var(--line);
-}
-
-.focus-label {
-  color: var(--ink-faint);
-  font-family: var(--font-mono);
-  font-size: 8px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.focus-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 7px 13px;
-  margin: 12px 0 0;
-  padding: 0;
-  list-style: none;
-}
-
-.focus-list li {
-  color: var(--ink-soft);
-  font-family: var(--font-mono);
-  font-size: 9px;
-  letter-spacing: 0.02em;
-}
-
-.focus-list li:not(:last-child)::after {
-  content: "/";
-  margin-left: 13px;
-  color: var(--line-strong);
 }
 
 /* ------------------------------------------------------------------ */
@@ -1933,10 +1909,6 @@
   .facts > div {
     grid-template-columns: 78px 1fr;
     gap: 12px;
-  }
-
-  .focus-row {
-    margin-top: 28px;
   }
 
   .work-head {

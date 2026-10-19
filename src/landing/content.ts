@@ -15,11 +15,11 @@ export const profile = {
   secondary: "Off the clock, you'll find me here.",
   primaryCta: 'View selected work',
   secondaryCta: 'Cast a line',
-  aboutLead:
-    'I work across web, mobile, and internal tooling for sports technology and IoT. I like problems where the interface has to meet real hardware, real operators, and real deadlines.',
+  aboutLead: 'I build software that has to work on game day.',
   aboutSecondary:
-    'Most of my work sits between the screen and the thing it controls — scoreboards, edge devices, test benches, and the people running them. I care about clear states, honest feedback, and tools that get out of the way.',
-  focus: ['React / Next.js', '.NET MAUI', 'Python', 'IoT tooling', 'Sports technology'],
+    'Product engineer in Toronto. I build Coach AIST and ship scoreboard and hardware tools at OES. The work has to hold up in a gym, on a bench, and when the clock is running.',
+  aboutPersonal:
+    'Basketball at Western shaped how I work: prepare early, take coaching, and make the next play.',
   github: 'https://github.com/peytoncampbell',
   linkedin: 'https://www.linkedin.com/in/peyton-campbell/',
   resume: `${baseUrl}Peyton-Campbell-Resume.pdf`,
@@ -140,12 +140,9 @@ export const education = [
 ] as const
 
 export const facts = [
-  { label: 'Based', value: 'Toronto, Ontario' },
   { label: 'Day job', value: 'Junior Software Developer at OES' },
   { label: 'Building', value: 'Coach AIST' },
-  { label: 'Education', value: 'BSc Computer Science, Western University' },
-  { label: 'Before', value: 'Varsity basketball player' },
-  { label: 'Previously', value: "Basketball analytics, Western" },
+  { label: 'Open to', value: 'Product engineering roles' },
 ] as const
 
 export const offTheClock = {

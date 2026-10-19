@@ -2139,34 +2139,36 @@
   align-items: center;
   justify-content: space-between;
   gap: 24px;
-  margin-top: clamp(42px, 6vw, 82px);
-  padding: 22px 26px 22px 24px;
-  border-left: 10px solid #ad3f1f;
+  margin-top: clamp(40px, 5vw, 64px);
+  padding: 18px 22px;
+  border: 1px solid var(--line);
+  border-left: 3px solid #ad3f1f;
   border-radius: 2px;
-  background: #efe3cc;
-  color: #1b1510;
+  background: rgba(243, 234, 217, 0.04);
+  color: var(--cream);
   text-decoration: none;
-  transition: background 160ms ease;
+  transition: background 160ms ease, border-color 160ms ease;
 }
 
 .resume-card:hover {
-  background: #e6d3b4;
+  border-color: var(--line-strong);
+  border-left-color: #c65a32;
+  background: rgba(243, 234, 217, 0.065);
 }
 
 .resume-card:focus-visible {
-  outline: 2px solid #f3d39a;
+  outline: 2px solid var(--accent-line);
   outline-offset: 4px;
 }
 
 .resume-card-title {
   min-width: 0;
-  color: #1b1510;
+  color: var(--cream);
   font-family: var(--font-display);
-  font-size: clamp(3rem, 6.4vw, 5.4rem);
+  font-size: clamp(1.8rem, 3vw, 2.6rem);
   font-weight: 400;
-  letter-spacing: -0.055em;
-  line-height: 0.8;
-  white-space: nowrap;
+  letter-spacing: -0.04em;
+  line-height: 1;
 }
 
 .resume-card-action {
@@ -2177,43 +2179,43 @@
 }
 
 .resume-card-format {
-  padding: 7px 8px;
-  border: 1px solid rgba(125, 44, 23, 0.38);
+  padding: 6px 7px;
+  border: 1px solid var(--line-strong);
   border-radius: 2px;
-  color: #7d2c17;
+  color: rgba(243, 234, 217, 0.56);
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 9px;
   letter-spacing: 0.12em;
   line-height: 1;
 }
 
 .resume-card-arrow {
   display: grid;
-  width: 62px;
-  height: 62px;
+  width: 46px;
+  height: 46px;
   place-items: center;
   border-radius: 50%;
   background: #ad3f1f;
   color: #fff4df;
   font-family: var(--font-ui);
-  font-size: 30px;
+  font-size: 21px;
   line-height: 1;
   transition: transform 160ms ease;
 }
 
 .resume-card:hover .resume-card-arrow {
-  transform: translateY(3px);
+  transform: translateY(2px);
 }
 
 @media (max-width: 600px) {
   .resume-card {
     gap: 14px;
-    padding: 18px 16px 18px 14px;
-    border-left-width: 7px;
+    padding: 16px 16px 16px 14px;
+    border-left-width: 3px;
   }
 
   .resume-card-title {
-    font-size: clamp(2.8rem, 13vw, 4rem);
+    font-size: clamp(1.7rem, 8vw, 2.2rem);
   }
 
   .resume-card-action {
@@ -2221,14 +2223,14 @@
   }
 
   .resume-card-format {
-    font-size: 9px;
-    padding: 6px;
+    font-size: 8px;
+    padding: 5px;
   }
 
   .resume-card-arrow {
-    width: 52px;
-    height: 52px;
-    font-size: 26px;
+    width: 42px;
+    height: 42px;
+    font-size: 19px;
   }
 }
 

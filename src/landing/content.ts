@@ -143,7 +143,6 @@ export const education = [
 export const facts = [
   { label: 'Day job', value: 'Junior Software Developer at OES' },
   { label: 'Building', value: 'Coach AIST' },
-  { label: 'Open to', value: 'Product engineering roles' },
 ] as const
 
 export const offTheClock = {

@@ -2,142 +2,222 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Peyton Campbell | Full-Stack Software Developer</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#0a0f17" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=DM+Serif+Display&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
-    />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="canonical" href="https://peytoncampbell.ca/" />
-
-    <!-- SEO Metadata -->
-    <meta name="description" content="Full-stack software developer in London, Ontario building React, Next.js, Python, C#, .NET MAUI, BLE, sports technology, and IoT product tools." />
-    <meta name="keywords" content="Peyton Campbell, full-stack software developer, React, Next.js, TypeScript, Python, C#, .NET MAUI, BLE, sports technology, IoT" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#0b1311" />
+    <meta name="color-scheme" content="dark" />
     <meta name="author" content="Peyton Campbell" />
+    <meta
+      name="description"
+      content="Peyton Campbell is a full-stack software developer in London, Ontario, building product interfaces, cross-platform apps, and internal tools for sports technology and IoT."
+    />
+    <meta name="robots" content="index, follow" />
+    <title>Peyton Campbell — Full-stack developer in London, Ontario</title>
+    <link rel="canonical" href="https://peytoncampbell.ca/" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
 
-    <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website" />
+    <meta property="og:type" content="profile" />
     <meta property="og:url" content="https://peytoncampbell.ca/" />
-    <meta property="og:title" content="Peyton Campbell | Full-Stack Software Developer" />
-    <meta property="og:description" content="Building product tools across React, Next.js, Python, C#, .NET MAUI, BLE, sports technology, and IoT workflows." />
-    <meta property="og:image" content="https://peytoncampbell.ca/og-image.svg" />
+    <meta property="og:title" content="Peyton Campbell — Full-stack developer" />
+    <meta
+      property="og:description"
+      content="Product interfaces, cross-platform apps, and internal tools for sports technology and IoT. Based in London, Ontario."
+    />
+    <meta property="og:image" content="https://peytoncampbell.ca/preview.jpg" />
+    <meta property="og:image:type" content="image/jpeg" />
+    <meta property="og:image:width" content="1440" />
+    <meta property="og:image:height" content="900" />
+    <meta
+      property="og:image:alt"
+      content="An angler seated at the end of a weathered dock over Stillwater Bay at golden hour."
+    />
+    <meta property="og:site_name" content="Peyton Campbell" />
+    <meta property="og:locale" content="en_CA" />
 
-    <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image" />
-    <meta property="twitter:url" content="https://peytoncampbell.ca/" />
-    <meta property="twitter:title" content="Peyton Campbell | Full-Stack Software Developer" />
-    <meta property="twitter:description" content="Building product tools across React, Next.js, Python, C#, .NET MAUI, BLE, sports technology, and IoT workflows." />
-    <meta property="twitter:image" content="https://peytoncampbell.ca/og-image.svg" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Peyton Campbell — Full-stack developer" />
+    <meta
+      name="twitter:description"
+      content="Product interfaces, cross-platform apps, and internal tools for sports technology and IoT. Based in London, Ontario."
+    />
+    <meta name="twitter:image" content="https://peytoncampbell.ca/preview.jpg" />
+    <meta
+      name="twitter:image:alt"
+      content="An angler seated at the end of a weathered dock over Stillwater Bay at golden hour."
+    />
 
-    <link rel="preload" as="image" href="/portrait-1200.webp" type="image/webp" fetchpriority="high" />
-    <!--
-      Config for the shared cross-app nav (src/nav.js, imported by src/main.tsx).
-
-      It MUST live in <head>, ahead of the module script. Two reasons:
-        1. ES module imports are evaluated before the importing module's body runs, so an
-           assignment inside main.tsx would land after nav.js already read it.
-        2. Vite hoists the bundled module script INTO <head>, so a classic script left in
-           <body> ends up running after it. Both were tried; both silently disabled
-           `hideOn` and drew a second navbar on top of the portfolio's own.
-
-      inline: render in flow, not as a sticky bar (the app routes own their page frame)
-      hideOn: pages that already provide their own navigation
-    -->
-    <script>
-      window.PC_NAV = { root: '/', inline: true, hideOn: '/,/login' };
-    </script>
-    <script defer data-domain="peytoncampbell.ca" src="https://plausible.io/js/script.js"></script>
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
-        "@graph": [
-          {
-            "@type": "Person",
-            "@id": "https://peytoncampbell.ca/#person",
-            "name": "Peyton Campbell",
-            "url": "https://peytoncampbell.ca/",
-            "image": "https://peytoncampbell.ca/portrait-1200.webp",
-            "jobTitle": "Full-Stack Software Developer",
-            "address": {
-              "@type": "PostalAddress",
-              "addressLocality": "London",
-              "addressRegion": "ON",
-              "addressCountry": "CA"
-            },
-            "alumniOf": [
-              {
-                "@type": "CollegeOrUniversity",
-                "name": "University of Western Ontario"
-              },
-              {
-                "@type": "CollegeOrUniversity",
-                "name": "Fanshawe College"
-              }
-            ],
-            "knowsAbout": [
-              "React",
-              "Next.js",
-              "TypeScript",
-              "Python",
-              "C#",
-              ".NET MAUI",
-              "Bluetooth Low Energy",
-              "IoT",
-              "Sports technology"
-            ],
-            "sameAs": [
-              "https://github.com/peytoncampbell",
-              "https://www.linkedin.com/in/peyton-campbell/"
-            ]
-          },
-          {
-            "@type": "WebSite",
-            "@id": "https://peytoncampbell.ca/#website",
-            "url": "https://peytoncampbell.ca/",
-            "name": "Peyton Campbell | Full-Stack Software Developer",
-            "publisher": {
-              "@id": "https://peytoncampbell.ca/#person"
-            }
-          },
-          {
-            "@type": "ItemList",
-            "@id": "https://peytoncampbell.ca/#projects",
-            "name": "Selected software projects",
-            "itemListElement": [
-              {
-                "@type": "CreativeWork",
-                "position": 1,
-                "name": "Scoreboard Configurator & Admin Layout Editor",
-                "description": "Web-based scoreboard configurator and internal admin layout editor for customer-facing previews and editable hardware-specific layouts."
-              },
-              {
-                "@type": "CreativeWork",
-                "position": 2,
-                "name": "ScoreController",
-                "url": "https://apps.apple.com/us/app/score-controller/id1563410119",
-                "description": "Cross-platform scoreboard controller for iOS, Android, and Windows with real-time BLE communication."
-              },
-              {
-                "@type": "SoftwareApplication",
-                "position": 3,
-                "name": "Catan Settlement Optimizer",
-                "url": "https://peytoncampbell.ca/catan/",
-                "applicationCategory": "GameApplication",
-                "description": "Interactive Catan optimizer that ranks settlement positions using probability, scarcity, and port-aware heuristics."
-              }
-            ]
-          }
+        "@type": "Person",
+        "name": "Peyton Campbell",
+        "url": "https://peytoncampbell.ca/",
+        "image": "https://peytoncampbell.ca/preview.jpg",
+        "email": "campbellpeyton042@gmail.com",
+        "jobTitle": "Full-stack software developer",
+        "description": "Full-stack software developer building product interfaces, cross-platform apps, and internal tools for sports technology and IoT.",
+        "homeLocation": {
+          "@type": "Place",
+          "name": "London, Ontario, Canada"
+        },
+        "worksFor": {
+          "@type": "Organization",
+          "name": "OES"
+        },
+        "alumniOf": [
+          { "@type": "CollegeOrUniversity", "name": "Western University" },
+          { "@type": "CollegeOrUniversity", "name": "Fanshawe College" }
+        ],
+        "sameAs": [
+          "https://github.com/peytoncampbell",
+          "https://www.linkedin.com/in/peyton-campbell/"
         ]
       }
     </script>
-    <script type="module" crossorigin src="/assets/index--pd5HcfL.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-C8IWfE-9.css">
+
+    <style>
+      .noscript-fallback {
+        margin: 0;
+        background: #0b1311;
+        color: #f3ead9;
+        font-family: "Avenir Next", "Segoe UI", system-ui, -apple-system, sans-serif;
+        line-height: 1.6;
+      }
+      .noscript-fallback a { color: #f3ead9; }
+      .noscript-wrap { width: min(1120px, calc(100% - 40px)); margin: 0 auto; padding: 28px 0 64px; }
+      .noscript-hero { position: relative; min-height: 520px; display: flex; align-items: flex-end; overflow: hidden; border: 1px solid rgba(243,234,217,.14); }
+      .noscript-hero img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .58; }
+      .noscript-hero-copy { position: relative; padding: 42px 32px; background: linear-gradient(90deg, rgba(5,11,10,.94), rgba(5,11,10,.25)); width: 100%; }
+      .noscript-kicker { margin: 0 0 12px; color: #e8bd81; font: 10px/1.5 "Cascadia Code", Consolas, monospace; letter-spacing: .16em; text-transform: uppercase; }
+      .noscript-fallback h1, .noscript-fallback h2, .noscript-fallback h3 { font-family: "Iowan Old Style", Palatino, Georgia, serif; font-weight: 400; line-height: 1.05; letter-spacing: -.03em; }
+      .noscript-fallback h1 { max-width: 760px; margin: 0; font-size: clamp(42px, 7vw, 74px); }
+      .noscript-fallback h2 { margin: 0 0 22px; font-size: clamp(30px, 4vw, 44px); }
+      .noscript-fallback h3 { margin: 0 0 4px; font-size: 25px; }
+      .noscript-fallback p { max-width: 68ch; margin: 12px 0; color: rgba(243,234,217,.72); }
+      .noscript-nav { display: flex; flex-wrap: wrap; gap: 18px; padding: 20px 0; border-bottom: 1px solid rgba(243,234,217,.14); }
+      .noscript-nav a { font: 10px/1.4 "Cascadia Code", Consolas, monospace; letter-spacing: .12em; text-decoration: none; text-transform: uppercase; }
+      .noscript-nav .noscript-wordmark { margin-right: auto; font: 22px/1.2 "Iowan Old Style", Palatino, Georgia, serif; letter-spacing: -.02em; text-transform: none; }
+      .noscript-cta { display: inline-flex; margin-top: 18px; padding: 13px 18px; border: 1px solid #f3ead9; background: #f3ead9; color: #17201b; font: 600 12px/1 "Avenir Next", "Segoe UI", system-ui, sans-serif; text-decoration: none; }
+      .noscript-section { padding: 54px 0; border-bottom: 1px solid rgba(243,234,217,.14); }
+      .noscript-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 28px; }
+      .noscript-card { padding: 20px 0; border-top: 1px solid rgba(243,234,217,.18); }
+      .noscript-label { color: rgba(243,234,217,.42); font: 9px/1.5 "Cascadia Code", Consolas, monospace; letter-spacing: .12em; text-transform: uppercase; }
+      .noscript-tags { margin: 10px 0 0; padding: 0; list-style: none; color: rgba(243,234,217,.52); font: 10px/1.8 "Cascadia Code", Consolas, monospace; }
+      .noscript-inline { display: flex; flex-wrap: wrap; gap: 10px 22px; margin-top: 18px; }
+      .noscript-inline a { font-size: 14px; }
+      .noscript-footer { padding-top: 26px; color: rgba(243,234,217,.42); font: 10px/1.8 "Cascadia Code", Consolas, monospace; }
+      .noscript-note { margin-top: 30px; padding: 14px 16px; border-left: 1px solid #e8bd81; color: rgba(243,234,217,.5); font-size: 12px; }
+    </style>
+    <script type="module" crossorigin src="./assets/index-UWBZZbRR.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-DeFvgbJx.css">
   </head>
   <body>
-    <div id="root"></div>
+    <noscript>
+      <div class="noscript-fallback">
+        <div class="noscript-wrap" id="top">
+          <nav class="noscript-nav" aria-label="Primary">
+            <a class="noscript-wordmark" href="#top">Peyton Campbell</a>
+            <a href="#noscript-about">About</a>
+            <a href="#noscript-work">Work</a>
+            <a href="#noscript-experience">Experience</a>
+            <a href="#noscript-contact">Contact</a>
+            <a href="./Peyton-Campbell-Resume.pdf" download>Resume (PDF)</a>
+          </nav>
+
+          <header class="noscript-hero" style="margin-top: 24px">
+            <img src="./assets/preview-jj4j4_Ot.jpg" alt="An angler seated at the end of a weathered dock over Stillwater Bay at golden hour" />
+            <div class="noscript-hero-copy">
+              <p class="noscript-kicker">Full-stack developer · London, Ontario</p>
+              <h1>I build software that earns its place in the workflow.</h1>
+              <p>Product interfaces, cross-platform apps, and internal tools for sports technology and IoT.</p>
+              <p><em>Off the clock, you'll find me here.</em></p>
+              <a class="noscript-cta" href="#noscript-work">View selected work ↓</a>
+            </div>
+          </header>
+
+          <section class="noscript-section" id="noscript-about">
+            <h2>About</h2>
+            <p>I work across web, mobile, and internal tooling for sports technology and IoT. I like problems where the interface has to meet real hardware, real operators, and real deadlines.</p>
+            <p>Based in London, Ontario. Full-stack at OES. Western CS graduate, former varsity basketball player, and analytics for Western men's basketball.</p>
+          </section>
+
+          <section class="noscript-section" id="noscript-work">
+            <h2>Selected work</h2>
+            <div class="noscript-grid">
+              <article class="noscript-card">
+                <p class="noscript-label">OES · internal product</p>
+                <h3>Scoreboard Configurator &amp; Admin Layout Editor</h3>
+                <p>A browser-based configurator and layout editor that lets operators set up scoreboards without hand-editing configuration files.</p>
+                <p class="noscript-label">Role / Full-stack · React, .NET, layout tooling</p>
+              </article>
+              <article class="noscript-card">
+                <p class="noscript-label">OES · shipped app</p>
+                <h3>ScoreController</h3>
+                <p>A real-time mobile control system for OES scoreboards, built for remote game data management and offline-first sync.</p>
+                <p class="noscript-label">Role / Full-stack, mobile · iOS, Bluetooth/WiFi</p>
+                <p><a href="https://apps.apple.com/us/app/score-controller/id1563410119">View on the App Store ↗</a></p>
+              </article>
+              <article class="noscript-card">
+                <p class="noscript-label">OES · internal product</p>
+                <h3>Provisioning Operations Console</h3>
+                <p>An internal console for provisioning and managing connected scoreboard hardware, replacing repetitive manual setup with a single operations view.</p>
+                <p class="noscript-label">Role / Full-stack · React, .NET, REST APIs</p>
+              </article>
+              <article class="noscript-card">
+                <p class="noscript-label">OES · production tooling</p>
+                <h3>Python Production Test Jig</h3>
+                <p>A Python test jig that exercises production hardware before it ships, turning a manual checklist into a repeatable validation step.</p>
+                <p class="noscript-label">Role / Tooling · Python, hardware I/O, automation</p>
+              </article>
+              <article class="noscript-card">
+                <p class="noscript-label">Personal project</p>
+                <h3>Catan Settlement Optimizer</h3>
+                <p>A browser tool that scores Catan boards and ranks settlement placements against scarcity, ports, and resource probability.</p>
+                <p class="noscript-label">Role / Solo builder · JavaScript, Canvas API, algorithms</p>
+                <p><a href="https://peytoncampbell.ca/catan/">Open the optimizer ↗</a></p>
+              </article>
+            </div>
+          </section>
+
+          <section class="noscript-section" id="noscript-experience">
+            <h2>Experience</h2>
+            <p class="noscript-label">Aug 2025 — Present</p>
+            <h3>OES — Full Stack Software Developer</h3>
+            <p>Build and modernize product interfaces across web and cross-platform apps. Connect scoreboard hardware, APIs, and operator workflows. Automate production testing and validation with Python.</p>
+            <p class="noscript-label">Aug 2023 — Present</p>
+            <h3>Western Men's Basketball — Head of Data Analytics</h3>
+            <p>Lead analytics for the men's basketball program. Build reporting and preparation tools for coaches.</p>
+            <p class="noscript-label">Education</p>
+            <p>Western University — BSc Computer Science, 2020–2025<br />Fanshawe College — AI &amp; Machine Learning Certificate, 2025</p>
+          </section>
+
+          <section class="noscript-section" id="noscript-off-clock">
+            <h2>Off the clock</h2>
+            <p>Basketball, fishing, Catan, and building small interactive things.</p>
+            <p><em>A small interactive detour. A place to think about systems, patience, and better tools.</em></p>
+            <p>I played varsity basketball at Western and still spend time around the game. Fishing, Catan, and small interactive projects all ask the same question: what makes this system worth spending time with?</p>
+          </section>
+
+          <section class="noscript-section" id="noscript-contact">
+            <h2>Contact</h2>
+            <p>The best way to reach me is email. Best fit: full-stack product roles, internal tools, sports tech, IoT, and automation.</p>
+            <div class="noscript-inline">
+              <a href="mailto:campbellpeyton042@gmail.com">campbellpeyton042@gmail.com</a>
+              <a href="https://github.com/peytoncampbell">GitHub ↗</a>
+              <a href="https://www.linkedin.com/in/peyton-campbell/">LinkedIn ↗</a>
+              <a href="./Peyton-Campbell-Resume.pdf" download>Resume (PDF) ↓</a>
+            </div>
+          </section>
+
+          <p class="noscript-note">
+            The interactive dock requires JavaScript and WebGL. This page is the static profile.
+          </p>
+
+          <footer class="noscript-footer">
+            © 2026 Peyton Campbell · London, Ontario · <a href="#top">Back to the dock</a>
+          </footer>
+        </div>
+      </div>
+    </noscript>
+    <div id="root"></div>
   </body>
 </html>

@@ -173,29 +173,34 @@ absolute `og:image` / `twitter:image` values in `index.html`.
 
 ## Deployment notes
 
+The live site, `https://peytoncampbell.ca/`, is served by GitHub Pages from the
+`docs/` directory.
+
 1. Run `npm run build`.
-2. Upload the contents of `dist/` to the static host.
-3. Keep `preview.jpg` available at the site root for the absolute OG/Twitter
+2. Overlay the build into the Pages directory:
+   `node -e "require('fs').cpSync('dist', 'docs', { recursive: true, force: true })"`
+3. Confirm `docs/CNAME` still contains `peytoncampbell.ca` and
+   `docs/.nojekyll` is present, then commit and push `docs/` with `main`.
+4. Keep `preview.jpg` available at the site root for the absolute OG/Twitter
    URLs, and keep `Peyton-Campbell-Resume.pdf` alongside the page for the
    download links.
-4. The build uses `base: './'`, so it can also live under a subpath, but the
-   canonical and OG URLs in `index.html` are written for
-   `https://peytoncampbell.ca/` and should be updated if that changes.
 5. There are no server routes, API endpoints, environment variables, or runtime
-   services to configure.
+   services to configure. The app also builds standalone to `dist/`.
 
-The `docs/` directory is a separate static deployment already tracked on
-`main`. This branch does not overwrite it; `dist/` is the new app build. Note
-that the existing `vercel.json` still sets `"outputDirectory": "docs"`; change
-that to `"dist"` when this landing page is ready to replace the current deploy.
+The overlay preserves the existing docs subpages and hashed assets. The old
+`/projects`, `/stocks`, `/odds`, `/catan`, and similar deployments remain
+available under their own paths; only the root document and the new app assets
+change.
+
+`vercel.json` also points at `"docs"`, so a Vercel build would publish the same
+GitHub Pages output rather than the raw `dist/` directory.
 
 ### Integration note
 
-This review branch is based on the current `main`, which also contains a newer
-flat `src/` app and its docs deployment. Those files are preserved. The root
-entry points, configuration, and `src` subdirectories for Off the Dock are
-applied on top, and `tsconfig.json` includes only this app's source so the
-older flat files do not interfere with its strict build.
+The repository also retains the previous flat `src/` app from the newer
+portfolio work. The Off the Dock app is applied on top, and `tsconfig.json`
+includes only this app's source so the older flat files do not interfere with
+its strict build.
 
 ## Tradeoffs
 

@@ -166,9 +166,9 @@ export default function App() {
   );
 
   const navigateHome = () => {
-    window.history.pushState({}, '', '/');
-    setRoute('/');
-    window.scrollTo({ top: 0, behavior: prefersReducedMotion ? 'auto' : 'smooth' });
+    // The stock pages are a legacy static app now; "/" belongs to the Off the Dock site.
+    // Leave the stock bundle instead of rendering the retired in-bundle homepage over it.
+    window.location.assign('/');
   };
 
   const navigate = (path: string) => {

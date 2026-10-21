@@ -260,9 +260,9 @@
 .stock-dashboard.sd-next .sd-kpis > div {
   display: grid;
   align-content: center;
-  gap: 5px;
+  gap: 3px;
   min-width: 0;
-  padding: 14px 22px 12px;
+  padding: 8px 22px 12px;
   border-right: 1px solid var(--line);
 }
 .stock-dashboard.sd-next .sd-kpis > div:last-child { border-right: 0; }
@@ -274,11 +274,11 @@
 }
 .stock-dashboard.sd-next .sd-kpis strong {
   color: var(--ink);
-  font: 400 31px/1 var(--font-display);
+  font: 400 30px/1 var(--font-display);
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
 }
-.stock-dashboard.sd-next .sd-kpis small { color: var(--ink-3); font-size: 11px; line-height: 1.35; }
+.stock-dashboard.sd-next .sd-kpis small { color: var(--ink-3); font-size: 11px; line-height: 1.25; }
 
 /* ---------- workspace --------------------------------------------------- */
 .stock-dashboard.sd-next .sd-workspace {
@@ -1024,12 +1024,12 @@
 @media (min-width: 1200px) and (min-height: 900px) {
   .stock-dashboard.sd-next .sd-portfolio-row { min-height: 40px; }
   .stock-dashboard.sd-next .sd-order-row { min-height: 44px; }
-  .stock-dashboard.sd-next .sd-kpis strong { font-size: 34px; }
+  .stock-dashboard.sd-next .sd-kpis strong { font-size: 32px; }
 }
 @media (min-width: 1200px) and (min-height: 1000px) {
   .stock-dashboard.sd-next .sd-portfolio-row { min-height: 46px; }
   .stock-dashboard.sd-next .sd-order-row { min-height: 48px; }
-  .stock-dashboard.sd-next .sd-kpis strong { font-size: 37px; }
+  .stock-dashboard.sd-next .sd-kpis strong { font-size: 34px; }
 }
 @media (min-width: 1200px) and (max-height: 760px) {
   .stock-dashboard.sd-next .sd-shortcuts { display: none; }

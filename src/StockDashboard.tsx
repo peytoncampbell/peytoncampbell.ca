@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
+import DeskCommand from './DeskCommand';
+import type { DeskCommandItem } from './DeskCommand';
+import './StockDesk.css';
 
 export type StockSelection = { ticker: string; origin: 'portfolio' | 'buy' | 'sell' | 'candidate' | 'change'; action?: string; changeId?: string };
 export type AnalysisView = 'quick' | 'summary' | 'history' | 'evidence';
@@ -25,6 +28,8 @@ export default function StockDashboard(props: Props) {
   const [selected, setSelected] = useState<StockSelection | null>(null);
   const [analysisView, setAnalysisView] = useState<AnalysisView>('quick');
   const [notice, setNotice] = useState('');
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
   const expanded = selected !== null && analysisView !== 'quick';
   const root = useRef<HTMLDivElement>(null);
   const pendingFocus = useRef<StockSelection | 'quick' | 'analysis' | 'reading' | 'changes' | 'attention' | null>(null);
@@ -73,7 +78,7 @@ export default function StockDashboard(props: Props) {
   });
   useEffect(() => {
     const escape = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') return;
+      if (event.key !== 'Escape' || paletteOpen) return;
       const warnings = root.current?.querySelector<HTMLDetailsElement>('.sd-attention-details[open]');
       if (warnings) { event.preventDefault(); warnings.open = false; warnings.querySelector('summary')?.focus(); }
       else if (expanded) { event.preventDefault(); back(); }
@@ -81,7 +86,23 @@ export default function StockDashboard(props: Props) {
     };
     document.addEventListener('keydown', escape);
     return () => document.removeEventListener('keydown', escape);
-  }, [selected, expanded, back, close]);
+  }, [selected, expanded, back, close, paletteOpen]);
+  useEffect(() => {
+    const shortcut = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      const typing = Boolean(target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable));
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault();
+        setPaletteOpen(open => !open);
+      } else if (event.key === '/' && !typing && !paletteOpen) {
+        event.preventDefault();
+        setPaletteOpen(true);
+      }
+    };
+    document.addEventListener('keydown', shortcut);
+    return () => document.removeEventListener('keydown', shortcut);
+  }, [paletteOpen]);
+  useEffect(() => { setCopied(false); }, [selected?.ticker]);
   useEffect(() => {
     const measure = () => {
       const large = probe.current ? parseFloat(getComputedStyle(probe.current).fontSize) > 20 : false;
@@ -128,13 +149,53 @@ export default function StockDashboard(props: Props) {
   const researchSections: DashboardSection[] = ['opportunities', 'universe', 'reports', 'model', 'brief'];
   const research = section !== null && researchSections.includes(section);
   const detail = selected ? (props.renderDetail ? props.renderDetail(selected, analysisView) : props.details[selected.ticker]) : null;
-  return <div ref={root} className={`stock-dashboard${enlarged ? ' sd-reflow' : ''}${section || expanded ? ' sd-secondary' : ''}`}>
+  const commandItems: DeskCommandItem[] = [
+    { id: 'cmd-dashboard', group: 'Go to', label: 'Dashboard', hint: 'Overview', run: () => go(null) },
+    { id: 'cmd-research', group: 'Go to', label: 'Research', hint: 'Best names, plan and model', run: () => go('opportunities') },
+    { id: 'cmd-universe', group: 'Go to', label: 'Universe', hint: 'Top 15 by composite', run: () => go('universe') },
+    { id: 'cmd-reports', group: 'Go to', label: 'Reports', hint: 'Weekly report', run: () => go('reports') },
+    { id: 'cmd-model', group: 'Go to', label: 'Model', hint: 'Evidence and calibration', run: () => go('model') },
+    { id: 'cmd-brief', group: 'Go to', label: 'Brief', hint: 'Morning note', run: () => go('brief') },
+    { id: 'cmd-history', group: 'Go to', label: 'History', hint: 'Published ratings over time', run: () => go('history') },
+    { id: 'cmd-book', group: 'Go to', label: 'Full book', hint: 'Every holding', run: () => go('book') },
+    { id: 'cmd-ticket', group: 'Go to', label: 'Full ticket', hint: 'Every proposed order', run: () => go('ticket') },
+    { id: 'cmd-status', group: 'Go to', label: 'Status details', hint: 'Freshness and exceptions', run: () => go('status') },
+    ...(props.changes ? [{ id: 'cmd-changes', group: 'Go to', label: 'Changes', hint: props.changes.label, run: () => go('changes') }] : []),
+    { id: 'cmd-refresh', group: 'Actions', label: 'Refresh desk', hint: 'Reload the published rows', run: () => props.onRefresh() },
+    ...props.portfolio.map(row => ({ id: `cmd-holding-${row.ticker}`, group: 'Holdings', label: row.ticker, hint: row.action ? `Holding · ${row.action}` : 'Holding', run: () => select({ ticker: row.ticker, origin: 'portfolio' as const, action: row.action }) })),
+    ...props.buys.map(row => ({ id: `cmd-buy-${row.ticker}`, group: 'Proposals', label: row.ticker, hint: 'Buy proposal', run: () => select({ ticker: row.ticker, origin: 'buy' as const, action: row.action }) })),
+    ...props.sells.map(row => ({ id: `cmd-sell-${row.ticker}`, group: 'Proposals', label: row.ticker, hint: 'Sell or trim', run: () => select({ ticker: row.ticker, origin: 'sell' as const, action: row.action }) })),
+    ...props.candidates.map(row => ({ id: `cmd-candidate-${row.ticker}`, group: 'Candidates', label: row.ticker, hint: `Candidate · ${row.rating}`, keywords: row.availability ?? '', run: () => select({ ticker: row.ticker, origin: 'candidate' as const }) })),
+  ];
+  const copyTicker = async () => {
+    if (!selected) return;
+    try {
+      await navigator.clipboard.writeText(selected.ticker);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1500);
+    } catch {
+      setCopied(false);
+    }
+  };
+  return <div ref={root} className={`stock-dashboard sd-next${enlarged ? ' sd-reflow' : ''}${section || expanded ? ' sd-secondary' : ''}`}>
     <span ref={probe} className="sd-size-probe" aria-hidden="true">M</span>
     <header className="sd-header">
-      <strong className="sd-brand">PC <span>Stock desk</span></strong>
+      <a className="sd-brand" href="/" aria-label="Peyton Campbell home" title="Back to peytoncampbell.ca">
+        <span className="sd-brand-mark" aria-hidden="true">PC</span>
+        <span className="sd-brand-name">Stock desk</span>
+        <span className="sd-brand-sub">Private</span>
+      </a>
       <nav aria-label="Primary">{(['Dashboard', 'Research', 'History'] as const).map(label => <button key={label} aria-current={(label === 'Dashboard' ? !research && section !== 'history' : label === 'History' ? section === 'history' : research) ? 'page' : undefined} onClick={() => go(label === 'Dashboard' ? null : label === 'History' ? 'history' : 'opportunities')}>{label}</button>)}</nav>
-      <button className="sd-refresh" onClick={props.onRefresh} disabled={props.refreshing}>{props.refreshing ? 'Refreshing…' : 'Refresh'}</button>
-      <details className="sd-account"><summary>Account</summary><div><span>{props.email}</span><button onClick={props.onHome}>Site</button><button onClick={props.onSignOut}>Sign out</button></div></details>
+      <button className="sd-search" onClick={() => setPaletteOpen(true)} aria-label="Search tickers and sections" aria-haspopup="dialog" aria-expanded={paletteOpen} aria-controls="sd-command-results" aria-keyshortcuts="Control+K Meta+K">
+        <svg className="sd-search-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.4-3.4" /></svg>
+        <span className="sd-search-label">Search</span>
+        <kbd>Ctrl K</kbd>
+      </button>
+      <button className={`sd-refresh${props.refreshing ? ' is-refreshing' : ''}`} onClick={props.onRefresh} disabled={props.refreshing}>
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7" /><path d="M20 4v7h-7" /></svg>
+        {props.refreshing ? 'Refreshing…' : 'Refresh'}
+      </button>
+      <details className="sd-account"><summary>Account</summary><div><span className="sd-account-email">{props.email}</span><button onClick={props.onHome}>Site</button><a href="/budget/">Budget</a><a href="/catan/">Catan</a><button onClick={props.onSignOut}>Sign out</button></div></details>
     </header>
     <section className="sd-kpis" aria-label="Account metrics">{props.kpis.map(kpi => <div key={kpi.label}><span>{kpi.label}</span><strong>{kpi.value}</strong><small>{kpi.note}</small></div>)}</section>
     {expanded ? <main className="sd-reading-workspace sd-analysis" data-analysis-ticker={selected.ticker}>
@@ -148,8 +209,8 @@ export default function StockDashboard(props: Props) {
     </main> : <main className="sd-workspace" ref={workspace}>
       <section className="sd-panel sd-portfolio" data-dashboard-panel="portfolio" aria-label="Portfolio">
         <div className="sd-panel-head"><h2 tabIndex={-1} data-origin-heading="portfolio">Portfolio <span>{props.portfolio.length}</span></h2><button onClick={() => go('book')}>Full book</button></div>
-        <div className="sd-portfolio-columns" aria-hidden="true"><span>Ticker</span><span>CAD value</span><span>Weight</span><span>Day</span><span>Book rating</span><span>Call</span></div>
-        {props.portfolio.slice(pp * capacity.portfolio, (pp + 1) * capacity.portfolio).map(row => <button key={row.ticker} data-stock-ticker={row.ticker} data-stock-origin="portfolio" data-stock-action={row.action} className="sd-portfolio-row" onClick={() => select({ ticker: row.ticker, origin: 'portfolio', action: row.action })} aria-label={`Inspect ${row.ticker} holding`}>{row.summary}</button>)}
+        <div className="sd-portfolio-columns" aria-hidden="true"><span>Ticker</span><span>CAD value</span><span>Weight</span><span>Day</span><span>Rating</span><span>Call</span></div>
+        {props.portfolio.slice(pp * capacity.portfolio, (pp + 1) * capacity.portfolio).map(row => <button key={row.ticker} data-stock-ticker={row.ticker} data-stock-origin="portfolio" data-stock-action={row.action} data-call={row.action} className="sd-portfolio-row" onClick={() => select({ ticker: row.ticker, origin: 'portfolio', action: row.action })} aria-label={`Inspect ${row.ticker} holding`}>{row.summary}</button>)}
         {props.portfolio.length === 0 && <p className="sd-empty">Holdings unavailable</p>}
         {pagination('portfolio', pp, props.portfolio.length, capacity.portfolio, setPortfolioPage)}
         <p className="sd-portfolio-foot">Book call ≠ playbook action or funding sale</p>
@@ -162,7 +223,11 @@ export default function StockDashboard(props: Props) {
       </section>
       <aside className="sd-panel sd-context" data-dashboard-panel="context">
         {selected ? <div className="sd-inspector" role="dialog" aria-modal="false" aria-label={`${selected.ticker} stock details`}>
-          <div className="sd-panel-head"><h2>{selected.ticker}</h2><button ref={closeButton} onClick={close} aria-label={`Close ${selected.ticker} details`}>Close</button><button data-focus="analysis" onClick={() => { setAnalysisView('summary'); pendingFocus.current = 'reading'; }}>Open analysis</button></div>
+          <div className="sd-panel-head"><h2>{selected.ticker}</h2><div className="sd-inspector-head-actions"><button ref={closeButton} onClick={close} aria-label={`Close ${selected.ticker} details`}>Close</button><button data-focus="analysis" onClick={() => { setAnalysisView('summary'); pendingFocus.current = 'reading'; }}>Open analysis</button></div></div>
+          <div className="sd-inspector-tools">
+            <a href={`https://finance.yahoo.com/quote/${encodeURIComponent(selected.ticker)}`} target="_blank" rel="noreferrer">Yahoo quote ↗</a>
+            <button type="button" onClick={copyTicker}>{copied ? 'Ticker copied' : 'Copy ticker'}</button>
+          </div>
           <div className="sd-inspector-content">{detail}</div>
         </div> : <>
           <div className="sd-panel-head"><h2 tabIndex={-1} data-focus="attention">Attention</h2><button onClick={() => go('status')}>View all ({props.attention.length})</button></div>
@@ -174,6 +239,10 @@ export default function StockDashboard(props: Props) {
           <ol className="sd-candidates">{props.candidates.slice(0, 5).map(row => <li key={row.ticker}><button data-stock-ticker={row.ticker} data-stock-origin="candidate" onClick={() => select({ ticker: row.ticker, origin: 'candidate' })}>{row.ticker}</button><span>{row.availability && <small className="sd-warning" title={row.note}>{row.availability} · </small>}<b>{row.rating}</b></span></li>)}</ol>
           <div className="sd-context-head"><h3>Morning brief</h3><button onClick={() => go('brief')}>Full brief</button></div>
           <p className="sd-brief-preview">{props.brief ? `${props.brief.slice(0, 145)}${props.brief.length > 145 ? '…' : ''}` : 'Brief unavailable in this publish.'}</p>
+          <div className="sd-shortcuts" aria-label="Keyboard shortcuts">
+            <span><kbd>Ctrl K</kbd> jump to a ticker or section</span>
+            <span><kbd>Esc</kbd> close the open panel</span>
+          </div>
         </>}
       </aside>
     </main>}
@@ -182,5 +251,6 @@ export default function StockDashboard(props: Props) {
       <details className="sd-attention-details"><summary className={props.attention.length ? 'sd-warning' : ''}>{props.attention.length} attention · Details</summary><div><h3>Attention details</h3><ul>{props.attention.map((item, i) => <li key={i}>{item}</li>)}</ul>{!props.attention.length && <p>No reported exceptions</p>}<button onClick={() => go('status')}>Status details</button></div></details>
       {(selected || section) && props.attention.length ? <span className="sd-warning sd-persistent-warning">{props.attention[0].split(';')[0]}</span> : <span>Proposals only · no orders executed</span>}
     </footer>
+    <DeskCommand open={paletteOpen} items={commandItems} onClose={() => setPaletteOpen(false)} />
   </div>;
 }

@@ -164,6 +164,25 @@
   transform: translateX(-50%);
 }
 
+.site-nav .desk-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--accent);
+}
+
+.site-nav .desk-link:hover {
+  color: var(--cream);
+}
+
+.desk-link-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 3px rgba(232, 189, 129, 0.12);
+}
+
 .resume-link {
   display: inline-flex;
   align-items: center;

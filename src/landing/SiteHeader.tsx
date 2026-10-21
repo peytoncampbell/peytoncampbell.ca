@@ -70,6 +70,14 @@ export function SiteHeader({ activeSection, scrolled, playMode }: SiteHeaderProp
             </a>
           )
         })}
+        <a
+          className="desk-link"
+          href="/stocks"
+          title="Private stock desk — sign in required"
+        >
+          <span className="desk-link-dot" aria-hidden="true" />
+          Stock desk
+        </a>
       </nav>
 
       <a
@@ -114,6 +122,10 @@ export function SiteHeader({ activeSection, scrolled, playMode }: SiteHeaderProp
             >
               Resume
               <span aria-hidden="true">↓</span>
+            </a>
+            <a href="/stocks" onClick={closeMenu} title="Private stock desk — sign in required">
+              Stock desk
+              <span aria-hidden="true">↗</span>
             </a>
           </nav>
         </div>

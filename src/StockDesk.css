@@ -1021,19 +1021,22 @@
 .stock-dashboard.sd-next.sd-reflow .sd-reading { overflow: visible; }
 
 /* ---------- taller screens get more air --------------------------------- */
-@media (min-width: 1100px) and (min-height: 900px) {
+@media (min-width: 1200px) and (min-height: 900px) {
   .stock-dashboard.sd-next .sd-portfolio-row { min-height: 40px; }
   .stock-dashboard.sd-next .sd-order-row { min-height: 44px; }
   .stock-dashboard.sd-next .sd-kpis strong { font-size: 34px; }
 }
-@media (min-width: 1100px) and (min-height: 1000px) {
+@media (min-width: 1200px) and (min-height: 1000px) {
   .stock-dashboard.sd-next .sd-portfolio-row { min-height: 46px; }
   .stock-dashboard.sd-next .sd-order-row { min-height: 48px; }
   .stock-dashboard.sd-next .sd-kpis strong { font-size: 37px; }
 }
+@media (min-width: 1200px) and (max-height: 760px) {
+  .stock-dashboard.sd-next .sd-shortcuts { display: none; }
+}
 
 /* ---------- document reflow at tablet and short viewports -------------- */
-@media (max-width: 1099px), (max-height: 699px) {
+@media (max-width: 1199px), (max-height: 699px) {
   .stock-dashboard.sd-next {
     height: auto;
     min-height: 100dvh;

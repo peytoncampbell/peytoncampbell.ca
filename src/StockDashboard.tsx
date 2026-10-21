@@ -109,7 +109,7 @@ export default function StockDashboard(props: Props) {
       setEnlarged(large);
       if (!workspace.current) return;
       // In a reflow layout, show the full default set and let the document scroll naturally.
-      const compact = window.innerWidth >= 1100 && window.innerHeight >= 700 && !large;
+      const compact = window.innerWidth >= 1200 && window.innerHeight >= 700 && !large;
       const height = workspace.current?.clientHeight ?? 528;
       const measured = (selector: string) => workspace.current?.querySelector(selector)?.getBoundingClientRect().height ?? 0;
       const rowsThatFit = (length: number, chrome: number, rowHeight: number) => {

@@ -1120,3 +1120,106 @@
   .stock-dashboard.sd-next *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
   .stock-dashboard.sd-next .sd-refresh.is-refreshing svg { animation: none; }
 }
+
+/* ---------- owner sign-in gate (same ledger, before the desk) ----------- */
+.own-gate.desk-gate {
+  --accent-rgb: 216, 185, 139;
+  --cyan: #d8b98b;
+  --text: #e9eef5;
+  --ink-3: #8494a7;
+  --line: rgba(214, 229, 244, 0.1);
+  --line-2: rgba(214, 229, 244, 0.16);
+  min-height: 100dvh;
+  padding: 2rem 1.25rem;
+  background:
+    radial-gradient(760px 460px at 50% -8%, rgba(216, 185, 139, 0.07), transparent 65%),
+    radial-gradient(900px 500px at 100% 100%, rgba(126, 156, 196, 0.05), transparent 60%),
+    #0a0e14;
+  color: var(--text);
+  font-family: 'IBM Plex Sans', 'Segoe UI', sans-serif;
+}
+.own-gate.desk-gate .own-gate-card {
+  width: 100%;
+  max-width: 26rem;
+  gap: 1.05rem;
+  padding: 1.7rem;
+  border: 1px solid rgba(214, 229, 244, 0.12);
+  border-radius: 14px;
+  background: #0f151d;
+  box-shadow: 0 28px 70px rgba(0, 0, 0, 0.5);
+}
+.own-gate.desk-gate .own-gate-head { align-items: flex-start; gap: 0.85rem; }
+.own-gate.desk-gate .own-mark {
+  width: 2.35rem;
+  height: 2.35rem;
+  border: 1px solid rgba(216, 185, 139, 0.42);
+  border-radius: 9px;
+  background: rgba(216, 185, 139, 0.08);
+  color: #d8b98b;
+  font: 700 0.62rem/1 'Archivo', 'IBM Plex Sans', sans-serif;
+  letter-spacing: 0.05em;
+}
+.own-gate.desk-gate .own-gate-head h1 {
+  margin: 0;
+  color: var(--text);
+  font: 400 2rem/1 'DM Serif Display', Georgia, serif;
+  letter-spacing: -0.02em;
+}
+.own-gate.desk-gate .own-gate-head p {
+  margin: 0.45rem 0 0;
+  max-width: 30ch;
+  color: var(--ink-3);
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+.own-gate.desk-gate .own-form { gap: 0.8rem; }
+.own-gate.desk-gate .own-field { gap: 0.35rem; }
+.own-gate.desk-gate .own-field span {
+  color: var(--ink-3);
+  font: 600 0.58rem/1 'Archivo', 'IBM Plex Sans', sans-serif;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.own-gate.desk-gate .own-field input {
+  height: 2.6rem;
+  padding: 0 0.8rem;
+  border: 1px solid var(--line-2);
+  border-radius: 8px;
+  background: #0a0e14;
+  color: var(--text);
+  font: 400 0.82rem/1 'IBM Plex Sans', sans-serif;
+}
+.own-gate.desk-gate .own-field input:focus {
+  outline: none;
+  border-color: #d8b98b;
+  box-shadow: 0 0 0 2px rgba(216, 185, 139, 0.16);
+}
+.own-gate.desk-gate .own-form-actions { gap: 0.5rem; }
+.own-gate.desk-gate .own-btn {
+  min-height: 2.55rem;
+  padding: 0.5rem 0.95rem;
+  border: 1px solid var(--line-2);
+  border-radius: 8px;
+  background: transparent;
+  color: #b9c6d5;
+  font: 500 0.62rem/1 'Archivo', 'IBM Plex Sans', sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+}
+.own-gate.desk-gate .own-btn:hover:not(:disabled) { border-color: rgba(216, 185, 139, 0.55); background: rgba(216, 185, 139, 0.06); color: var(--text); }
+.own-gate.desk-gate .own-btn.primary { border-color: transparent; background: #d8b98b; color: #161006; }
+.own-gate.desk-gate .own-btn.primary:hover:not(:disabled) { background: #e7cda7; color: #161006; }
+.own-gate.desk-gate .own-btn.ghost { background: transparent; color: #b9c6d5; }
+.own-gate.desk-gate .own-btn:disabled { opacity: 0.55; }
+.own-gate.desk-gate .own-gate-foot { gap: 0.45rem; padding-top: 0.9rem; border-top: 1px solid var(--line); }
+.own-gate.desk-gate .own-gate-foot a { color: #d8b98b; font-size: 0.72rem; }
+.own-gate.desk-gate .own-gate-foot a:hover { color: #e7cda7; }
+.own-gate.desk-gate .own-quiet { color: var(--ink-3); font-size: 0.64rem; line-height: 1.55; }
+.own-gate.desk-gate .own-note { color: var(--ink-3); font-size: 0.72rem; }
+.own-gate.desk-gate .own-note-warn { color: #e2a69c; }
+@media (max-width: 420px) {
+  .own-gate.desk-gate { padding: 1.2rem 1rem; }
+  .own-gate.desk-gate .own-gate-card { padding: 1.35rem; }
+  .own-gate.desk-gate .own-gate-head h1 { font-size: 1.8rem; }
+}

@@ -52,7 +52,7 @@ export default function OwnerLogin({ onSignedIn, onHome }: { onSignedIn: (path: 
   };
 
   return (
-    <div className="own-gate">
+    <div className="own-gate desk-gate">
       <div className="own-gate-card">
         <div className="own-gate-head">
           <span className="own-mark">PC</span>

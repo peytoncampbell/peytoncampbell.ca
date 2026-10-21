@@ -1554,7 +1554,7 @@ export default function OwnerStocks({ onSignedOut, onHome, onReaderDesk }: { onS
     const holdingDetail = row && <section data-detail-origin="portfolio"><h3>Book call: {row.holding.call}</h3>
         <p className="sd-analysis-note">{row.currency ?? 'Currency unavailable'} · Book {latest.as_of}</p>
         <dl><dt>CAD value / allocation</dt><dd>{latest?.book_value_cad == null ? '--' : money(value(row.holding.weight_pct))} / {row.holding.weight_pct.toFixed(2)}%</dd>
-          <dt>Book / universe rating</dt><dd>{row.holding.rating?.toFixed(1) ?? '--'} / {row.holding.rating_universe?.toFixed(1) ?? '--'}</dd></dl>
+          <dt>Universe / book rating</dt><dd>{row.holding.rating_universe?.toFixed(1) ?? '--'} / {row.holding.rating?.toFixed(1) ?? '--'}</dd></dl>
         {holdingFactors}
         <h3>Why this call?</h3><p>{row.holding.reason ?? 'Holding rationale unavailable'}</p>
         {detailView !== 'quick' && <PublishedCallEvaluation evaluation={row.holding.call_evaluation} expectedAsOf={latest.as_of} expectedCall={row.holding.call} />}
@@ -2379,7 +2379,7 @@ export default function OwnerStocks({ onSignedOut, onHome, onReaderDesk }: { onS
   return <StockDashboard
     changes={{ label: `Changes · ${changeStatus}`, render: open => <StockChanges groups={changeGroups} reviewed={changeReview.reviewed} onReview={id => { if (reviewableChanges.current.input === comparisonInput && comparisonInput.sequence === loadSequence.current && reviewableChanges.current.ids.has(id)) changeReview.markReviewed(id); }} onOpen={open} /> }}
     email={session?.email} onHome={onHome} onSignOut={onSignOut} onRefresh={() => void load()} refreshing={refreshing}
-    portfolio={book.map(({ holding: h }) => ({ ticker: h.ticker, summary: <><strong>{h.ticker}</strong><span>{latest?.book_value_cad == null ? '--' : money(value(h.weight_pct), 0)}</span><span>{h.weight_pct.toFixed(1)}%</span><span className={tone(h.day_pct)}>{pct(h.day_pct, 1)}</span><span>{h.rating?.toFixed(0) ?? '--'}</span><span className={h.call === 'SELL' ? 'down' : ''}>{h.call}</span></> }))}
+    portfolio={book.map(({ holding: h }) => ({ ticker: h.ticker, summary: <><strong>{h.ticker}</strong><span>{latest?.book_value_cad == null ? '--' : money(value(h.weight_pct), 0)}</span><span>{h.weight_pct.toFixed(1)}%</span><span className={tone(h.day_pct)}>{pct(h.day_pct, 1)}</span><span title={h.rating_universe != null ? 'Universe composite' : h.rating != null ? 'Book score (outside the universe)' : 'Not scored'}>{h.rating_universe?.toFixed(0) ?? h.rating?.toFixed(0) ?? '--'}</span><span className={h.call === 'SELL' ? 'down' : ''}>{h.call}</span></> }))}
     buys={orderRows.filter(row => row.key === 'buys').map(({ line, action }) => ({ ticker: line.ticker, action, summary: <DashboardOrderRow line={line} action={action} /> }))}
     sells={orderRows.filter(row => row.key !== 'buys').map(({ line, action }) => ({ ticker: line.ticker, action, summary: <DashboardOrderRow line={line} action={action} /> }))}
     details={{}} renderDetail={renderDetail}

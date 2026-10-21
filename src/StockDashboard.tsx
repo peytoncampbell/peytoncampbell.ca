@@ -209,11 +209,11 @@ export default function StockDashboard(props: Props) {
     </main> : <main className="sd-workspace" ref={workspace}>
       <section className="sd-panel sd-portfolio" data-dashboard-panel="portfolio" aria-label="Portfolio">
         <div className="sd-panel-head"><h2 tabIndex={-1} data-origin-heading="portfolio">Portfolio <span>{props.portfolio.length}</span></h2><button onClick={() => go('book')}>Full book</button></div>
-        <div className="sd-portfolio-columns" aria-hidden="true"><span>Ticker</span><span>CAD value</span><span>Weight</span><span>Day</span><span>Rating</span><span>Call</span></div>
+        <div className="sd-portfolio-columns" aria-hidden="true"><span>Ticker</span><span>CAD value</span><span>Weight</span><span>Day</span><span>Universe</span><span>Call</span></div>
         {props.portfolio.slice(pp * capacity.portfolio, (pp + 1) * capacity.portfolio).map(row => <button key={row.ticker} data-stock-ticker={row.ticker} data-stock-origin="portfolio" data-stock-action={row.action} data-call={row.action} className="sd-portfolio-row" onClick={() => select({ ticker: row.ticker, origin: 'portfolio', action: row.action })} aria-label={`Inspect ${row.ticker} holding`}>{row.summary}</button>)}
         {props.portfolio.length === 0 && <p className="sd-empty">Holdings unavailable</p>}
         {pagination('portfolio', pp, props.portfolio.length, capacity.portfolio, setPortfolioPage)}
-        <p className="sd-portfolio-foot">Book call ≠ playbook action or funding sale</p>
+        <p className="sd-portfolio-foot">Universe rating · book-relative call · not the playbook action</p>
       </section>
       <section className="sd-panel sd-orders" data-dashboard-panel="orders" aria-label="Today's proposed plan">
         <div className="sd-panel-head"><h2>Today's plan <span>Proposed</span></h2><button onClick={() => go('ticket')}>Full ticket</button></div>
